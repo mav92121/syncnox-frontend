@@ -1,5 +1,8 @@
+import { AntdRegistry } from "@ant-design/nextjs-registry";
 import type { Metadata } from "next";
+import { ConfigProvider } from "antd";
 import { Inter } from "next/font/google";
+import theme from "@/lib/themeConfig";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,6 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "logo.svg",
+  },
   title: "App | Syncnox",
   description:
     "Syncnox optimizes enterprise logistics from order to delivery. Our AI-powered agents automates complex scheduling, routing, and resource allocation across field operations, healthcare, manufacturing, and fleet management. With real-time optimization and a unified command center, operators reduce costs, improve efficiency, and ensure the right people and resources are in the right place at the right time.",
@@ -20,7 +26,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>{children}</body>
+      <AntdRegistry>
+        <ConfigProvider theme={theme}>
+          <body className={`${inter.className} antialiased`}>{children}</body>
+        </ConfigProvider>
+      </AntdRegistry>
     </html>
   );
 }
