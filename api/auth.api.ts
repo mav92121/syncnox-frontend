@@ -12,13 +12,9 @@ interface LoginError {
 export const login = async (email: string, password: string) => {
   try {
     const result = await apiClient.post("/auth/login", { email, password });
-    console.log("login success -> ", result);
-    // Backend sets HTTP-only cookie automatically
-    // Return user data from response
     return result.data;
   } catch (err) {
     const error = err as LoginError;
-    console.log("login error -> ", error);
     if (error.status === 401 || error.status === 500) {
       return {
         status: error.status,
@@ -31,13 +27,12 @@ export const login = async (email: string, password: string) => {
 export const logout = async () => {
   try {
     const result = await apiClient.post("/auth/logout");
-    console.log("logout success -> ", result);
-    // Backend sets HTTP-only cookie automatically
-    // Return user data from response
-    return result.data;
+    return {
+      status: result.status,
+      message: result.data?.message || "Logout successfull",
+    };
   } catch (err) {
     const error = err as LoginError;
-    console.log("logout error -> ", error);
     if (error.status === 401 || error.status === 500) {
       return {
         status: error.status,

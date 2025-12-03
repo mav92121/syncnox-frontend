@@ -41,13 +41,13 @@ export default function SignInPage() {
       <div className="flex flex-col items-center gap-2">
         <img src="logo.svg" alt="Syncnox Logo" className="h-12 mb-4" />
 
-        <Title level={2} className="text-gray-800">
+        <Title level={2} className="text-gray-800 text-center">
           Sign in to Syncnox
         </Title>
       </div>
 
       {/* Sign In Card */}
-      <Card className="w-full max-w-md shadow-md">
+      <Card className="w-full max-w-lg shadow-md">
         <Form
           requiredMark={false}
           form={form}

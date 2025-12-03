@@ -1,5 +1,5 @@
 "use client";
-import { Button } from "antd";
+import { Button, message } from "antd";
 import { logout } from "@/api/auth.api";
 import { useRouter } from "next/navigation";
 export default function Home() {
@@ -7,8 +7,8 @@ export default function Home() {
   const handleLogout = async () => {
     const result = await logout();
     if (result?.status === 200) {
-      console.log("logout success -> ", result);
       router.push("/sign-in");
+      message.success(result?.message);
     }
   };
   return (
