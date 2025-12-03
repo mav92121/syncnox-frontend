@@ -2,8 +2,9 @@ import { AntdRegistry } from "@ant-design/nextjs-registry";
 import type { Metadata } from "next";
 import { ConfigProvider } from "antd";
 import { Inter } from "next/font/google";
-import theme from "@/lib/themeConfig";
+import theme from "@/config/theme.config";
 import "./globals.css";
+import AppLayout from "../components/AppLayout";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -28,7 +29,11 @@ export default function RootLayout({
     <html lang="en">
       <AntdRegistry>
         <ConfigProvider theme={theme}>
-          <body className={`${inter.className} antialiased`}>{children}</body>
+          <body
+            className={`${inter.className} antialiased text-[13px] overflow-hidden`}
+          >
+            <AppLayout>{children}</AppLayout>
+          </body>
         </ConfigProvider>
       </AntdRegistry>
     </html>

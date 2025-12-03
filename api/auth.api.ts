@@ -1,4 +1,4 @@
-import apiClient from "@/lib/apiClient";
+import apiClient from "@/config/apiClient.config";
 
 interface LoginError {
   status: number;
