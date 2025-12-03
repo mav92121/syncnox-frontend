@@ -4,18 +4,28 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar } from "antd";
-import { UserOutlined } from "@ant-design/icons";
+import {
+  RocketOutlined,
+  BarChartOutlined,
+  CalendarOutlined,
+  LineChartOutlined,
+  AimOutlined,
+  SettingOutlined,
+  TeamOutlined,
+  UserOutlined,
+  LogoutOutlined,
+} from "@ant-design/icons";
 import { useIndexStore } from "@/zustand/index.store";
 import { logout } from "@/api/auth.api";
 
 interface MenuItem {
-  icon: string;
+  icon: React.ComponentType<any>;
   label: string;
   path: string;
 }
 
 interface BottomMenuItem {
-  icon: string;
+  icon: React.ComponentType<any>;
   label: string;
   action?: () => void;
   isDanger?: boolean;
@@ -48,28 +58,36 @@ const SideBar = () => {
   };
 
   const menuItems: MenuItem[] = [
-    { icon: "/rocket.svg", label: "Plan", path: "/dashboard" },
-    { icon: "/analytics.svg", label: "Insights", path: "/insights" },
-    { icon: "/schedule.svg", label: "Schedule", path: "/schedule" },
-    { icon: "/recent.svg", label: "Analytics", path: "/analytics" },
+    { icon: RocketOutlined, label: "Plan", path: "/dashboard" },
+    { icon: BarChartOutlined, label: "Insights", path: "/insights" },
+    { icon: CalendarOutlined, label: "Schedule", path: "/schedule" },
+    { icon: LineChartOutlined, label: "Analytics", path: "/analytics" },
     {
-      icon: "/tracking.svg",
+      icon: AimOutlined,
       label: "Live Tracking & Alerts",
       path: "/tracking",
     },
-    { icon: "/settings.svg", label: "Settings", path: "/settings" },
-    { icon: "/team.svg", label: "Team", path: "/team" },
-    { icon: "/customers.svg", label: "Customers", path: "/customers" },
+    { icon: SettingOutlined, label: "Settings", path: "/settings" },
+    { icon: TeamOutlined, label: "Team", path: "/team" },
+    { icon: UserOutlined, label: "Customers", path: "/customers" },
   ];
 
   const bottomMenuItems: BottomMenuItem[] = [
     {
-      icon: "/settings.svg",
+      icon: SettingOutlined,
       label: "Settings",
       action: () => router.push("/settings"),
     },
     {
-      icon: "/logout.svg",
+      icon: (props: any) => (
+        <Image
+          src="/logout.svg"
+          alt="Logout"
+          width={24}
+          height={24}
+          {...props}
+        />
+      ),
       label: "Log out",
       action: handleLogout,
       isDanger: true,
@@ -156,13 +174,7 @@ const SideBar = () => {
               <Link href={item.path}>
                 <button className="w-full bg-primary text-white py-2.5 flex items-center transition-all duration-200 hover:opacity-90 cursor-pointer">
                   <div className="w-5 h-5 flex items-center justify-center ml-2.5 shrink-0">
-                    <Image
-                      src={item.icon}
-                      alt={item.label}
-                      width={20}
-                      height={20}
-                      className="brightness-0 invert"
-                    />
+                    <item.icon className="text-xl text-white" />
                   </div>
                   <span
                     className={`ml-3 text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ${
@@ -184,13 +196,7 @@ const SideBar = () => {
                   }`}
                 >
                   <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                    <Image
-                      src={item.icon}
-                      alt={item.label}
-                      width={16}
-                      height={16}
-                      className="object-contain"
-                    />
+                    <item.icon className="text-base" />
                   </div>
                   <span
                     className={`ml-3 text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${
@@ -241,16 +247,8 @@ const SideBar = () => {
             }`}
           >
             <div className="w-5 h-5 flex items-center justify-center shrink-0">
-              <Image
-                src={item.icon}
-                alt={item.label}
-                width={16}
-                height={16}
-                className={
-                  item.isDanger
-                    ? "brightness-0 saturate-100 hue-rotate-350"
-                    : ""
-                }
+              <item.icon
+                className={`text-base ${item.isDanger ? "text-red-600" : ""}`}
               />
             </div>
             <span
