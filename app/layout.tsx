@@ -27,15 +27,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <AntdRegistry>
-        <ConfigProvider theme={theme}>
-          <body
-            className={`${inter.className} antialiased text-[13px] overflow-hidden`}
-          >
+      <body
+        className={`${inter.className} antialiased text-[13px] overflow-hidden`}
+      >
+        <AntdRegistry>
+          <ConfigProvider theme={theme}>
             <AppLayout>{children}</AppLayout>
-          </body>
-        </ConfigProvider>
-      </AntdRegistry>
+          </ConfigProvider>
+        </AntdRegistry>
+      </body>
     </html>
   );
 }
