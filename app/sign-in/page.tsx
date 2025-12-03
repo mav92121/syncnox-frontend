@@ -3,6 +3,7 @@ import { Card, Form, Input, Button, Typography, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { login } from "@/api/auth.api";
+import { useIndexStore } from "@/zustand/index.store";
 
 const { Title } = Typography;
 
@@ -14,6 +15,7 @@ interface SignInFormValues {
 export default function SignInPage() {
   const [form] = Form.useForm();
   const router = useRouter();
+  const { setUser } = useIndexStore();
 
   const onFinish = async (values: SignInFormValues) => {
     const result = await login(values.email, values.password);
@@ -27,8 +29,8 @@ export default function SignInPage() {
     // Handle success case
     // Backend sets HTTP-only cookie automatically
     if (result?.user) {
+      setUser(result.user);
       message.success("Login successful!");
-      // Use setTimeout to allow message to display and cookie to be set
       router.replace("/dashboard");
     }
   };

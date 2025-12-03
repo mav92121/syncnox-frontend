@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Avatar } from "antd";
 import { UserOutlined } from "@ant-design/icons";
+import { useIndexStore } from "@/zustand/index.store";
 import { logout } from "@/api/auth.api";
 
 interface MenuItem {
@@ -25,6 +26,7 @@ const SideBar = () => {
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, clearUser } = useIndexStore();
 
   // Clean up timers on unmount
   useEffect(() => {
@@ -38,6 +40,7 @@ const SideBar = () => {
   const handleLogout = async () => {
     try {
       await logout();
+      clearUser();
       router.push("/sign-in");
     } catch (error) {
       console.log("error -> ", error);
@@ -220,6 +223,9 @@ const SideBar = () => {
             style={{ transitionProperty: "opacity, max-width" }}
           >
             <p className="text-xs text-gray-700">Admin</p>
+            {user?.email && (
+              <p className="text-xs text-gray-500">{user?.email}</p>
+            )}
           </div>
         </div>
 
