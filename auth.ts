@@ -18,6 +18,7 @@ declare module "next-auth" {
     id: string;
     email: string;
     tenant_id: number;
+    access_token: string;
   }
 }
 
@@ -40,7 +41,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials): Promise<User | null> {
         try {
-          // Validate credentials against backend
           const response = await fetch(
             `${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/verify-credentials`,
             {
@@ -54,17 +54,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           );
 
           if (!response.ok) {
-            console.error("Login failed:", response.statusText);
             return null;
           }
 
           const data = await response.json();
 
-          // Return user object that will be stored in the JWT
+          // ✅ Store backend's access_token directly
           return {
             id: data.user.id,
             email: data.user.email,
             tenant_id: data.user.tenant_id,
+            access_token: data.access_token, // Get from backend
           };
         } catch (error) {
           console.error("Authorization error:", error);
@@ -82,29 +82,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Initial sign in
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.tenant_id = user.tenant_id;
-
-        // Create access token for backend API calls
-        // Using the same JWT library that backend expects
-        const jose = await import("jose");
-        const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
-
-        const accessToken = await new jose.SignJWT({
-          id: user.id,
-          tenant_id: user.tenant_id,
-          email: user.email,
-        })
-          .setProtectedHeader({ alg: "HS256" })
-          .setExpirationTime("24h")
-          .sign(secret);
-
-        token.access_token = accessToken;
+        token.access_token = user.access_token; // ✅ Use backend token
       }
-
       return token;
     },
     async session({ session, token }) {
