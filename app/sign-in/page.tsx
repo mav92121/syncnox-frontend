@@ -14,6 +14,7 @@ interface SignInFormValues {
 export default function SignInPage() {
   const [form] = Form.useForm();
   const router = useRouter();
+  console.log("sign in page")
 
   const onFinish = async (values: SignInFormValues) => {
     try {
