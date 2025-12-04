@@ -10,7 +10,7 @@ const Dashboard = () => {
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-2">Dashboard</h1>
-      <p className="text-green-500">Welcome to Syncnox Dashboard</p>
+      <p className="text-green-500">Welcome to Syncnox Dashboard!</p>
     </div>
   );
 };
