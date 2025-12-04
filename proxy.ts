@@ -1,40 +1,41 @@
-import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-export function proxy(request: NextRequest) {
-  // Get the authentication cookie
-  const token = request.cookies.get("access_token");
-  const { pathname } = request.nextUrl;
+export async function proxy(request: NextRequest) {
+  const session = await auth();
 
-  const isValidPaths = ["/sign-in", "/dashboard", "/insights"];
+  // Protected routes
+  const protectedRoutes = ["/dashboard", "/insights"];
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    request.nextUrl.pathname.startsWith(route)
+  );
 
-  // If user is not authenticated and trying to access protected routes
-  if (!token && pathname !== "/sign-in") {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+  // Redirect to sign-in if trying to access protected route without authentication
+  if (isProtectedRoute && !session) {
+    const signInUrl = new URL("/sign-in", request.url);
+    return NextResponse.redirect(signInUrl);
   }
 
-  // If user is authenticated and trying to access sign-in page, redirect to dashboard
-  if (token && pathname === "/sign-in") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-
-  if (!isValidPaths.includes(pathname)) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  // Redirect to dashboard if authenticated user tries to access sign-in page
+  if (request.nextUrl.pathname === "/sign-in" && session) {
+    const dashboardUrl = new URL("/dashboard", request.url);
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();
 }
 
-// Configure which routes should be checked by middleware
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for:
-     * - api routes
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public files (logo.svg, etc.)
+     * - public files (images, etc)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg|.*\\.png|.*\\.jpg).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.gif|.*\\.webp).*)",
   ],
 };

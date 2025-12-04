@@ -2,6 +2,7 @@ import { AntdRegistry } from "@ant-design/nextjs-registry";
 import type { Metadata } from "next";
 import { ConfigProvider } from "antd";
 import { Inter } from "next/font/google";
+import { SessionProvider } from "next-auth/react";
 import theme from "@/config/theme.config";
 import "./globals.css";
 import AppLayout from "../components/AppLayout";
@@ -30,11 +31,13 @@ export default function RootLayout({
       <body
         className={`${inter.className} antialiased text-[13px] overflow-hidden`}
       >
-        <AntdRegistry>
-          <ConfigProvider theme={theme}>
-            <AppLayout>{children}</AppLayout>
-          </ConfigProvider>
-        </AntdRegistry>
+        <SessionProvider>
+          <AntdRegistry>
+            <ConfigProvider theme={theme}>
+              <AppLayout>{children}</AppLayout>
+            </ConfigProvider>
+          </AntdRegistry>
+        </SessionProvider>
       </body>
     </html>
   );

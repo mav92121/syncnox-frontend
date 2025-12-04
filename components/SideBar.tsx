@@ -15,7 +15,7 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import { useIndexStore } from "@/zustand/index.store";
-import { logout } from "@/api/auth.api";
+import { signOut } from "next-auth/react";
 
 interface MenuItem {
   icon: React.ComponentType<any>;
@@ -48,9 +48,8 @@ const SideBar = () => {
 
   const handleLogout = async () => {
     try {
-      await logout();
       clearUser();
-      router.push("/sign-in");
+      await signOut({ callbackUrl: "/sign-in" });
     } catch (error) {
       console.log("error -> ", error);
     }

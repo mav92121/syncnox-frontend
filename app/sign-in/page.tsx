@@ -2,8 +2,7 @@
 import { Card, Form, Input, Button, Typography, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
-import { login } from "@/api/auth.api";
-import { useIndexStore } from "@/zustand/index.store";
+import { signIn } from "next-auth/react";
 
 const { Title } = Typography;
 
@@ -15,23 +14,27 @@ interface SignInFormValues {
 export default function SignInPage() {
   const [form] = Form.useForm();
   const router = useRouter();
-  const { setUser } = useIndexStore();
 
   const onFinish = async (values: SignInFormValues) => {
-    const result = await login(values.email, values.password);
+    try {
+      const result = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      });
 
-    // Handle error cases (401 or 500)
-    if (result?.status === 401 || result?.status === 500) {
-      message.error(result.message);
-      return;
-    }
+      if (result?.error) {
+        message.error("Invalid email or password");
+        return;
+      }
 
-    // Handle success case
-    // Backend sets HTTP-only cookie automatically
-    if (result?.user) {
-      setUser(result.user);
-      message.success("Login successful!");
-      router.replace("/dashboard");
+      if (result?.ok) {
+        message.success("Login successful!");
+        router.replace("/dashboard");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      message.error("An error occurred during login");
     }
   };
 
