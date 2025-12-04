@@ -1,15 +1,17 @@
 import axios from "axios";
 
-// In development: use proxy to avoid cross-site cookie issues
-// In production: call API directly (same-site since app.syncnox.com and api.syncnox.com share the same domain)
+const env = process.env.NEXT_PUBLIC_ENVIRONMENT;
+const server = process.env.NEXT_PUBLIC_SERVER_URL ?? "";
+
+const isLocal = env === "development";
+const isLocalBackend = server.includes("localhost");
+
+// If local FE + local BE → use proxy (/api)
+const useProxy = isLocal && isLocalBackend;
+
 const apiClient = axios.create({
-  baseURL:
-    process.env.NEXT_PUBLIC_ENVIRONMENT === "development"
-      ? "/api" // Use Next.js proxy in dev
-      : `${process.env.NEXT_PUBLIC_SERVER_URL}/api`, // Direct API call in production
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: useProxy ? "/api" : `${server}/api`,
+  headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
 

@@ -13,7 +13,6 @@ import {
   SettingOutlined,
   TeamOutlined,
   UserOutlined,
-  LogoutOutlined,
 } from "@ant-design/icons";
 import { useIndexStore } from "@/zustand/index.store";
 import { logout } from "@/api/auth.api";
@@ -73,11 +72,6 @@ const SideBar = () => {
   ];
 
   const bottomMenuItems: BottomMenuItem[] = [
-    {
-      icon: SettingOutlined,
-      label: "Settings",
-      action: () => router.push("/settings"),
-    },
     {
       icon: (props: any) => (
         <Image
