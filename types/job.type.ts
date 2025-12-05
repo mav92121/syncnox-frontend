@@ -1,6 +1,46 @@
+export type JobStatus =
+  | "draft"
+  | "scheduled"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
+export type JobType = "delivery" | "pickup" | "service";
+export type PriorityLevel = "low" | "medium" | "high";
+export type RecurrenceType = "one_time" | "daily" | "weekly" | "monthly";
+export type PaymentStatus = "unpaid" | "paid" | "pending";
+
+export interface Location {
+  lat: number;
+  lng: number;
+}
+
 export interface Job {
-  id: string;
-  name: string;
-  description: string;
-  status: string;
+  id: number;
+  tenant_id: number;
+  status: JobStatus;
+  scheduled_date: string;
+  job_type: JobType;
+  location: Location;
+  address_formatted: string;
+  time_window_start: string;
+  time_window_end: string;
+  service_duration: number;
+  priority_level: PriorityLevel;
+  first_name: string;
+  last_name: string;
+  email: string;
+  business_name: string;
+  phone_number: string;
+  customer_preferences: string;
+  additional_notes: string;
+  recurrence_type: RecurrenceType;
+  documents: Record<string, unknown>[];
+  payment_status: PaymentStatus;
+  pod_notes: string;
+}
+
+export interface FetchJobsParams {
+  skip?: number;
+  limit?: number;
+  status?: JobStatus;
 }

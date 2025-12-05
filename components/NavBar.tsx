@@ -1,21 +1,17 @@
 "use client";
-import { usePathname, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { getTabsConfigForRoute, getActiveTab } from "@/config/navTabs.config";
+import { usePathname } from "next/navigation";
+import { getTabsConfigForRoute } from "@/config/navTabs.config";
+import { useTabStore } from "@/zustand/tab.store";
 
 const NavBar = () => {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const tabsConfig = getTabsConfigForRoute(pathname);
+  const tabs = getTabsConfigForRoute(pathname);
+  const { currentTab, setCurrentTab } = useTabStore();
 
   // Don't render navbar if no tabs configured for this route
-  if (!tabsConfig) {
+  if (!tabs) {
     return null;
   }
-
-  const { queryParam, tabs } = tabsConfig;
-  const currentQueryValue = searchParams.get(queryParam);
-  const activeTab = getActiveTab(queryParam, currentQueryValue, tabs);
 
   return (
     <nav className="bg-white border-b border-gray-200 px-6">
@@ -23,14 +19,14 @@ const NavBar = () => {
         {/* Tabs */}
         <div className="flex items-center gap-6">
           {tabs.map((tab) => {
-            const isActive = activeTab.key === tab.key;
+            const isActive = currentTab === tab.key;
             const Icon = tab.icon;
 
             return (
-              <Link
+              <button
                 key={tab.key}
-                href={`${pathname}?${queryParam}=${tab.queryValue}`}
-                className={`flex items-center gap-2 px-1 h-14 border-b-2 transition-colors ${
+                onClick={() => setCurrentTab(tab.key as any)}
+                className={`flex cursor-pointer items-center gap-2 px-1 h-14 border-b-2 transition-colors ${
                   isActive
                     ? "border-primary text-primary font-medium"
                     : "border-transparent text-gray-600 hover:text-gray-900"
@@ -38,7 +34,7 @@ const NavBar = () => {
               >
                 {Icon && <Icon className="text-base" />}
                 <span className="text-sm">{tab.label}</span>
-              </Link>
+              </button>
             );
           })}
         </div>

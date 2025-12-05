@@ -1,0 +1,159 @@
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
+import { Job, FetchJobsParams, JobStatus } from "@/types/job.type";
+import { fetchJobs } from "@/api/jobs.api";
+
+interface JobsState {
+  // Data
+  jobs: Job[];
+  filteredJobs: Job[];
+
+  // Pagination
+  totalJobs: number;
+  currentPage: number;
+  itemsPerPage: number;
+
+  // Loading & Error states
+  isLoading: boolean;
+  error: string | null;
+  hasFetched: boolean; // Track if data has been fetched
+
+  // Filters
+  statusFilter: JobStatus | null;
+
+  // Actions
+  initializeJobs: (params?: FetchJobsParams) => Promise<void>; // Smart fetch (only if not already fetched)
+  fetchJobs: (params?: FetchJobsParams) => Promise<void>; // Force fetch
+  setStatusFilter: (status: JobStatus | null) => void;
+  setPage: (page: number) => void;
+  setItemsPerPage: (itemsPerPage: number) => void;
+  refreshJobs: () => Promise<void>;
+  clearJobs: () => void;
+
+  // Selectors
+  getJobById: (id: number) => Job | undefined;
+  getJobsByStatus: (status: JobStatus) => Job[];
+  getDraftJobs: () => Job[];
+}
+
+export const useJobsStore = create<JobsState>()(
+  devtools(
+    immer((set, get) => ({
+      // Initial state
+      jobs: [],
+      filteredJobs: [],
+      totalJobs: 0,
+      currentPage: 1,
+      itemsPerPage: 10,
+      isLoading: false,
+      error: null,
+      hasFetched: false,
+      statusFilter: null,
+
+      // Initialize jobs (fetch only if not already fetched)
+      initializeJobs: async (params?: FetchJobsParams) => {
+        const { hasFetched, isLoading } = get();
+
+        // Skip if already fetched or currently loading
+        if (hasFetched || isLoading) {
+          return;
+        }
+
+        await get().fetchJobs(params);
+      },
+
+      // Fetch jobs with optional params (force fetch)
+      fetchJobs: async (params?: FetchJobsParams) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          const data = await fetchJobs(params);
+
+          set((state) => {
+            state.jobs = data;
+            state.filteredJobs = data;
+            state.totalJobs = data.length;
+            state.isLoading = false;
+            state.hasFetched = true; // Mark as fetched
+          });
+        } catch (error) {
+          set((state) => {
+            state.error =
+              error instanceof Error ? error.message : "Failed to fetch jobs";
+            state.isLoading = false;
+          });
+        }
+      },
+
+      // Set status filter and update filtered jobs
+      setStatusFilter: (status) => {
+        set((state) => {
+          state.statusFilter = status;
+          state.filteredJobs = status
+            ? state.jobs.filter((job) => job.status === status)
+            : state.jobs;
+          state.currentPage = 1;
+        });
+      },
+
+      // Pagination
+      setPage: (page) =>
+        set((state) => {
+          state.currentPage = page;
+        }),
+
+      setItemsPerPage: (itemsPerPage) =>
+        set((state) => {
+          state.itemsPerPage = itemsPerPage;
+          state.currentPage = 1;
+        }),
+
+      // Refresh jobs (re-fetch with current filters)
+      refreshJobs: async () => {
+        const { statusFilter, currentPage, itemsPerPage } = get();
+        const skip = (currentPage - 1) * itemsPerPage;
+
+        await get().fetchJobs({
+          skip,
+          limit: itemsPerPage,
+          status: statusFilter || undefined,
+        });
+      },
+
+      // Clear all jobs
+      clearJobs: () =>
+        set((state) => {
+          state.jobs = [];
+          state.filteredJobs = [];
+          state.totalJobs = 0;
+          state.currentPage = 1;
+          state.error = null;
+          state.statusFilter = null;
+          state.hasFetched = false; // Reset fetch flag
+        }),
+
+      // Selectors
+      getJobById: (id) => {
+        const { jobs } = get();
+        return jobs.find((job) => job.id === id);
+      },
+
+      getJobsByStatus: (status) => {
+        const { jobs } = get();
+        return jobs.filter((job) => job.status === status);
+      },
+
+      getDraftJobs: () => {
+        const { jobs } = get();
+        return jobs.filter((job) => job.status === "draft");
+      },
+    })),
+    {
+      name: "jobs-store",
+    }
+  )
+);
