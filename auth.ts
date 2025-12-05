@@ -48,8 +48,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             process.env.NEXT_PUBLIC_SERVER_URL
           );
           console.log(
-            "  NEXT_PUBLIC_NEXTAUTH_SECRET exists:",
-            process.env.NEXT_PUBLIC_NEXTAUTH_SECRET
+            "  NEXTAUTH_SECRET exists (server-only):",
+            !!process.env.NEXTAUTH_SECRET
           );
           console.log("  NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
 
@@ -122,7 +122,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
   trustHost: true,
-  secret: process.env.NEXT_PUBLIC_NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET,
   basePath: "/api/auth",
   debug: true, // ✅ Enable debug mode for production troubleshooting
 });

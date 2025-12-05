@@ -14,13 +14,6 @@ interface SignInFormValues {
 export default function SignInPage() {
   const [form] = Form.useForm();
   const router = useRouter();
-  console.log(
-    "temp env => ",
-    process.env.NEXT_CHECK,
-    process.env.NEXTAUTH_SECRET,
-    process.env.NEXTAUTH_URL,
-    process.env.NEXT_PUBLIC_NEXTAUTH_SECRET
-  );
 
   // 🔍 Debug: Check environment variables accessible in browser
   console.log("🔍 [SIGN-IN PAGE] Environment Check:");
