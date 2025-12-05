@@ -1,16 +1,6 @@
 import { handlers } from "@/auth";
-import { NextRequest } from "next/server";
 
-console.log("NextAuth route handler loaded");
-
-export const GET = async (req: NextRequest) => {
-  console.log("GET request to auth route:", req.url);
-  return handlers.GET(req);
-};
-
-export const POST = async (req: NextRequest) => {
-  console.log("POST request to auth route:", req.url);
-  return handlers.POST(req);
-};
+// ✅ Export handlers directly - critical for production deployment
+export const { GET, POST } = handlers;
 
 export const runtime = "nodejs";
