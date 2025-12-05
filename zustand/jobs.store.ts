@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { Job, FetchJobsParams, JobStatus } from "@/types/job.type";
-import { fetchJobs } from "@/api/jobs.api";
+import { fetchJobs } from "@/apis/jobs.api";
 
 interface JobsState {
   // Data
