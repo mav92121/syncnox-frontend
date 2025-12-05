@@ -15,39 +15,20 @@ export default function SignInPage() {
   const [form] = Form.useForm();
   const router = useRouter();
 
-  // 🔍 Debug: Check environment variables accessible in browser
-  console.log("🔍 [SIGN-IN PAGE] Environment Check:");
-  console.log("  NEXT_PUBLIC_SERVER_URL:", process.env.NEXT_PUBLIC_SERVER_URL);
-  console.log(
-    "  Window location:",
-    typeof window !== "undefined" ? window.location.href : "SSR"
-  );
-
   const onFinish = async (values: SignInFormValues) => {
     try {
-      console.log("🔍 [SIGN-IN] Attempting login for:", values.email);
-
       const result = await signIn("credentials", {
         email: values.email,
         password: values.password,
         redirect: false,
       });
 
-      console.log("🔍 [SIGN-IN] SignIn result:", {
-        ok: result?.ok,
-        error: result?.error,
-        status: result?.status,
-        url: result?.url,
-      });
-
       if (result?.error) {
-        console.error("❌ [SIGN-IN] Authentication failed:", result.error);
         message.error("Invalid email or password");
         return;
       }
 
       if (result?.ok) {
-        console.log("✅ [SIGN-IN] Login successful, redirecting to dashboard");
         message.success("Login successful!");
         router.replace("/dashboard");
       }

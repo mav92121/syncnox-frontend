@@ -41,20 +41,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials): Promise<User | null> {
         try {
-          // 🔍 Debug: Log environment variables
-          console.log("🔍 [AUTH] Environment Check:");
-          console.log(
-            "  NEXT_PUBLIC_SERVER_URL:",
-            process.env.NEXT_PUBLIC_SERVER_URL
-          );
-          console.log(
-            "  NEXTAUTH_SECRET exists (server-only):",
-            !!process.env.NEXTAUTH_SECRET
-          );
-          console.log("  NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
-
           const apiUrl = `${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/verify-credentials`;
-          console.log("🔍 [AUTH] Calling API:", apiUrl);
 
           const response = await fetch(apiUrl, {
             method: "POST",
@@ -65,8 +52,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }),
           });
 
-          console.log("🔍 [AUTH] API Response Status:", response.status);
-
           if (!response.ok) {
             const errorText = await response.text();
             console.error("❌ [AUTH] API Error Response:", errorText);
@@ -74,7 +59,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           const data = await response.json();
-          console.log("✅ [AUTH] API Success - User ID:", data.user?.id);
 
           // ✅ Store backend's access_token directly
           return {
@@ -107,12 +91,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.email = user.email;
         token.tenant_id = user.tenant_id;
-        token.access_token = user.access_token; // ✅ Use backend token
+        token.access_token = user.access_token;
       }
       return token;
     },
     async session({ session, token }) {
-      // Expose user data to the client
       session.user.id = token.id;
       session.user.email = token.email;
       session.user.tenant_id = token.tenant_id;
@@ -124,5 +107,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   secret: process.env.NEXTAUTH_SECRET,
   basePath: "/api/auth",
-  debug: true, // ✅ Enable debug mode for production troubleshooting
 });
