@@ -41,23 +41,40 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials): Promise<User | null> {
         try {
-          const response = await fetch(
-            `${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/verify-credentials`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                email: credentials.email,
-                password: credentials.password,
-              }),
-            }
+          // 🔍 Debug: Log environment variables
+          console.log("🔍 [AUTH] Environment Check:");
+          console.log(
+            "  NEXT_PUBLIC_SERVER_URL:",
+            process.env.NEXT_PUBLIC_SERVER_URL
           );
+          console.log(
+            "  NEXTAUTH_SECRET exists:",
+            !!process.env.NEXTAUTH_SECRET
+          );
+          console.log("  NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
+
+          const apiUrl = `${process.env.NEXT_PUBLIC_SERVER_URL}/api/auth/verify-credentials`;
+          console.log("🔍 [AUTH] Calling API:", apiUrl);
+
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials.email,
+              password: credentials.password,
+            }),
+          });
+
+          console.log("🔍 [AUTH] API Response Status:", response.status);
 
           if (!response.ok) {
+            const errorText = await response.text();
+            console.error("❌ [AUTH] API Error Response:", errorText);
             return null;
           }
 
           const data = await response.json();
+          console.log("✅ [AUTH] API Success - User ID:", data.user?.id);
 
           // ✅ Store backend's access_token directly
           return {
@@ -67,7 +84,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             access_token: data.access_token, // Get from backend
           };
         } catch (error) {
-          console.error("Authorization error:", error);
+          console.error("❌ [AUTH] Authorization error:", error);
+          console.error("❌ [AUTH] Error details:", {
+            message: error instanceof Error ? error.message : "Unknown error",
+            stack: error instanceof Error ? error.stack : undefined,
+          });
           return null;
         }
       },
@@ -103,5 +124,5 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   secret: process.env.NEXTAUTH_SECRET,
   basePath: "/api/auth",
-  debug: false,
+  debug: true, // ✅ Enable debug mode for production troubleshooting
 });
