@@ -25,7 +25,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         <Suspense fallback={null}>
           <NavBar />
         </Suspense>
-        <main className="flex-1 overflow-hidden p-2">{children}</main>
+        <main className="flex-1 overflow-y-auto p-2">{children}</main>
       </div>
     </div>
   );
