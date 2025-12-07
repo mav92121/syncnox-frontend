@@ -158,7 +158,8 @@ export default function JobsList() {
 
   const statusStyleMap: Record<string, string> = {
     draft: "bg-gray-100 text-gray-700 border border-gray-200 py-1.5 ",
-    scheduled: "bg-yellow-100 text-yellow-800 border border-yellow-200 py-1.5 ",
+    assigned: "bg-yellow-100 text-yellow-800 border border-yellow-200 py-1.5 ",
+    in_transit: "bg-blue-100 text-blue-800 border border-blue-200 py-1.5 ",
     completed: "bg-green-100 text-green-700 border border-green-200 py-1.5 ",
     default: "bg-gray-100 text-gray-700 border border-gray-200 py-1.5 ",
   };
