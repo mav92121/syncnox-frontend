@@ -87,6 +87,13 @@ export default function BaseTable<TData = any>({
       return;
     }
 
+    // If filling available space, we use CSS height: 100%
+    // The calculation below is only needed if we wanted to set a specific pixel height
+    // based on window size, but CSS flexbox is more robust.
+    // However, if we want to respect bottomOffset with CSS, we might need calc().
+    // For now, assuming parent handles layout.
+    return;
+
     const calculateHeight = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
@@ -185,7 +192,12 @@ export default function BaseTable<TData = any>({
 
   return (
     <div ref={containerRef} className="flex-1 min-h-0 w-full">
-      <div style={{ height: `${gridHeight}px`, width: "100%" }}>
+      <div
+        style={{
+          height: fillAvailableSpace ? "100%" : `${gridHeight}px`,
+          width: "100%",
+        }}
+      >
         <AgGridReact
           columnDefs={columnDefs}
           rowData={rowData}

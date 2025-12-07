@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useTabStore } from "@/zustand/tab.store";
+import { useIndexStore } from "@/zustand/index.store";
 import { useJobsStore } from "@/zustand/jobs.store";
 import DashboardView from "./_components/DashboardView";
 import JobsList from "./_components/JobsList";
@@ -9,7 +9,7 @@ import RoutesView from "./_components/RoutesView";
 import ScheduleView from "./_components/ScheduleView";
 
 const Dashboard = () => {
-  const { currentTab } = useTabStore();
+  const { currentTab } = useIndexStore();
   const { initializeJobs } = useJobsStore();
 
   useEffect(() => {
@@ -32,8 +32,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div>
-      <div>{renderTabContent()}</div>
+    <div className="h-full">
+      <div className="h-full">{renderTabContent()}</div>
     </div>
   );
 };

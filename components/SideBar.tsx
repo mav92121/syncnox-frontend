@@ -14,13 +14,14 @@ import {
   TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { useIndexStore } from "@/zustand/index.store";
+import { TabKey, useIndexStore } from "@/zustand/index.store";
 import { signOut } from "next-auth/react";
 
 interface MenuItem {
   icon: React.ComponentType<any>;
   label: string;
   path: string;
+  tabKey: TabKey;
 }
 
 interface BottomMenuItem {
@@ -34,7 +35,7 @@ const SideBar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
-  const { user, clearUser } = useIndexStore();
+  const { user, clearUser, setCurrentTab } = useIndexStore();
 
   // Clean up timers on unmount
   useEffect(() => {
@@ -55,18 +56,44 @@ const SideBar = () => {
   };
 
   const menuItems: MenuItem[] = [
-    { icon: RocketOutlined, label: "Plan", path: "/dashboard" },
-    { icon: BarChartOutlined, label: "Insights", path: "/insights" },
-    { icon: CalendarOutlined, label: "Schedule", path: "/schedule" },
-    { icon: LineChartOutlined, label: "Analytics", path: "/analytics" },
+    { icon: RocketOutlined, label: "Plan", path: "/plan", tabKey: "plan" },
+    {
+      icon: BarChartOutlined,
+      label: "Insights",
+      path: "/insights",
+      tabKey: "team",
+    },
+    {
+      icon: CalendarOutlined,
+      label: "Schedule",
+      path: "/schedule",
+      tabKey: "schedule",
+    },
+    {
+      icon: LineChartOutlined,
+      label: "Analytics",
+      path: "/analytics",
+      tabKey: "optimization",
+    },
     {
       icon: AimOutlined,
       label: "Live Tracking & Alerts",
       path: "/tracking",
+      tabKey: "routes",
     },
-    { icon: SettingOutlined, label: "Settings", path: "/settings" },
-    { icon: TeamOutlined, label: "Team", path: "/team" },
-    { icon: UserOutlined, label: "Customers", path: "/customers" },
+    {
+      icon: SettingOutlined,
+      label: "Settings",
+      path: "/settings",
+      tabKey: "reports",
+    },
+    { icon: TeamOutlined, label: "Team", path: "/team", tabKey: "team" },
+    {
+      icon: UserOutlined,
+      label: "Customers",
+      path: "/customers",
+      tabKey: "api",
+    },
   ];
 
   const bottomMenuItems: BottomMenuItem[] = [
@@ -111,7 +138,7 @@ const SideBar = () => {
       <div className="pt-3 px-4 mb-4 h-16 flex items-center">
         <div className="transition-all duration-300 ease-in-out w-full">
           {isExpanded ? (
-            <Link href="/dashboard">
+            <Link onClick={() => setCurrentTab("dashboard")} href="/dashboard">
               <div className="flex items-center cursor-pointer">
                 <Image
                   src="/syncnox.svg"
@@ -147,7 +174,7 @@ const SideBar = () => {
         {menuItems.map((item, index) => (
           <div key={index} className="mb-1">
             {item.label === "Plan" ? (
-              <Link href={item.path}>
+              <Link onClick={() => setCurrentTab(item.tabKey)} href={item.path}>
                 <button className="w-full bg-primary text-white py-2.5 flex items-center transition-all duration-200 hover:opacity-90 cursor-pointer">
                   <div className="w-5 h-5 flex items-center justify-center ml-2.5 shrink-0">
                     <item.icon className="text-xl text-white" />
@@ -163,7 +190,7 @@ const SideBar = () => {
                 </button>
               </Link>
             ) : (
-              <Link href={item.path}>
+              <Link onClick={() => setCurrentTab(item.tabKey)} href={item.path}>
                 <button
                   className={`w-full flex items-center pl-2 py-2.5 transition-all duration-200 cursor-pointer ${
                     isActive(item.path)

@@ -1,12 +1,12 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { getTabsConfigForRoute } from "@/config/navTabs.config";
-import { useTabStore } from "@/zustand/tab.store";
+import { useIndexStore } from "@/zustand/index.store";
 
 const NavBar = () => {
   const pathname = usePathname();
   const tabs = getTabsConfigForRoute(pathname);
-  const { currentTab, setCurrentTab } = useTabStore();
+  const { currentTab, setCurrentTab } = useIndexStore();
 
   // Don't render navbar if no tabs configured for this route
   if (!tabs) {
