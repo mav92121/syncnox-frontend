@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Avatar } from "antd";
 import {
   RocketOutlined,
@@ -34,7 +34,6 @@ const SideBar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
-  const router = useRouter();
   const { user, clearUser } = useIndexStore();
 
   // Clean up timers on unmount
@@ -145,22 +144,6 @@ const SideBar = () => {
           scrollbarColor: "#E5E7EB transparent",
         }}
       >
-        {/* <style jsx>{`
-          div::-webkit-scrollbar {
-            width: 4px;
-          }
-          div::-webkit-scrollbar-track {
-            background: transparent;
-          }
-          div::-webkit-scrollbar-thumb {
-            background-color: #e5e7eb;
-            border-radius: 2px;
-          }
-          div::-webkit-scrollbar-thumb:hover {
-            background-color: #d1d5db;
-          }
-        `}</style> */}
-
         {menuItems.map((item, index) => (
           <div key={index} className="mb-1">
             {item.label === "Plan" ? (
