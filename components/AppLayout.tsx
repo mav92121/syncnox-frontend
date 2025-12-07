@@ -2,10 +2,16 @@
 import { usePathname } from "next/navigation";
 import SideBar from "@/components/SideBar";
 import NavBar from "@/components/NavBar";
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
+import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
+
+  // Register AG Grid modules on client side only to prevent hydration issues
+  useEffect(() => {
+    ModuleRegistry.registerModules([AllCommunityModule]);
+  }, []);
   const isSignInPage = pathname === "/sign-in";
 
   if (isSignInPage) {
@@ -19,7 +25,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         <Suspense fallback={null}>
           <NavBar />
         </Suspense>
-        <main className="flex-1 overflow-y-auto p-4">{children}</main>
+        <main className="flex-1 overflow-y-auto p-2">{children}</main>
       </div>
     </div>
   );

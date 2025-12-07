@@ -1,10 +1,13 @@
 @import "tailwindcss";
+/* @import "ag-grid-community/styles/ag-grid.css";
+@import "ag-grid-community/styles/ag-theme-quartz.css"; */
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
   --primary: #003220;
   --border: #e5e7eb;
+  --secondary: #f6ffed;
 }
 
 @theme inline {
@@ -29,4 +32,30 @@ body {
   ::before {
     border-color: var(--border);
   }
+}
+
+/* AG Grid Custom Scrollbar Styling - Slim Scrollbars */
+.ag-root-wrapper ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.ag-root-wrapper ::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.ag-root-wrapper ::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.ag-root-wrapper ::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* For Firefox */
+.ag-root-wrapper * {
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
 }
