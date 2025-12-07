@@ -32,8 +32,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div>
-      <div>{renderTabContent()}</div>
+    <div className="h-full">
+      <div className="h-full">{renderTabContent()}</div>
     </div>
   );
 };
