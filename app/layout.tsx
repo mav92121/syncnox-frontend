@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ConfigProvider } from "antd";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
+import Script from "next/script";
 import theme from "@/config/theme.config";
 import "./globals.css";
 import AppLayout from "../components/AppLayout";
@@ -31,6 +32,10 @@ export default function RootLayout({
       <body
         className={`${inter.className} antialiased text-[13px] overflow-hidden`}
       >
+        <Script
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&libraries=places,maps`}
+          strategy="beforeInteractive"
+        />
         <SessionProvider>
           <AntdRegistry>
             <ConfigProvider theme={theme}>

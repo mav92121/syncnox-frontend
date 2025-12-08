@@ -1,0 +1,295 @@
+import dayjs from "dayjs";
+import {
+  Form,
+  Input,
+  Select,
+  DatePicker,
+  TimePicker,
+  Button,
+  message,
+  AutoComplete,
+  Flex,
+  Row,
+  Col,
+} from "antd";
+import { PlusCircleOutlined } from "@ant-design/icons";
+import { Job } from "@/types/job.type";
+import { COUNTRY_CODES } from "@/constants/country";
+import AddressAutocomplete, {
+  AddressData,
+} from "@/components/common/AddressAutocomplete";
+import {
+  JOB_TYPES,
+  PAYMENT_STATUS_OPTIONS,
+  PRIORITY_OPTIONS,
+  RECURRENCE_OPTIONS,
+} from "./jobForm.constants";
+
+interface JobFormProps {
+  initialData?: Job | null;
+}
+
+const JobForm = ({ initialData = null }: JobFormProps) => {
+  const [messageApi, contextHolder] = message.useMessage();
+  const [form] = Form.useForm();
+
+  const onFinish = (values: Job) => {
+    console.log("Form submitted ", values);
+  };
+
+  return (
+    <Flex vertical style={{ height: "100%", overflow: "hidden" }}>
+      {contextHolder}
+
+      {/* Scrollable Form Area */}
+      <Flex
+        vertical
+        style={{
+          width: "100%",
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          padding: "0 8px",
+        }}
+        className="custom-scrollbar"
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          requiredMark={false}
+          initialValues={{
+            schedule_date: dayjs(),
+            priority_level: "medium",
+            recurrence_type: "single",
+            payment_status: "paid",
+            job_type: "pickup",
+            service_duration: 5,
+          }}
+        >
+          {/* Date and Job Type */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Date"
+                name="schedule_date"
+                rules={[{ required: true, message: "Date is required" }]}
+              >
+                <DatePicker format="DD-MM-YYYY" className="w-full" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Job Type"
+                name="job_type"
+                rules={[{ required: true, message: "Type is required" }]}
+              >
+                <Select placeholder="Select" options={JOB_TYPES} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Priority and Assign Drivers */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Priority" name="priority_level">
+                <Select placeholder="Select" options={PRIORITY_OPTIONS} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Assign Drivers" name="drivers">
+                <Select placeholder="Select">
+                  <Select.Option value="rahul">Rahul +1</Select.Option>
+                  {/* Add more options as needed */}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Address */}
+          <Form.Item
+            label="Address"
+            name="address_formatted"
+            rules={[{ required: true, message: "Address is required" }]}
+          >
+            <AddressAutocomplete
+              placeholder="Type to search address"
+              onSelect={(addressData: AddressData) => {
+                // Update form with location data
+                form.setFieldsValue({
+                  address_formatted: addressData.address_formatted,
+                  location: addressData.location,
+                });
+              }}
+            />
+          </Form.Item>
+
+          {/* Hidden location fields */}
+          <Form.Item name={["location", "lat"]} hidden>
+            <Input />
+          </Form.Item>
+          <Form.Item name={["location", "lng"]} hidden>
+            <Input />
+          </Form.Item>
+
+          {/* Phone Number */}
+          <Form.Item
+            label="Phone Number"
+            required
+            // rules={[{ required: true, message: "Phone number is required" }]}
+          >
+            <Row gutter={8}>
+              <Col span={8}>
+                <Form.Item
+                  name={["phone", "countryCode"]}
+                  noStyle
+                  initialValue={`🇺🇸 +1`}
+                >
+                  <Select
+                    showSearch
+                    optionFilterProp="children"
+                    className="w-full"
+                  >
+                    {COUNTRY_CODES.map((item) => (
+                      <Select.Option
+                        key={item.code}
+                        value={`${item.flag} ${item.code}`}
+                      >
+                        {item.flag} {item.code} &nbsp; {item.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+              <Col span={16}>
+                <Form.Item
+                  name={["phone", "number"]}
+                  noStyle
+                  rules={[
+                    { required: true, message: "Phone number is required" },
+                    {
+                      pattern: /^[0-9]{7,15}$/,
+                      message:
+                        "Please enter a valid phone number (7-15 digits)",
+                    },
+                  ]}
+                >
+                  <Input
+                    type="number"
+                    placeholder="8023456789"
+                    maxLength={15}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </Form.Item>
+
+          {/* First Name and Last Name */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="First Name" name="first_name">
+                <Input placeholder="First Name" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Last Name" name="last_name">
+                <Input placeholder="Last Name" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Email and Business Name */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Email" name="email">
+                <Input type="email" placeholder="Email" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Business Name" name="business_name">
+                <Input placeholder="Business Name" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Time From, To, and Duration */}
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item label="From" name="time_window_start">
+                <TimePicker className="w-full" format="HH:mm" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="To" name="time_window_end">
+                <TimePicker className="w-full" format="HH:mm" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="Job Duration" name="service_duration">
+                <Input
+                  type="number"
+                  placeholder="Enter duration"
+                  className="w-full"
+                  addonAfter="min"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Customer Preferences */}
+          <Form.Item label="Customer Preferences" name="preferences">
+            <Input.TextArea rows={3} placeholder="Type" />
+          </Form.Item>
+
+          {/* Notes */}
+          <Form.Item label="Notes" name="additional_notes">
+            <Input.TextArea rows={3} placeholder="Type" />
+          </Form.Item>
+
+          {/* Single/Recurring and Payment Status */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Single or Recurring" name="recurrence_type">
+                <Select placeholder="Select" options={RECURRENCE_OPTIONS} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Paid/Unpaid" name="payment_status">
+                <Select placeholder="Select" options={PAYMENT_STATUS_OPTIONS} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* File Attachment */}
+          {/* <Form.Item label="Attach Files" name="files">
+            <Upload.Dragger multiple>
+              <Space direction="horizontal" align="center">
+                <PlusOutlined />
+                <Text>Attach Files</Text>
+              </Space>
+            </Upload.Dragger>
+          </Form.Item> */}
+        </Form>
+      </Flex>
+
+      {/* Fixed Button at Bottom */}
+      <Flex
+        style={{
+          paddingTop: "12px",
+        }}
+      >
+        <Button
+          type="primary"
+          htmlType="submit"
+          block
+          icon={<PlusCircleOutlined />}
+          onClick={() => form.submit()}
+        >
+          {initialData ? "Update" : "Add"}
+        </Button>
+      </Flex>
+    </Flex>
+  );
+};
+
+export default JobForm;
