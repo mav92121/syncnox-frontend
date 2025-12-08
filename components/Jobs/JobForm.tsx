@@ -7,7 +7,6 @@ import {
   TimePicker,
   Button,
   message,
-  AutoComplete,
   Flex,
   Row,
   Col,
@@ -24,6 +23,12 @@ import {
   PRIORITY_OPTIONS,
   RECURRENCE_OPTIONS,
 } from "./jobForm.constants";
+import {
+  validateTimeWindowStart,
+  validateTimeWindowEnd,
+  phoneNumberPattern,
+  validateJobDuration,
+} from "./jobs.validation";
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -113,9 +118,18 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
             rules={[{ required: true, message: "Address is required" }]}
           >
             <AddressAutocomplete
+              value={form.getFieldValue("address_formatted")}
               placeholder="Type to search address"
+              onChange={(value: string) => {
+                // Always clear form fields when user is typing
+                // Fields will only be set when user selects from dropdown
+                form.setFieldsValue({
+                  address_formatted: undefined,
+                  location: undefined,
+                });
+              }}
               onSelect={(addressData: AddressData) => {
-                // Update form with location data
+                // Update form with location data only when user selects from dropdown
                 form.setFieldsValue({
                   address_formatted: addressData.address_formatted,
                   location: addressData.location,
@@ -135,8 +149,7 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
           {/* Phone Number */}
           <Form.Item
             label="Phone Number"
-            required
-            // rules={[{ required: true, message: "Phone number is required" }]}
+            rules={[{ required: true, message: "Phone number is required" }]}
           >
             <Row gutter={8}>
               <Col span={8}>
@@ -167,11 +180,7 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
                   noStyle
                   rules={[
                     { required: true, message: "Phone number is required" },
-                    {
-                      pattern: /^[0-9]{7,15}$/,
-                      message:
-                        "Please enter a valid phone number (7-15 digits)",
-                    },
+                    phoneNumberPattern,
                   ]}
                 >
                   <Input
@@ -215,22 +224,50 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
           {/* Time From, To, and Duration */}
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item label="From" name="time_window_start">
-                <TimePicker className="w-full" format="HH:mm" />
+              <Form.Item
+                label="From"
+                name="time_window_start"
+                rules={[validateTimeWindowStart(form)]}
+              >
+                <TimePicker
+                  className="w-full"
+                  format="HH:mm"
+                  onChange={() => {
+                    // Trigger validation on end time when start time changes
+                    form.validateFields(["time_window_end"]);
+                  }}
+                />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="To" name="time_window_end">
-                <TimePicker className="w-full" format="HH:mm" />
+              <Form.Item
+                label="To"
+                name="time_window_end"
+                rules={[validateTimeWindowEnd(form)]}
+              >
+                <TimePicker
+                  className="w-full"
+                  format="HH:mm"
+                  onChange={() => {
+                    // Trigger validation on start time when end time changes
+                    form.validateFields(["time_window_start"]);
+                  }}
+                />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Job Duration" name="service_duration">
+              <Form.Item
+                label="Job Duration"
+                name="service_duration"
+                rules={[validateJobDuration()]}
+              >
                 <Input
                   type="number"
                   placeholder="Enter duration"
                   className="w-full"
-                  addonAfter="min"
+                  addonAfter="mins"
+                  max={540}
+                  min={0}
                 />
               </Form.Item>
             </Col>
