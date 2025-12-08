@@ -11,16 +11,26 @@ import {
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { ColDef } from "ag-grid-community";
-import { Button, Typography } from "antd";
+import { Button, Typography, Dropdown } from "antd";
 import Link from "next/link";
+import { EllipsisVertical } from "lucide-react";
 
 const { Title } = Typography;
 
 const Recents = () => {
-  const { jobs, isLoading, error } = useJobsStore();
+  const { draftJobs, isLoading, error } = useJobsStore();
   const { setCurrentTab } = useIndexStore();
 
   const columns: ColDef<Job>[] = [
+    {
+      headerCheckboxSelection: true,
+      checkboxSelection: true,
+      width: 50,
+      pinned: "left",
+      filter: false,
+      resizable: false,
+      sortable: false,
+    },
     {
       field: "id",
       headerName: "ID",
@@ -54,6 +64,8 @@ const Recents = () => {
     {
       headerName: "View",
       width: 120,
+      sortable: false,
+      filter: false,
       cellRenderer: (params: any) => (
         <Button type="link" size="small">
           Map View
@@ -122,10 +134,45 @@ const Recents = () => {
         <StatusBadge value={params.value} styleMap={paymentStyleMap} />
       ),
     },
+    {
+      headerName: "Actions",
+      pinned: "right",
+      lockVisible: true,
+      lockPosition: true,
+      resizable: false,
+      width: 80,
+      sortable: false,
+      filter: false,
+      cellRenderer: () => {
+        const menuItems = [
+          {
+            key: "edit",
+            label: "Edit",
+          },
+          {
+            key: "delete",
+            label: "Delete",
+            danger: true,
+          },
+        ];
+
+        return (
+          <Dropdown
+            menu={{ items: menuItems }}
+            trigger={["click"]}
+            placement="bottomRight"
+          >
+            <div className="flex items-center justify-center h-full cursor-pointer">
+              <EllipsisVertical size={18} />
+            </div>
+          </Dropdown>
+        );
+      },
+    },
   ];
+
   const rowSelection = {
     mode: "multiRow" as const,
-    headerCheckbox: true,
   };
 
   if (error) {
@@ -149,7 +196,7 @@ const Recents = () => {
         <div className="flex-1 mb-2">
           <BaseTable<Job>
             columnDefs={columns}
-            rowData={jobs}
+            rowData={draftJobs}
             rowSelection={rowSelection}
             loading={isLoading}
             emptyMessage="No jobs to show"

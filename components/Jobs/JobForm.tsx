@@ -16,7 +16,7 @@ import { Job } from "@/types/job.type";
 import { COUNTRY_CODES } from "@/constants/country";
 import AddressAutocomplete, {
   AddressData,
-} from "@/components/common/AddressAutocomplete";
+} from "@/components/AddressAutocomplete";
 import {
   JOB_TYPES,
   PAYMENT_STATUS_OPTIONS,
