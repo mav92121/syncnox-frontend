@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { ColDef, themeQuartz } from "ag-grid-community";
 import { Spin } from "antd";
@@ -13,11 +13,11 @@ export interface BaseTableProps<TData = any> {
   columnDefs: ColDef<TData>[];
   rowData: TData[];
 
-  // Optional - Height Configuration
-  minHeight?: number; // Minimum height in pixels (default: 300)
-  maxHeight?: number | "auto"; // Maximum height in pixels or 'auto' for unlimited (default: 'auto')
-  fillAvailableSpace?: boolean; // Should the table fill all available vertical space (default: true)
-  bottomOffset?: number; // Additional space to reserve at the bottom for buttons/elements (default: 0)
+  // Optional - Container Styling (NEW - for custom layouts)
+  containerClassName?: string; // Tailwind classes for the container
+  containerStyle?: React.CSSProperties; // Inline styles for the container
+  gridClassName?: string; // Tailwind classes for the grid wrapper
+  gridStyle?: React.CSSProperties; // Inline styles for the grid wrapper
 
   // Optional - Theme Customization
   theme?: any; // Custom AG Grid theme
@@ -32,6 +32,7 @@ export interface BaseTableProps<TData = any> {
   // Optional - States
   loading?: boolean; // Show loading spinner
   emptyMessage?: string; // Message to display when there's no data
+  minHeight?: number; // Minimum height for loading/empty states (default: 300)
 
   // Optional - Callbacks
   onRowClicked?: (event: any) => void;
@@ -44,26 +45,38 @@ export interface BaseTableProps<TData = any> {
 
 /**
  * BaseTable Component
- * A reusable AG Grid wrapper that automatically fills available space and provides
- * consistent styling across the application.
+ * A simplified, reusable AG Grid wrapper that's easy to use in custom layouts.
  *
  * @example
  * ```tsx
+ * // Simple usage with auto height
  * <BaseTable
  *   columnDefs={columns}
  *   rowData={data}
- *   rowSelection={{ mode: 'multiRow' }}
- *   onSelectionChanged={handleSelection}
+ * />
+ *
+ * // Custom layout with explicit height
+ * <BaseTable
+ *   columnDefs={columns}
+ *   rowData={data}
+ *   containerStyle={{ height: '500px' }}
+ * />
+ *
+ * // Full flex layout
+ * <BaseTable
+ *   columnDefs={columns}
+ *   rowData={data}
+ *   containerClassName="flex-1 min-h-0"
  * />
  * ```
  */
 export default function BaseTable<TData = any>({
   columnDefs,
   rowData,
-  minHeight = 300,
-  maxHeight = "auto",
-  fillAvailableSpace = true,
-  bottomOffset = 0,
+  containerClassName = "",
+  containerStyle,
+  gridClassName = "",
+  gridStyle,
   theme,
   themeParams,
   defaultColDef,
@@ -72,49 +85,12 @@ export default function BaseTable<TData = any>({
   paginationPageSize = 100,
   loading = false,
   emptyMessage = "No data available",
+  minHeight = 300,
   onRowClicked,
   onSelectionChanged,
   onGridReady,
   ...otherGridProps
 }: BaseTableProps<TData>) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [gridHeight, setGridHeight] = useState<number>(minHeight);
-
-  // Calculate available height dynamically
-  useEffect(() => {
-    if (!fillAvailableSpace) {
-      setGridHeight(minHeight);
-      return;
-    }
-
-    // If filling available space, we use CSS height: 100%
-    // The calculation below is only needed if we wanted to set a specific pixel height
-    // based on window size, but CSS flexbox is more robust.
-    // However, if we want to respect bottomOffset with CSS, we might need calc().
-    // For now, assuming parent handles layout.
-    return;
-
-    const calculateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const availableHeight = window.innerHeight - rect.top - bottomOffset;
-        let calculatedHeight = Math.max(availableHeight, minHeight);
-
-        // Apply max height if specified
-        if (maxHeight !== "auto" && typeof maxHeight === "number") {
-          calculatedHeight = Math.min(calculatedHeight, maxHeight);
-        }
-
-        setGridHeight(calculatedHeight);
-      }
-    };
-
-    calculateHeight();
-    window.addEventListener("resize", calculateHeight);
-
-    return () => window.removeEventListener("resize", calculateHeight);
-  }, [fillAvailableSpace, minHeight, maxHeight, bottomOffset]);
-
   // Default theme configuration based on the app's design system
   const defaultTheme = useMemo(() => {
     const baseTheme = themeQuartz.withParams({
@@ -156,8 +132,8 @@ export default function BaseTable<TData = any>({
   if (loading) {
     return (
       <div
-        className="flex flex-col justify-center items-center"
-        style={{ minHeight: `${minHeight}px` }}
+        className={`flex flex-col justify-center items-center ${containerClassName}`}
+        style={{ minHeight: `${minHeight}px`, ...containerStyle }}
       >
         <Spin size="large" />
         <div className="mt-4 text-primary">Loading...</div>
@@ -169,8 +145,8 @@ export default function BaseTable<TData = any>({
   if (!rowData || rowData.length === 0) {
     return (
       <div
-        className="flex flex-col justify-center items-center text-gray-500"
-        style={{ minHeight: `${minHeight}px` }}
+        className={`flex flex-col justify-center items-center text-gray-500 ${containerClassName}`}
+        style={{ minHeight: `${minHeight}px`, ...containerStyle }}
       >
         <svg
           className="w-16 h-16 mb-4 text-gray-300"
@@ -191,13 +167,8 @@ export default function BaseTable<TData = any>({
   }
 
   return (
-    <div ref={containerRef} className="flex-1 min-h-0 w-full">
-      <div
-        style={{
-          height: fillAvailableSpace ? "100%" : `${gridHeight}px`,
-          width: "100%",
-        }}
-      >
+    <div className={containerClassName} style={containerStyle}>
+      <div className={`h-full w-full ${gridClassName}`} style={gridStyle}>
         <AgGridReact
           columnDefs={columnDefs}
           rowData={rowData}

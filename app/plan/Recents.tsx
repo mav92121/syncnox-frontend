@@ -1,22 +1,22 @@
-"use client";
-import Link from "next/link";
-import { ColDef } from "ag-grid-community";
-import { Typography, Button } from "antd";
-import { useJobsStore } from "@/zustand/jobs.store";
-import { useIndexStore } from "@/zustand/index.store";
-import { Job } from "@/types/job.type";
 import BaseTable from "@/components/BaseTable";
+import GoogleMaps from "@/components/GoogleMaps";
+import StatusBadge from "@/components/Jobs/StatusBanner";
+import { Job } from "@/types/job.type";
 import {
   formatTimeWindow,
+  paymentStyleMap,
   priorityStyleMap,
   statusStyleMap,
-  paymentStyleMap,
 } from "@/utils/jobs.utils";
-import StatusBadge from "@/components/Jobs/StatusBanner";
+import { useJobsStore } from "@/zustand/jobs.store";
+import { useIndexStore } from "@/zustand/index.store";
+import { ColDef } from "ag-grid-community";
+import { Button, Typography } from "antd";
+import Link from "next/link";
 
 const { Title } = Typography;
 
-export default function JobsList() {
+const Recents = () => {
   const { jobs, isLoading, error } = useJobsStore();
   const { setCurrentTab } = useIndexStore();
 
@@ -123,7 +123,6 @@ export default function JobsList() {
       ),
     },
   ];
-
   const rowSelection = {
     mode: "multiRow" as const,
     headerCheckbox: true,
@@ -134,30 +133,42 @@ export default function JobsList() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <Title level={4} className="m-0">
-        Jobs
-      </Title>
-
-      <div className="flex-1 min-h-0">
-        <BaseTable<Job>
-          columnDefs={columns}
-          rowData={jobs}
-          rowSelection={rowSelection}
-          loading={isLoading}
-          emptyMessage="No jobs to show"
-          pagination={true}
-          containerStyle={{ height: "100%" }}
-        />
+    <div className="absolute inset-0 flex flex-col">
+      {/* Map - 40% height */}
+      <div style={{ height: "40vh" }}>
+        <GoogleMaps />
       </div>
 
-      <div className="pt-2">
-        <Link href="/plan" onClick={() => setCurrentTab("plan")}>
-          <Button type="primary" block size="middle">
-            Add Job
-          </Button>
-        </Link>
+      {/* Jobs Section - 60% height */}
+      <div className="flex flex-col" style={{ height: "60vh" }}>
+        <Title level={4} className="m-0 mb-2 pt-2">
+          Jobs
+        </Title>
+
+        {/* Table with explicit height */}
+        <div className="flex-1 mb-2">
+          <BaseTable<Job>
+            columnDefs={columns}
+            rowData={jobs}
+            rowSelection={rowSelection}
+            loading={isLoading}
+            emptyMessage="No jobs to show"
+            pagination={true}
+            containerStyle={{ height: "100%" }}
+          />
+        </div>
+
+        {/* Add Job Button */}
+        <div>
+          <Link href="/plan" onClick={() => setCurrentTab("plan")}>
+            <Button type="primary" block size="middle">
+              Add More Jobs
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default Recents;
