@@ -15,7 +15,8 @@ const AddJobsModal = ({
       open={open}
       onCancel={() => setOpen(false)}
       width={700}
-      styles={{ body: { overflow: "hidden", height: "72vh" } }}
+      centered
+      styles={{ body: { overflow: "hidden", height: "80vh" } }}
     >
       <div style={{ height: "100%" }}>
         <JobForm />
