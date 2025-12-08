@@ -4,6 +4,7 @@ import SideBar from "@/components/SideBar";
 import NavBar from "@/components/NavBar";
 import { Suspense, useEffect } from "react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
+import { useJobsStore } from "@/zustand/jobs.store";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -11,6 +12,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   // Register AG Grid modules on client side only to prevent hydration issues
   useEffect(() => {
     ModuleRegistry.registerModules([AllCommunityModule]);
+  }, []);
+  const { initializeJobs } = useJobsStore();
+  useEffect(() => {
+    initializeJobs();
   }, []);
   const isSignInPage = pathname === "/sign-in";
 

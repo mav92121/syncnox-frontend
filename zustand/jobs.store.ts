@@ -8,6 +8,7 @@ interface JobsState {
   // Data
   jobs: Job[];
   filteredJobs: Job[];
+  draftJobs: Job[]; // Draft jobs fetched separately
 
   // Pagination
   totalJobs: number;
@@ -43,6 +44,7 @@ export const useJobsStore = create<JobsState>()(
       // Initial state
       jobs: [],
       filteredJobs: [],
+      draftJobs: [],
       totalJobs: 0,
       currentPage: 1,
       itemsPerPage: 10,
@@ -71,12 +73,17 @@ export const useJobsStore = create<JobsState>()(
         });
 
         try {
-          const data = await fetchJobs(params);
+          // Make parallel API calls for all jobs and draft jobs
+          const [allJobsData, draftJobsData] = await Promise.all([
+            fetchJobs(params),
+            fetchJobs({ ...params, status: "draft" }),
+          ]);
 
           set((state) => {
-            state.jobs = data;
-            state.filteredJobs = data;
-            state.totalJobs = data.length;
+            state.jobs = allJobsData;
+            state.filteredJobs = allJobsData;
+            state.draftJobs = draftJobsData;
+            state.totalJobs = allJobsData.length;
             state.isLoading = false;
             state.hasFetched = true; // Mark as fetched
           });
@@ -129,6 +136,7 @@ export const useJobsStore = create<JobsState>()(
         set((state) => {
           state.jobs = [];
           state.filteredJobs = [];
+          state.draftJobs = [];
           state.totalJobs = 0;
           state.currentPage = 1;
           state.error = null;
