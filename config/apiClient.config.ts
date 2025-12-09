@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getSession } from "next-auth/react";
+import { getSession, signOut } from "next-auth/react";
 
 const env = process.env.NEXT_PUBLIC_ENVIRONMENT;
 const backendUrl = process.env.NEXT_PUBLIC_SERVER_URL;
@@ -17,6 +17,9 @@ const apiClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// Flag to prevent multiple 401 handlers running simultaneously
+let isHandling401 = false;
+
 apiClient.interceptors.request.use(
   async (config) => {
     const session = await getSession();
@@ -30,11 +33,40 @@ apiClient.interceptors.request.use(
 
 apiClient.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     console.log("API Error:", error.response?.data || error.message);
 
     if (error.response?.status === 401) {
-      window.location.href = "/sign-in";
+      // Prevent multiple handlers running at once
+      if (isHandling401) {
+        console.log("🔒 Already handling 401, skipping duplicate");
+        return Promise.reject(error);
+      }
+
+      isHandling401 = true;
+
+      // Token expired - clear stores and sign out from NextAuth
+      try {
+        console.log("🔒 Token expired - clearing stores and signing out");
+
+        // Clear zustand stores
+        const { useIndexStore } = await import("@/zustand/index.store");
+        const { useJobsStore } = await import("@/zustand/jobs.store");
+
+        useIndexStore.getState().clearUser();
+        useJobsStore.getState().clearJobs();
+
+        // Sign out from NextAuth (clears session cookie and redirects)
+        if (typeof window !== "undefined") {
+          await signOut({ callbackUrl: "/sign-in", redirect: true });
+        }
+      } catch (err) {
+        console.error("Error during 401 handling:", err);
+        // Fallback: manual redirect
+        if (typeof window !== "undefined") {
+          window.location.href = "/sign-in";
+        }
+      }
     }
 
     return Promise.reject(error);

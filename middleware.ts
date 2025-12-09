@@ -4,28 +4,28 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
   const session = await auth();
+  const { pathname } = request.nextUrl;
 
-  // Protected routes
-  const protectedRoutes = ["/dashboard", "/insights"];
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    request.nextUrl.pathname.startsWith(route)
-  );
+  // Define public routes that don't require authentication
+  const publicRoutes = ["/sign-in"];
+  const isPublicRoute = publicRoutes.includes(pathname);
 
   // Redirect to sign-in if trying to access protected route without authentication
-  if (isProtectedRoute && !session) {
-    const signInUrl = new URL("/sign-in", request.url);
-    return NextResponse.redirect(signInUrl);
+  if (!isPublicRoute && !session) {
+    return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
   // Redirect to dashboard if authenticated user tries to access sign-in page
-  if (request.nextUrl.pathname === "/sign-in" && session) {
-    const dashboardUrl = new URL("/dashboard", request.url);
-    return NextResponse.redirect(dashboardUrl);
+  if (isPublicRoute && session) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
 }
 
+// Apply middleware to all routes except API routes, static files, and public assets
 export const config = {
-  matcher: ["/dashboard/:path*", "/insights/:path*", "/sign-in"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };
