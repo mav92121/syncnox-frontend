@@ -11,16 +11,21 @@ import {
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { ColDef } from "ag-grid-community";
-import { Button, Typography, Dropdown } from "antd";
+import { Button, Typography, Dropdown, message, Modal } from "antd";
 import Link from "next/link";
 import { EllipsisVertical } from "lucide-react";
+import { deleteJob } from "@/apis/jobs.api";
 
 const { Title } = Typography;
 
 const Recents = () => {
-  const { draftJobs, isLoading, error } = useJobsStore();
+  const {
+    draftJobs,
+    deleteJob: deleteJobStore,
+    isLoading,
+    error,
+  } = useJobsStore();
   const { setCurrentTab } = useIndexStore();
-
   const columns: ColDef<Job>[] = [
     {
       checkboxSelection: true,
@@ -145,7 +150,7 @@ const Recents = () => {
       width: 80,
       sortable: false,
       filter: false,
-      cellRenderer: () => {
+      cellRenderer: (params: any) => {
         const menuItems = [
           {
             key: "edit",
@@ -155,6 +160,26 @@ const Recents = () => {
             key: "delete",
             label: "Delete",
             danger: true,
+            onClick: async () => {
+              Modal.confirm({
+                title: "Delete Job",
+                content: "Are you sure you want to delete this job?",
+                okText: "Delete",
+                okType: "danger",
+                cancelText: "Cancel",
+                onOk: async () => {
+                  try {
+                    await deleteJob(params.data.id);
+                    deleteJobStore(params.data.id);
+                    console.log("job deleted -> ", params.data.id);
+                    message.success("Job deleted successfully");
+                  } catch (error) {
+                    console.error("Failed to delete job", error);
+                    message.error("Failed to delete job");
+                  }
+                },
+              });
+            },
           },
         ];
 

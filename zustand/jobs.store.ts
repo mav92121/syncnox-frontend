@@ -32,6 +32,7 @@ interface JobsState {
   setItemsPerPage: (itemsPerPage: number) => void;
   refreshJobs: () => Promise<void>;
   clearJobs: () => void;
+  deleteJob: (jobId: number) => void;
 
   // Selectors
   getJobById: (id: number) => Job | undefined;
@@ -112,6 +113,16 @@ export const useJobsStore = create<JobsState>()(
               j.id === job.id ? job : j
             );
           }
+        });
+      },
+
+      deleteJob: (jobId: number) => {
+        set((state) => {
+          state.jobs = state.jobs.filter((job) => job.id !== jobId);
+          state.filteredJobs = state.filteredJobs.filter(
+            (job) => job.id !== jobId
+          );
+          state.draftJobs = state.draftJobs.filter((job) => job.id !== jobId);
         });
       },
 
