@@ -87,3 +87,28 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #c1c1c1 #f1f1f1;
 }
+
+/* Force Modal to have zero border radius */
+.ant-modal,
+.ant-modal-content,
+.ant-modal-container,
+.ant-modal-header,
+.ant-modal-body,
+.ant-modal-footer,
+.ant-modal-confirm-body-wrapper {
+  border-radius: 0 !important;
+}
+
+/* Modal footer buttons - zero border radius and green theme */
+.ant-modal-footer .ant-btn,
+.ant-modal-confirm-btns .ant-btn {
+  border-radius: 0 !important;
+}
+
+.ant-btn-color-default {
+  border-color: #003220 !important;
+}
+
+.ant-btn-color-default:hover {
+  color: #003220 !important;
+}

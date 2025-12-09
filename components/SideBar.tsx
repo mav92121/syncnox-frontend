@@ -16,6 +16,7 @@ import {
 } from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/zustand/index.store";
 import { signOut } from "next-auth/react";
+import { useJobsStore } from "@/zustand/jobs.store";
 
 interface MenuItem {
   icon: React.ComponentType<any>;
@@ -36,6 +37,7 @@ const SideBar = () => {
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const { user, clearUser, setCurrentTab } = useIndexStore();
+  const { clearJobs } = useJobsStore();
 
   // Clean up timers on unmount
   useEffect(() => {
@@ -49,6 +51,7 @@ const SideBar = () => {
   const handleLogout = async () => {
     try {
       clearUser();
+      clearJobs(); // Clear jobs data on logout
       await signOut({ callbackUrl: "/sign-in" });
     } catch (error) {
       console.log("error -> ", error);

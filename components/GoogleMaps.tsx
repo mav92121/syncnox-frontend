@@ -68,8 +68,6 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || "",
   });
-
-  const [map, setMap] = useState<google.maps.Map | null>(null);
   const [mapTypeId, setMapTypeId] = useState<MapType>("roadmap");
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
 
@@ -84,8 +82,6 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
         map.setCenter(center);
         map.setZoom(zoom);
       }
-
-      setMap(map);
     },
     [center, markers, zoom]
   );
@@ -93,10 +89,6 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   const handleMapTypeChange = (type: MapType) => {
     setMapTypeId(type);
   };
-
-  const onUnmount = useCallback(function callback(map: google.maps.Map) {
-    setMap(null);
-  }, []);
 
   if (!isLoaded) {
     return <></>;
@@ -108,7 +100,6 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
       center={center}
       zoom={zoom}
       onLoad={onLoad}
-      onUnmount={onUnmount}
       options={{
         mapTypeId: mapTypeId,
         disableDefaultUI: true,

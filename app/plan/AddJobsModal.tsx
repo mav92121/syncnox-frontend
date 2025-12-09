@@ -19,7 +19,7 @@ const AddJobsModal = ({
       styles={{ body: { overflow: "hidden", height: "80vh" } }}
     >
       <div style={{ height: "100%" }}>
-        <JobForm />
+        <JobForm onSubmit={() => setOpen(false)} />
       </div>
     </Modal>
   );

@@ -1,3 +1,5 @@
+import { useState } from "react";
+import Link from "next/link";
 import BaseTable from "@/components/BaseTable";
 import GoogleMaps from "@/components/GoogleMaps";
 import StatusBadge from "@/components/Jobs/StatusBanner";
@@ -11,22 +13,46 @@ import {
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { ColDef } from "ag-grid-community";
-import { Button, Typography, Dropdown } from "antd";
-import Link from "next/link";
+import { Button, Typography, Dropdown, message, Modal, Drawer } from "antd";
 import { EllipsisVertical } from "lucide-react";
+import { deleteJob } from "@/apis/jobs.api";
+import JobForm from "@/components/Jobs/JobForm";
 
 const { Title } = Typography;
 
 const Recents = () => {
-  const { draftJobs, isLoading, error } = useJobsStore();
+  const {
+    draftJobs,
+    deleteJob: deleteJobStore,
+    isLoading,
+    error,
+  } = useJobsStore();
   const { setCurrentTab } = useIndexStore();
+  const [editJobData, setEditJobData] = useState<Job | null>(null);
+  const [mapCenter, setMapCenter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  // Transform draftJobs into markers for GoogleMaps
+  const markers = draftJobs
+    .filter((job) => job.location?.lat && job.location?.lng)
+    .map((job) => ({
+      id: job.id,
+      position: {
+        lat: job.location.lat,
+        lng: job.location.lng,
+      },
+      description: job.address_formatted || "No address",
+    }));
 
   const columns: ColDef<Job>[] = [
     {
-      headerCheckboxSelection: true,
       checkboxSelection: true,
+      headerCheckboxSelection: true,
       width: 50,
       pinned: "left",
+      lockPosition: true,
       filter: false,
       resizable: false,
       sortable: false,
@@ -36,6 +62,7 @@ const Recents = () => {
       headerName: "ID",
       width: 80,
       minWidth: 80,
+      pinned: null,
     },
     {
       field: "priority_level",
@@ -67,7 +94,18 @@ const Recents = () => {
       sortable: false,
       filter: false,
       cellRenderer: (params: any) => (
-        <Button type="link" size="small">
+        <Button
+          type="link"
+          size="small"
+          onClick={() => {
+            if (params.data.location?.lat && params.data.location?.lng) {
+              setMapCenter({
+                lat: params.data.location.lat,
+                lng: params.data.location.lng,
+              });
+            }
+          }}
+        >
           Map View
         </Button>
       ),
@@ -143,16 +181,39 @@ const Recents = () => {
       width: 80,
       sortable: false,
       filter: false,
-      cellRenderer: () => {
+      cellRenderer: (params: any) => {
         const menuItems = [
           {
             key: "edit",
             label: "Edit",
+            onClick: () => {
+              setEditJobData(params.data);
+            },
           },
           {
             key: "delete",
             label: "Delete",
             danger: true,
+            onClick: async () => {
+              Modal.confirm({
+                title: "Delete Job",
+                content: "Are you sure you want to delete this job?",
+                okText: "Delete",
+                okType: "danger",
+                cancelText: "Cancel",
+                onOk: async () => {
+                  try {
+                    await deleteJob(params.data.id);
+                    deleteJobStore(params.data.id);
+                    console.log("job deleted -> ", params.data.id);
+                    message.success("Job deleted successfully");
+                  } catch (error) {
+                    console.error("Failed to delete job", error);
+                    message.error("Failed to delete job");
+                  }
+                },
+              });
+            },
           },
         ];
 
@@ -171,10 +232,6 @@ const Recents = () => {
     },
   ];
 
-  const rowSelection = {
-    mode: "multiRow" as const,
-  };
-
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -183,7 +240,11 @@ const Recents = () => {
     <div className="absolute inset-0 flex flex-col">
       {/* Map - 40% height */}
       <div style={{ height: "40vh" }}>
-        <GoogleMaps />
+        <GoogleMaps
+          markers={markers}
+          center={mapCenter || undefined}
+          zoom={mapCenter ? 17 : undefined}
+        />
       </div>
 
       {/* Jobs Section - 60% height */}
@@ -197,13 +258,25 @@ const Recents = () => {
           <BaseTable<Job>
             columnDefs={columns}
             rowData={draftJobs}
-            rowSelection={rowSelection}
+            rowSelection="multiple"
             loading={isLoading}
             emptyMessage="No jobs to show"
             pagination={true}
             containerStyle={{ height: "100%" }}
           />
         </div>
+        <Drawer
+          onClose={() => setEditJobData(null)}
+          title="Edit Job"
+          open={editJobData?.id !== undefined}
+          size="large"
+          placement="right"
+        >
+          <JobForm
+            onSubmit={() => setEditJobData(null)}
+            initialData={editJobData}
+          />
+        </Drawer>
 
         {/* Add Job Button */}
         <div>

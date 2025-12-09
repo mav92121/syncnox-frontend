@@ -17,12 +17,12 @@ const Plan = () => {
         />
       </div>
       <div className="absolute top-1/3 right-1/2 transform translate-x-1/2 translate-y-1/2 flex flex-col gap-5 w-[500px]">
-        <Button size="large" className="flex gap-1">
+        <Button size="middle" className="flex gap-1">
           <UploadOutlined /> <p className="text-lg">Bulk Upload Jobs</p>
         </Button>
         <Button
           onClick={() => setIsAddJobsModalOpen(true)}
-          size="large"
+          size="middle"
           className="flex gap-1"
           type="primary"
         >

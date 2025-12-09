@@ -20,3 +20,17 @@ export const fetchJobs = async (params?: FetchJobsParams): Promise<Job[]> => {
   const response = await apiClient.get<Job[]>(url);
   return response.data;
 };
+
+export const createJob = async (job: Job): Promise<Job> => {
+  const response = await apiClient.post<Job>("/jobs", job);
+  return response.data;
+};
+
+export const updateJob = async (job: Job): Promise<Job> => {
+  const response = await apiClient.put<Job>(`/jobs/${job.id}`, job);
+  return response.data;
+};
+
+export const deleteJob = async (jobId: string): Promise<void> => {
+  await apiClient.delete(`/jobs/${jobId}`);
+};

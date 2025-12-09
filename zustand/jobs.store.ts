@@ -26,11 +26,13 @@ interface JobsState {
   // Actions
   initializeJobs: (params?: FetchJobsParams) => Promise<void>; // Smart fetch (only if not already fetched)
   fetchJobs: (params?: FetchJobsParams) => Promise<void>; // Force fetch
+  upsertJob: (job: Job, id?: number | null) => void;
   setStatusFilter: (status: JobStatus | null) => void;
   setPage: (page: number) => void;
   setItemsPerPage: (itemsPerPage: number) => void;
   refreshJobs: () => Promise<void>;
   clearJobs: () => void;
+  deleteJob: (jobId: number) => void;
 
   // Selectors
   getJobById: (id: number) => Job | undefined;
@@ -94,6 +96,34 @@ export const useJobsStore = create<JobsState>()(
             state.isLoading = false;
           });
         }
+      },
+
+      upsertJob: (job: Job, id: number | null = null) => {
+        set((state) => {
+          if (!id) {
+            state.jobs = [job, ...state.jobs];
+            state.draftJobs = [job, ...state.draftJobs];
+            state.filteredJobs = [job, ...state.filteredJobs];
+          } else {
+            state.jobs = state.jobs.map((j) => (j.id === id ? job : j));
+            state.draftJobs = state.draftJobs.map((j) =>
+              j.id === id ? job : j
+            );
+            state.filteredJobs = state.filteredJobs.map((j) =>
+              j.id === id ? job : j
+            );
+          }
+        });
+      },
+
+      deleteJob: (jobId: number) => {
+        set((state) => {
+          state.jobs = state.jobs.filter((job) => job.id !== jobId);
+          state.filteredJobs = state.filteredJobs.filter(
+            (job) => job.id !== jobId
+          );
+          state.draftJobs = state.draftJobs.filter((job) => job.id !== jobId);
+        });
       },
 
       // Set status filter and update filtered jobs
