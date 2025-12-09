@@ -11,6 +11,7 @@ import {
   priorityStyleMap,
   statusStyleMap,
 } from "@/utils/jobs.utils";
+import { createActionsColumn } from "@/utils/jobs.utils";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { ColDef } from "ag-grid-community";
@@ -173,64 +174,10 @@ const Recents = () => {
         <StatusBadge value={params.value} styleMap={paymentStyleMap} />
       ),
     },
-    {
-      headerName: "Actions",
-      pinned: "right",
-      lockVisible: true,
-      lockPosition: true,
-      resizable: false,
-      width: 80,
-      sortable: false,
-      filter: false,
-      cellRenderer: (params: any) => {
-        const menuItems = [
-          {
-            key: "edit",
-            label: "Edit",
-            onClick: () => {
-              setEditJobData(params.data);
-            },
-          },
-          {
-            key: "delete",
-            label: "Delete",
-            danger: true,
-            onClick: async () => {
-              Modal.confirm({
-                title: "Delete Job",
-                content: "Are you sure you want to delete this job?",
-                okText: "Delete",
-                okType: "danger",
-                cancelText: "Cancel",
-                onOk: async () => {
-                  try {
-                    await deleteJob(params.data.id);
-                    deleteJobStore(params.data.id);
-                    console.log("job deleted -> ", params.data.id);
-                    message.success("Job deleted successfully");
-                  } catch (error) {
-                    console.error("Failed to delete job", error);
-                    message.error("Failed to delete job");
-                  }
-                },
-              });
-            },
-          },
-        ];
-
-        return (
-          <Dropdown
-            menu={{ items: menuItems }}
-            trigger={["click"]}
-            placement="bottomRight"
-          >
-            <div className="flex items-center justify-center h-full cursor-pointer">
-              <EllipsisVertical size={18} />
-            </div>
-          </Dropdown>
-        );
-      },
-    },
+    createActionsColumn({
+      onEdit: (job) => setEditJobData(job),
+      onDelete: (jobId) => deleteJobStore(jobId),
+    }),
   ];
 
   if (error) {
