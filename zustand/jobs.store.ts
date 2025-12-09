@@ -26,6 +26,7 @@ interface JobsState {
   // Actions
   initializeJobs: (params?: FetchJobsParams) => Promise<void>; // Smart fetch (only if not already fetched)
   fetchJobs: (params?: FetchJobsParams) => Promise<void>; // Force fetch
+  upsertJob: (job: Job) => void;
   setStatusFilter: (status: JobStatus | null) => void;
   setPage: (page: number) => void;
   setItemsPerPage: (itemsPerPage: number) => void;
@@ -94,6 +95,24 @@ export const useJobsStore = create<JobsState>()(
             state.isLoading = false;
           });
         }
+      },
+
+      upsertJob: (job: Job) => {
+        set((state) => {
+          if (!job.id) {
+            state.jobs = [job, ...state.jobs];
+            state.draftJobs = [job, ...state.draftJobs];
+            state.filteredJobs = [job, ...state.filteredJobs];
+          } else {
+            state.jobs = state.jobs.map((j) => (j.id === job.id ? job : j));
+            state.draftJobs = state.draftJobs.map((j) =>
+              j.id === job.id ? job : j
+            );
+            state.filteredJobs = state.filteredJobs.map((j) =>
+              j.id === job.id ? job : j
+            );
+          }
+        });
       },
 
       // Set status filter and update filtered jobs

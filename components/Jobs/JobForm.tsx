@@ -29,6 +29,8 @@ import {
   phoneNumberPattern,
   validateJobDuration,
 } from "./jobs.validation";
+import { useJobsStore } from "@/zustand/jobs.store";
+import { createJob, updateJob } from "@/apis/jobs.api";
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -36,10 +38,62 @@ interface JobFormProps {
 
 const JobForm = ({ initialData = null }: JobFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
+  const { upsertJob } = useJobsStore();
   const [form] = Form.useForm();
 
-  const onFinish = (values: Job) => {
-    console.log("Form submitted ", values);
+  const onFinish = async (values: any) => {
+    console.log("Form submitted (raw)", values);
+
+    // Transform the form values to match API requirements
+    const transformedValues: any = { ...values };
+
+    // 1. Transform scheduled_date: dayjs object -> local date string (YYYY-MM-DD)
+    if (values.scheduled_date) {
+      transformedValues.scheduled_date = dayjs(values.scheduled_date).format(
+        "YYYY-MM-DD"
+      );
+    }
+
+    // 2. Transform time windows: dayjs object -> local time string (HH:mm:ss)
+    if (values.time_window_start) {
+      transformedValues.time_window_start = dayjs(
+        values.time_window_start
+      ).format("HH:mm");
+    }
+    if (values.time_window_end) {
+      transformedValues.time_window_end = dayjs(values.time_window_end).format(
+        "HH:mm"
+      );
+    }
+
+    // 3. Transform phone: object {countryCode, number} -> string phone_number
+    if (values.phone) {
+      const { countryCode, number } = values.phone;
+      // Extract just the code part (e.g., "+1" from "🇺🇸 +1")
+      const codeOnly = countryCode.match(/\+\d+/)?.[0] || "";
+      transformedValues.phone_number = `${codeOnly}-${number}`;
+      delete transformedValues.phone;
+    }
+
+    console.log("Form submitted (transformed)", transformedValues);
+
+    try {
+      if (transformedValues.id) {
+        const newJob = await updateJob(transformedValues);
+        console.log("new Job -> ", newJob);
+        upsertJob(newJob);
+        messageApi.success("Job updated successfully");
+      } else {
+        const newJob = await createJob(transformedValues);
+        console.log("new Job -> ", newJob);
+        upsertJob(newJob);
+        messageApi.success("Job created successfully");
+      }
+    } catch (e) {
+      const error = e as Error;
+      console.error(error.message);
+      messageApi.error("Something went wrong");
+    }
   };
 
   return (
@@ -64,9 +118,9 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
           onFinish={onFinish}
           requiredMark={false}
           initialValues={{
-            schedule_date: dayjs(),
+            scheduled_date: dayjs(),
             priority_level: "medium",
-            recurrence_type: "single",
+            recurrence_type: "one_time",
             payment_status: "paid",
             job_type: "pickup",
             service_duration: 5,
@@ -77,7 +131,7 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
             <Col span={12}>
               <Form.Item
                 label="Date"
-                name="schedule_date"
+                name="scheduled_date"
                 rules={[{ required: true, message: "Date is required" }]}
               >
                 <DatePicker format="DD-MM-YYYY" className="w-full" />
@@ -274,7 +328,7 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
           </Row>
 
           {/* Customer Preferences */}
-          <Form.Item label="Customer Preferences" name="preferences">
+          <Form.Item label="Customer Preferences" name="customer_preferences">
             <Input.TextArea rows={3} placeholder="Type" />
           </Form.Item>
 

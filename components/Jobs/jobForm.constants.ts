@@ -14,7 +14,7 @@ export const PRIORITY_OPTIONS = [
 
 // Recurrence options
 export const RECURRENCE_OPTIONS = [
-  { value: "single", label: "Single" },
+  { value: "one_time", label: "Single" },
   { value: "recurring", label: "Recurring" },
 ];
 
