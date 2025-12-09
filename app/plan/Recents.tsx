@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Link from "next/link";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import BaseTable from "@/components/BaseTable";
 import GoogleMaps from "@/components/GoogleMaps";
 import StatusBadge from "@/components/Jobs/StatusBanner";
@@ -14,7 +15,7 @@ import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { ColDef } from "ag-grid-community";
 import { Button, Typography, Dropdown, message, Modal, Drawer } from "antd";
-import { EllipsisVertical } from "lucide-react";
+import { EllipsisVertical, GripHorizontal } from "lucide-react";
 import { deleteJob } from "@/apis/jobs.api";
 import JobForm from "@/components/Jobs/JobForm";
 
@@ -237,56 +238,72 @@ const Recents = () => {
   }
 
   return (
-    <div className="absolute inset-0 flex flex-col">
-      {/* Map - 40% height */}
-      <div style={{ height: "40vh" }}>
-        <GoogleMaps
-          markers={markers}
-          center={mapCenter || undefined}
-          zoom={mapCenter ? 17 : undefined}
-        />
-      </div>
+    <div className="absolute inset-0">
+      <PanelGroup direction="vertical">
+        {/* Map Panel - Resizable */}
+        <Panel defaultSize={40} minSize={10}>
+          <div className="h-full">
+            <GoogleMaps
+              markers={markers}
+              center={mapCenter || undefined}
+              zoom={mapCenter ? 17 : undefined}
+            />
+          </div>
+        </Panel>
 
-      {/* Jobs Section - 60% height */}
-      <div className="flex flex-col" style={{ height: "60vh" }}>
-        <Title level={4} className="m-0 mb-2 pt-2">
-          Jobs
-        </Title>
+        {/* Resize Handle */}
+        <PanelResizeHandle className="relative h-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-ns-resize flex items-center justify-center group">
+          <div className="absolute flex items-center justify-center">
+            <GripHorizontal
+              size={30}
+              className="text-gray-500 group-hover:text-black transition-colors"
+            />
+          </div>
+        </PanelResizeHandle>
 
-        {/* Table with explicit height */}
-        <div className="flex-1 mb-2">
-          <BaseTable<Job>
-            columnDefs={columns}
-            rowData={draftJobs}
-            rowSelection="multiple"
-            loading={isLoading}
-            emptyMessage="No jobs to show"
-            pagination={true}
-            containerStyle={{ height: "100%" }}
-          />
-        </div>
-        <Drawer
-          onClose={() => setEditJobData(null)}
-          title="Edit Job"
-          open={editJobData?.id !== undefined}
-          size="large"
-          placement="right"
-        >
-          <JobForm
-            onSubmit={() => setEditJobData(null)}
-            initialData={editJobData}
-          />
-        </Drawer>
+        {/* Jobs Section Panel */}
+        <Panel defaultSize={60} minSize={5}>
+          <div className="flex flex-col h-full">
+            <Title level={4} className="m-0 mb-2 pt-2">
+              Jobs
+            </Title>
 
-        {/* Add Job Button */}
-        <div>
-          <Link href="/plan" onClick={() => setCurrentTab("plan")}>
-            <Button type="primary" block size="middle">
-              Add More Jobs
-            </Button>
-          </Link>
-        </div>
-      </div>
+            {/* Table with explicit height */}
+            <div className="flex-1 mb-2">
+              <BaseTable<Job>
+                columnDefs={columns}
+                rowData={draftJobs}
+                rowSelection="multiple"
+                loading={isLoading}
+                emptyMessage="No jobs to show"
+                pagination={true}
+                containerStyle={{ height: "100%" }}
+              />
+            </div>
+            <Drawer
+              onClose={() => setEditJobData(null)}
+              title="Edit Job"
+              open={editJobData?.id !== undefined}
+              size="large"
+              placement="right"
+            >
+              <JobForm
+                onSubmit={() => setEditJobData(null)}
+                initialData={editJobData}
+              />
+            </Drawer>
+
+            {/* Add Job Button */}
+            <div>
+              <Link href="/plan" onClick={() => setCurrentTab("plan")}>
+                <Button type="primary" block size="middle">
+                  Add More Jobs
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </Panel>
+      </PanelGroup>
     </div>
   );
 };
