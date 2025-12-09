@@ -26,7 +26,7 @@ interface JobsState {
   // Actions
   initializeJobs: (params?: FetchJobsParams) => Promise<void>; // Smart fetch (only if not already fetched)
   fetchJobs: (params?: FetchJobsParams) => Promise<void>; // Force fetch
-  upsertJob: (job: Job) => void;
+  upsertJob: (job: Job, id?: number | null) => void;
   setStatusFilter: (status: JobStatus | null) => void;
   setPage: (page: number) => void;
   setItemsPerPage: (itemsPerPage: number) => void;
@@ -98,19 +98,19 @@ export const useJobsStore = create<JobsState>()(
         }
       },
 
-      upsertJob: (job: Job) => {
+      upsertJob: (job: Job, id: number | null = null) => {
         set((state) => {
-          if (!job.id) {
+          if (!id) {
             state.jobs = [job, ...state.jobs];
             state.draftJobs = [job, ...state.draftJobs];
             state.filteredJobs = [job, ...state.filteredJobs];
           } else {
-            state.jobs = state.jobs.map((j) => (j.id === job.id ? job : j));
+            state.jobs = state.jobs.map((j) => (j.id === id ? job : j));
             state.draftJobs = state.draftJobs.map((j) =>
-              j.id === job.id ? job : j
+              j.id === id ? job : j
             );
             state.filteredJobs = state.filteredJobs.map((j) =>
-              j.id === job.id ? job : j
+              j.id === id ? job : j
             );
           }
         });

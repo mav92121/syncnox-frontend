@@ -82,7 +82,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
     try {
       if (initialData?.id) {
         const newJob = await updateJob(transformedValues);
-        upsertJob(newJob);
+        upsertJob(newJob, newJob.id);
         messageApi.success("Job updated successfully");
         onSubmit?.();
       } else {

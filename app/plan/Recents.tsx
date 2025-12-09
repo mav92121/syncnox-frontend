@@ -29,6 +29,23 @@ const Recents = () => {
   } = useJobsStore();
   const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
+  const [mapCenter, setMapCenter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  // Transform draftJobs into markers for GoogleMaps
+  const markers = draftJobs
+    .filter((job) => job.location?.lat && job.location?.lng)
+    .map((job) => ({
+      id: job.id,
+      position: {
+        lat: job.location.lat,
+        lng: job.location.lng,
+      },
+      description: job.address_formatted || "No address",
+    }));
+
   const columns: ColDef<Job>[] = [
     {
       checkboxSelection: true,
@@ -77,7 +94,18 @@ const Recents = () => {
       sortable: false,
       filter: false,
       cellRenderer: (params: any) => (
-        <Button type="link" size="small">
+        <Button
+          type="link"
+          size="small"
+          onClick={() => {
+            if (params.data.location?.lat && params.data.location?.lng) {
+              setMapCenter({
+                lat: params.data.location.lat,
+                lng: params.data.location.lng,
+              });
+            }
+          }}
+        >
           Map View
         </Button>
       ),
@@ -212,7 +240,11 @@ const Recents = () => {
     <div className="absolute inset-0 flex flex-col">
       {/* Map - 40% height */}
       <div style={{ height: "40vh" }}>
-        <GoogleMaps />
+        <GoogleMaps
+          markers={markers}
+          center={mapCenter || undefined}
+          zoom={mapCenter ? 17 : undefined}
+        />
       </div>
 
       {/* Jobs Section - 60% height */}
