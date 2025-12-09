@@ -23,10 +23,11 @@ const Recents = () => {
 
   const columns: ColDef<Job>[] = [
     {
-      headerCheckboxSelection: true,
       checkboxSelection: true,
+      headerCheckboxSelection: true,
       width: 50,
       pinned: "left",
+      lockPosition: true,
       filter: false,
       resizable: false,
       sortable: false,
@@ -36,6 +37,7 @@ const Recents = () => {
       headerName: "ID",
       width: 80,
       minWidth: 80,
+      pinned: null,
     },
     {
       field: "priority_level",
@@ -171,10 +173,6 @@ const Recents = () => {
     },
   ];
 
-  const rowSelection = {
-    mode: "multiRow" as const,
-  };
-
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -197,7 +195,7 @@ const Recents = () => {
           <BaseTable<Job>
             columnDefs={columns}
             rowData={draftJobs}
-            rowSelection={rowSelection}
+            rowSelection="multiple"
             loading={isLoading}
             emptyMessage="No jobs to show"
             pagination={true}
