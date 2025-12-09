@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import dayjs from "dayjs";
 import {
   Form,
@@ -34,9 +35,10 @@ import { createJob, updateJob } from "@/apis/jobs.api";
 
 interface JobFormProps {
   initialData?: Job | null;
+  onSubmit?: () => void;
 }
 
-const JobForm = ({ initialData = null }: JobFormProps) => {
+const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const { upsertJob } = useJobsStore();
   const [form] = Form.useForm();
@@ -45,7 +47,7 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
     console.log("Form submitted (raw)", values);
 
     // Transform the form values to match API requirements
-    const transformedValues: any = { ...values };
+    const transformedValues: any = { ...values, id: initialData?.id };
 
     // 1. Transform scheduled_date: dayjs object -> local date string (YYYY-MM-DD)
     if (values.scheduled_date) {
@@ -78,16 +80,16 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
     console.log("Form submitted (transformed)", transformedValues);
 
     try {
-      if (transformedValues.id) {
+      if (initialData?.id) {
         const newJob = await updateJob(transformedValues);
-        console.log("new Job -> ", newJob);
         upsertJob(newJob);
         messageApi.success("Job updated successfully");
+        onSubmit?.();
       } else {
         const newJob = await createJob(transformedValues);
-        console.log("new Job -> ", newJob);
         upsertJob(newJob);
         messageApi.success("Job created successfully");
+        onSubmit?.();
       }
     } catch (e) {
       const error = e as Error;
@@ -95,6 +97,44 @@ const JobForm = ({ initialData = null }: JobFormProps) => {
       messageApi.error("Something went wrong");
     }
   };
+
+  // Prefill form when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData) {
+      const formValues: any = { ...initialData };
+
+      // 1. Transform scheduled_date: string (YYYY-MM-DD) -> dayjs object
+      if (formValues.scheduled_date) {
+        formValues.scheduled_date = dayjs(formValues.scheduled_date);
+      }
+
+      // 2. Transform time windows: string (HH:mm) -> dayjs object
+      if (formValues.time_window_start) {
+        formValues.time_window_start = dayjs(
+          formValues.time_window_start,
+          "HH:mm"
+        );
+      }
+      if (formValues.time_window_end) {
+        formValues.time_window_end = dayjs(formValues.time_window_end, "HH:mm");
+      }
+
+      // 3. Transform phone_number: string "+1-298372138" -> object {countryCode, number}
+      if (formValues.phone_number) {
+        const [code, number] = formValues.phone_number.split("-");
+        // Find the country with matching code to get flag
+        const country = COUNTRY_CODES.find((c) => c.code === code);
+        formValues.phone = {
+          countryCode: country ? `${country.flag} ${code}` : `🇺🇸 ${code}`,
+          number: number,
+        };
+        delete formValues.phone_number;
+      }
+
+      // Set all form fields with the transformed values
+      form.setFieldsValue(formValues);
+    }
+  }, [initialData]);
 
   return (
     <Flex vertical style={{ height: "100%", overflow: "hidden" }}>

@@ -1,3 +1,5 @@
+import { useState } from "react";
+import Link from "next/link";
 import BaseTable from "@/components/BaseTable";
 import GoogleMaps from "@/components/GoogleMaps";
 import StatusBadge from "@/components/Jobs/StatusBanner";
@@ -11,10 +13,10 @@ import {
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { ColDef } from "ag-grid-community";
-import { Button, Typography, Dropdown, message, Modal } from "antd";
-import Link from "next/link";
+import { Button, Typography, Dropdown, message, Modal, Drawer } from "antd";
 import { EllipsisVertical } from "lucide-react";
 import { deleteJob } from "@/apis/jobs.api";
+import JobForm from "@/components/Jobs/JobForm";
 
 const { Title } = Typography;
 
@@ -26,6 +28,7 @@ const Recents = () => {
     error,
   } = useJobsStore();
   const { setCurrentTab } = useIndexStore();
+  const [editJobData, setEditJobData] = useState<Job | null>(null);
   const columns: ColDef<Job>[] = [
     {
       checkboxSelection: true,
@@ -155,6 +158,9 @@ const Recents = () => {
           {
             key: "edit",
             label: "Edit",
+            onClick: () => {
+              setEditJobData(params.data);
+            },
           },
           {
             key: "delete",
@@ -227,6 +233,18 @@ const Recents = () => {
             containerStyle={{ height: "100%" }}
           />
         </div>
+        <Drawer
+          onClose={() => setEditJobData(null)}
+          title="Edit Job"
+          open={editJobData?.id !== undefined}
+          size="large"
+          placement="right"
+        >
+          <JobForm
+            onSubmit={() => setEditJobData(null)}
+            initialData={editJobData}
+          />
+        </Drawer>
 
         {/* Add Job Button */}
         <div>
