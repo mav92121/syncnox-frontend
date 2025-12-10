@@ -14,7 +14,7 @@ export const MENU_ITEMS = [
 export const INITIAL_FORM_VALUES = {
   role_type: "driver",
   navigation_link_format: "default",
-  vehicle_id: "car",
+  vehicle: "car",
   allowed_overtime: false,
   max_distance: 50,
   fixed_cost_for_driver: 0,

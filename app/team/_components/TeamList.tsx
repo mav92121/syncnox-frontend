@@ -7,12 +7,17 @@ import { Typography, Drawer, Flex, Button } from "antd";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import { deleteTeam } from "@/apis/team.api";
 import TeamMemberForm from "./TeamMemberForm";
+import AddTeamMemberModal from "./AddTeamMemberModal";
+import dayjs from "dayjs";
+import StatusBadge from "@/components/Jobs/StatusBanner";
+import { statusStyleMap } from "./teamMemberForm.utils";
 
 const { Title } = Typography;
 
 const TeamList = () => {
   const { isLoading, teams, deleteTeam: deleteTeamStore } = useTeamStore();
   const [editTeamData, setEditTeamData] = useState<Team | null>(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
   console.log("teams -> ", teams);
 
   const columns: ColDef<Team>[] = [
@@ -58,6 +63,9 @@ const TeamList = () => {
       field: "status",
       headerName: "Status",
       width: 150,
+      cellRenderer: (params: any) => (
+        <StatusBadge value={params.value} styleMap={statusStyleMap} />
+      ),
     },
     {
       headerName: "Work Timings",
@@ -79,6 +87,8 @@ const TeamList = () => {
     {
       field: "created_at",
       headerName: "Joined Date",
+      valueGetter: (params) =>
+        dayjs(params.data?.created_at).format("DD-MM-YYYY"),
       width: 150,
     },
     {
@@ -113,7 +123,13 @@ const TeamList = () => {
     <div className="flex flex-col h-full">
       <Flex justify="space-between">
         <Title level={4}>Team Members</Title>
-        <Button type="primary" size="small">Add Team Member</Button>
+        <Button
+          type="primary"
+          size="small"
+          onClick={() => setAddModalOpen(true)}
+        >
+          Add Team Member
+        </Button>
       </Flex>
       <div className="flex-1 min-h-0">
         <BaseTable<Team>
@@ -127,6 +143,10 @@ const TeamList = () => {
         />
       </div>
 
+      {/* Add Team Member Modal */}
+      <AddTeamMemberModal open={addModalOpen} setOpen={setAddModalOpen} />
+
+      {/* Edit Team Member Drawer */}
       <Drawer
         onClose={() => setEditTeamData(null)}
         title="Edit Team Member"

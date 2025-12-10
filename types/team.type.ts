@@ -11,6 +11,7 @@ export interface Team {
   email: string;
   phone_number: string;
   navigation_link_format: string;
+  vehicle: string;
   work_start_time: string;
   work_end_time: string;
   allowed_overtime: boolean;
