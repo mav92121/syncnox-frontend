@@ -25,12 +25,14 @@ interface BasicInformationProps {
   form: FormInstance;
   scheduleBreak: boolean;
   onScheduleBreakChange: (checked: boolean) => void;
+  isDriver: boolean;
 }
 
 const BasicInformation = ({
   form,
   scheduleBreak,
   onScheduleBreakChange,
+  isDriver,
 }: BasicInformationProps) => {
   return (
     <>
@@ -42,7 +44,7 @@ const BasicInformation = ({
             name="name"
             rules={[{ required: true, message: "Name is required" }]}
           >
-            <Input placeholder="Type and Auto Suggest" />
+            <Input placeholder="Name" />
           </Form.Item>
         </Col>
         <Col span={12}>
@@ -60,7 +62,7 @@ const BasicInformation = ({
       <Row gutter={16}>
         <Col span={12}>
           <Form.Item label="External Identifier" name="external_identifier">
-            <Input placeholder="Type and Auto Suggest" />
+            <Input placeholder="External Identifier" />
           </Form.Item>
         </Col>
         <Col span={12}>
@@ -69,7 +71,7 @@ const BasicInformation = ({
             name="email"
             rules={[{ type: "email", message: "Please enter a valid email" }]}
           >
-            <Input type="email" placeholder="Type and Auto Suggest" />
+            <Input type="email" placeholder="Email" />
           </Form.Item>
         </Col>
       </Row>
@@ -107,120 +109,50 @@ const BasicInformation = ({
                 phoneNumberPattern,
               ]}
             >
-              <Input type="number" placeholder="8023456789" maxLength={15} />
+              <Input type="number" placeholder="Phone Number" maxLength={15} />
             </Form.Item>
           </Col>
         </Row>
       </Form.Item>
 
-      {/* Navigation Link Format and Default Vehicles */}
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            label="Navigation Link Format"
-            name="navigation_link_format"
-          >
-            <Select placeholder="Select" options={NAVIGATION_FORMAT_OPTIONS} />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item label="Default Vehicles" name="vehicle_id">
-            <Select placeholder="Select" options={DEFAULT_VEHICLES_OPTIONS} />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      {/* Work Time From and To */}
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            label="Work Time"
-            name="work_start_time"
-            rules={[
-              createTimeWindowStartValidator(
-                form,
-                "work_end_time",
-                "Work start time",
-                "Work end time"
-              ),
-            ]}
-          >
-            <TimePicker
-              className="w-full"
-              format="HH:mm"
-              placeholder="Select time"
-              onChange={() => {
-                // Trigger validation on end time when start time changes
-                form.validateFields(["work_end_time"]);
-              }}
-            />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            label="To"
-            name="work_end_time"
-            rules={[
-              createTimeWindowEndValidator(
-                form,
-                "work_start_time",
-                "Work start time",
-                "Work end time"
-              ),
-            ]}
-          >
-            <TimePicker
-              className="w-full"
-              format="HH:mm"
-              placeholder="Select time"
-              onChange={() => {
-                // Trigger validation on start time when end time changes
-                form.validateFields(["work_start_time"]);
-              }}
-            />
-          </Form.Item>
-        </Col>
-      </Row>
-
-      {/* Allowed Overtime */}
-      <Form.Item name="allowed_overtime" valuePropName="checked">
-        <Checkbox>Allowed Overtime</Checkbox>
-      </Form.Item>
-
-      {/* Distance Limit */}
-      <Form.Item label="Distance limit (km)" name="max_distance">
-        <InputNumber
-          className="w-full"
-          placeholder="50"
-          min={0}
-          addonAfter="km"
-        />
-      </Form.Item>
-
-      {/* Schedule Break */}
-      <Form.Item>
-        <Checkbox
-          checked={scheduleBreak}
-          onChange={(e) => onScheduleBreakChange(e.target.checked)}
-        >
-          Schedule a break for this driver
-        </Checkbox>
-      </Form.Item>
-
-      {/* Break Time (conditional) */}
-      {scheduleBreak && (
-        <Form.Item label="Break must happen between">
+      {/* Driver-specific fields - only show for drivers */}
+      {isDriver && (
+        <>
+          {/* Navigation Link Format and Default Vehicles */}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                name="break_time_start"
-                noStyle
+                label="Navigation Link Format"
+                name="navigation_link_format"
+              >
+                <Select
+                  placeholder="Select"
+                  options={NAVIGATION_FORMAT_OPTIONS}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Default Vehicles" name="vehicle">
+                <Select
+                  placeholder="Select"
+                  options={DEFAULT_VEHICLES_OPTIONS}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Work Time From and To */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Work Time"
+                name="work_start_time"
                 rules={[
                   createTimeWindowStartValidator(
                     form,
-                    "break_time_end",
-                    "Break start time",
-                    "Break end time"
+                    "work_end_time",
+                    "Work start time",
+                    "Work end time"
                   ),
                 ]}
               >
@@ -230,21 +162,21 @@ const BasicInformation = ({
                   placeholder="Select time"
                   onChange={() => {
                     // Trigger validation on end time when start time changes
-                    form.validateFields(["break_time_end"]);
+                    form.validateFields(["work_end_time"]);
                   }}
                 />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
-                name="break_time_end"
-                noStyle
+                label="To"
+                name="work_end_time"
                 rules={[
                   createTimeWindowEndValidator(
                     form,
-                    "break_time_start",
-                    "Break start time",
-                    "Break end time"
+                    "work_start_time",
+                    "Work start time",
+                    "Work end time"
                   ),
                 ]}
               >
@@ -254,13 +186,94 @@ const BasicInformation = ({
                   placeholder="Select time"
                   onChange={() => {
                     // Trigger validation on start time when end time changes
-                    form.validateFields(["break_time_start"]);
+                    form.validateFields(["work_start_time"]);
                   }}
                 />
               </Form.Item>
             </Col>
           </Row>
-        </Form.Item>
+
+          {/* Allowed Overtime */}
+          <Form.Item name="allowed_overtime" valuePropName="checked">
+            <Checkbox>Allowed Overtime</Checkbox>
+          </Form.Item>
+
+          {/* Distance Limit */}
+          <Form.Item label="Distance limit (km)" name="max_distance">
+            <InputNumber
+              className="w-full"
+              placeholder="50"
+              min={0}
+              addonAfter="km"
+            />
+          </Form.Item>
+
+          {/* Schedule Break */}
+          <Form.Item>
+            <Checkbox
+              checked={scheduleBreak}
+              onChange={(e) => onScheduleBreakChange(e.target.checked)}
+            >
+              Schedule a break for this driver
+            </Checkbox>
+          </Form.Item>
+
+          {/* Break Time (conditional) */}
+          {scheduleBreak && (
+            <Form.Item label="Break must happen between">
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="break_time_start"
+                    noStyle
+                    rules={[
+                      createTimeWindowStartValidator(
+                        form,
+                        "break_time_end",
+                        "Break start time",
+                        "Break end time"
+                      ),
+                    ]}
+                  >
+                    <TimePicker
+                      className="w-full"
+                      format="HH:mm"
+                      placeholder="Select time"
+                      onChange={() => {
+                        // Trigger validation on end time when start time changes
+                        form.validateFields(["break_time_end"]);
+                      }}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    name="break_time_end"
+                    noStyle
+                    rules={[
+                      createTimeWindowEndValidator(
+                        form,
+                        "break_time_start",
+                        "Break start time",
+                        "Break end time"
+                      ),
+                    ]}
+                  >
+                    <TimePicker
+                      className="w-full"
+                      format="HH:mm"
+                      placeholder="Select time"
+                      onChange={() => {
+                        // Trigger validation on start time when end time changes
+                        form.validateFields(["break_time_start"]);
+                      }}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </Form.Item>
+          )}
+        </>
       )}
     </>
   );

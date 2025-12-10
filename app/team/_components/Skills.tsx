@@ -54,7 +54,13 @@ const Skills = ({
           <Flex gap="8px" wrap="wrap">
             {skills.map((skill) => (
               <Tag
-                variant="solid"
+                style={{
+                  padding: "5px",
+                  gap: "5px",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+                variant="outlined"
                 key={skill}
                 closable
                 onClose={() => onRemoveSkill(skill)}

@@ -26,6 +26,18 @@ const TeamMemberForm = ({
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
   const [scheduleBreak, setScheduleBreak] = useState(false);
+  const [roleType, setRoleType] = useState<string>("driver");
+
+  // Watch for role_type changes
+  const onValuesChange = (changedValues: any) => {
+    if (changedValues.role_type) {
+      setRoleType(changedValues.role_type);
+      // If changing from driver to non-driver, reset to basic section
+      if (changedValues.role_type !== "driver" && activeSection !== "basic") {
+        setActiveSection("basic");
+      }
+    }
+  };
 
   const onFinish = async (values: any) => {
     console.log("Form submitted (raw)", values);
@@ -63,6 +75,11 @@ const TeamMemberForm = ({
     if (initialData) {
       const formValues = transformApiToForm(initialData);
 
+      // Set role type
+      if (initialData.role_type) {
+        setRoleType(initialData.role_type);
+      }
+
       // Set skills
       if (initialData.skills && Array.isArray(initialData.skills)) {
         setSkills(initialData.skills);
@@ -88,11 +105,18 @@ const TeamMemberForm = ({
     setSkills(skills.filter((skill) => skill !== skillToRemove));
   };
 
+  const isDriver = roleType === "driver";
+
+  // Filter menu items based on role - only show Basic Information for non-drivers
+  const filteredMenuItems = isDriver
+    ? MENU_ITEMS
+    : MENU_ITEMS.filter((item) => item.key === "basic");
+
   return (
     <Flex style={{ height: "100%", overflow: "hidden" }}>
       {contextHolder}
 
-      {/* Left Sidebar Menu */}
+      {/* Left Sidebar Menu - always show but filter items based on role */}
       <div
         style={{
           width: "200px",
@@ -105,7 +129,7 @@ const TeamMemberForm = ({
           mode="inline"
           selectedKeys={[activeSection]}
           onClick={({ key }) => setActiveSection(key as MenuKey)}
-          items={MENU_ITEMS}
+          items={filteredMenuItems}
           style={{
             border: "none",
             fontSize: "14px",
@@ -116,7 +140,11 @@ const TeamMemberForm = ({
       {/* Right Content Area */}
       <Flex
         vertical
-        style={{ flex: 1, overflow: "hidden", paddingLeft: "24px" }}
+        style={{
+          flex: 1,
+          overflow: "hidden",
+          paddingLeft: "24px",
+        }}
       >
         {/* Scrollable Form Area */}
         <Flex
@@ -133,37 +161,57 @@ const TeamMemberForm = ({
             form={form}
             layout="vertical"
             onFinish={onFinish}
+            onValuesChange={onValuesChange}
             requiredMark={false}
             initialValues={INITIAL_FORM_VALUES}
           >
-            {/* Render all sections but hide inactive ones */}
-            <div
-              style={{ display: activeSection === "basic" ? "block" : "none" }}
-            >
+            {isDriver ? (
+              <>
+                {/* Render all sections for driver but hide inactive ones */}
+                <div
+                  style={{
+                    display: activeSection === "basic" ? "block" : "none",
+                  }}
+                >
+                  <BasicInformation
+                    form={form}
+                    scheduleBreak={scheduleBreak}
+                    onScheduleBreakChange={setScheduleBreak}
+                    isDriver={isDriver}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: activeSection === "skills" ? "block" : "none",
+                  }}
+                >
+                  <Skills
+                    skills={skills}
+                    skillInput={skillInput}
+                    onSkillInputChange={setSkillInput}
+                    onAddSkill={handleAddSkill}
+                    onRemoveSkill={handleRemoveSkill}
+                  />
+                </div>
+
+                <div
+                  style={{
+                    display: activeSection === "cost" ? "block" : "none",
+                  }}
+                >
+                  <Cost />
+                </div>
+              </>
+            ) : (
+              // For non-driver roles, show only basic information (first 5 fields)
               <BasicInformation
                 form={form}
                 scheduleBreak={scheduleBreak}
                 onScheduleBreakChange={setScheduleBreak}
+                isDriver={isDriver}
               />
-            </div>
-
-            <div
-              style={{ display: activeSection === "skills" ? "block" : "none" }}
-            >
-              <Skills
-                skills={skills}
-                skillInput={skillInput}
-                onSkillInputChange={setSkillInput}
-                onAddSkill={handleAddSkill}
-                onRemoveSkill={handleRemoveSkill}
-              />
-            </div>
-
-            <div
-              style={{ display: activeSection === "cost" ? "block" : "none" }}
-            >
-              <Cost />
-            </div>
+            )}
           </Form>
         </Flex>
 
@@ -176,7 +224,7 @@ const TeamMemberForm = ({
             icon={<PlusCircleOutlined />}
             onClick={() => form.submit()}
           >
-            {initialData ? "Update" : "Add Contact"}
+            {initialData ? "Update" : "Add"}
           </Button>
         </Flex>
       </Flex>

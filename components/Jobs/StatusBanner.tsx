@@ -9,7 +9,9 @@ const StatusBadge = ({
   const style = styleMap[value] || styleMap.default;
   return (
     <div className="flex text-center items-center justify-start h-full w-full">
-      <span className={`${style} px-3 text-sm font-medium min-w-[100px]`}>
+      <span
+        className={`${style} px-3 text-sm font-medium min-w-[100px] py-1.5`}
+      >
         {value[0].toUpperCase() + value.slice(1)}
       </span>
     </div>
