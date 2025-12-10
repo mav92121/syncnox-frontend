@@ -106,6 +106,13 @@ export const routeTabsConfig: RouteTabConfig = {
       icon: CarOutlined,
     },
   ],
+  "/team": [
+    {
+      key: "team",
+      label: "Team",
+      icon: TeamOutlined,
+    },
+  ],
 };
 
 /**

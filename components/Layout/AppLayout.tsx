@@ -1,12 +1,13 @@
 "use client";
-import { usePathname } from "next/navigation";
-import SideBar from "@/components/SideBar";
-import NavBar from "@/components/NavBar";
-import { Suspense, useEffect, useRef } from "react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
-import { useJobsStore } from "@/zustand/jobs.store";
+import { Suspense, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useIndexStore } from "@/zustand/index.store";
+import { useJobsStore } from "@/zustand/jobs.store";
+import { useTeamStore } from "@/zustand/team.store";
+import SideBar from "@/components/Layout/SideBar";
+import NavBar from "@/components/Layout/NavBar";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -14,6 +15,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const hasInitialized = useRef(false);
   const { data: session } = useSession();
   const { setUser, clearUser } = useIndexStore();
+  const { initializeTeams } = useTeamStore();
 
   // Register AG Grid modules on client side only to prevent hydration issues
   useEffect(() => {
@@ -40,8 +42,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     if (!isSignInPage && !hasInitialized.current) {
       hasInitialized.current = true;
       initializeJobs();
+      initializeTeams();
     }
-  }, [isSignInPage, initializeJobs]);
+  }, [isSignInPage, initializeJobs, initializeTeams]);
 
   if (isSignInPage) {
     return <>{children}</>;

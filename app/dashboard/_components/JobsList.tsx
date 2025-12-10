@@ -1,26 +1,41 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import { ColDef } from "ag-grid-community";
-import { Typography, Button } from "antd";
+import { Typography, Button, Drawer } from "antd";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { Job } from "@/types/job.type";
-import BaseTable from "@/components/BaseTable";
+import BaseTable from "@/components/Table/BaseTable";
+import JobForm from "@/components/Jobs/JobForm";
 import {
   formatTimeWindow,
   priorityStyleMap,
   statusStyleMap,
   paymentStyleMap,
 } from "@/utils/jobs.utils";
+import { createActionsColumn } from "@/components/Table/ActionsColumn";
+import { deleteJob } from "@/apis/jobs.api";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 
 const { Title } = Typography;
 
 export default function JobsList() {
-  const { jobs, isLoading, error } = useJobsStore();
+  const { jobs, isLoading, error, deleteJob: deleteJobStore } = useJobsStore();
   const { setCurrentTab } = useIndexStore();
+  const [editJobData, setEditJobData] = useState<Job | null>(null);
 
   const columns: ColDef<Job>[] = [
+    {
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+      width: 50,
+      pinned: "left",
+      lockPosition: true,
+      filter: false,
+      resizable: false,
+      sortable: false,
+    },
     {
       field: "id",
       headerName: "ID",
@@ -122,12 +137,13 @@ export default function JobsList() {
         <StatusBadge value={params.value} styleMap={paymentStyleMap} />
       ),
     },
+    createActionsColumn<Job>({
+      onEdit: (job) => setEditJobData(job),
+      onDelete: (jobId) => deleteJobStore(jobId),
+      deleteApi: deleteJob,
+      entityName: "Job",
+    }),
   ];
-
-  const rowSelection = {
-    mode: "multiRow" as const,
-    headerCheckbox: true,
-  };
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -143,13 +159,26 @@ export default function JobsList() {
         <BaseTable<Job>
           columnDefs={columns}
           rowData={jobs}
-          rowSelection={rowSelection}
+          rowSelection="multiple"
           loading={isLoading}
           emptyMessage="No jobs to show"
           pagination={true}
           containerStyle={{ height: "100%" }}
         />
       </div>
+
+      <Drawer
+        onClose={() => setEditJobData(null)}
+        title="Edit Job"
+        open={editJobData?.id !== undefined}
+        size="large"
+        placement="right"
+      >
+        <JobForm
+          onSubmit={() => setEditJobData(null)}
+          initialData={editJobData}
+        />
+      </Drawer>
 
       <div className="pt-2">
         <Link href="/plan" onClick={() => setCurrentTab("plan")}>
