@@ -19,7 +19,7 @@ const TeamMemberForm = ({
   onSubmit,
 }: TeamMemberFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
-  const { createTeamAction, updateTeamAction } = useTeamStore();
+  const { createTeamAction, updateTeamAction, isLoading } = useTeamStore();
   const [form] = Form.useForm();
   const [activeSection, setActiveSection] = useState<MenuKey>("basic");
   const [skills, setSkills] = useState<string[]>([]);
@@ -119,7 +119,7 @@ const TeamMemberForm = ({
           width: "200px",
           borderRight: "1px solid #f0f0f0",
           paddingRight: "12px",
-          paddingTop: "8px",
+          paddingTop: "12px",
         }}
       >
         <Menu
@@ -140,7 +140,7 @@ const TeamMemberForm = ({
         style={{
           flex: 1,
           overflow: "hidden",
-          paddingLeft: "24px",
+          paddingLeft: "12px",
         }}
       >
         {/* Scrollable Form Area */}
@@ -215,6 +215,7 @@ const TeamMemberForm = ({
         {/* Fixed Button at Bottom */}
         <Flex style={{ paddingTop: "12px" }}>
           <Button
+            loading={isLoading}
             type="primary"
             htmlType="submit"
             block
