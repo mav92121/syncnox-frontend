@@ -6,7 +6,7 @@ import { Typography, Button, Drawer } from "antd";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { Job } from "@/types/job.type";
-import BaseTable from "@/components/BaseTable";
+import BaseTable from "@/components/Table/BaseTable";
 import JobForm from "@/components/Jobs/JobForm";
 import {
   formatTimeWindow,
@@ -14,7 +14,8 @@ import {
   statusStyleMap,
   paymentStyleMap,
 } from "@/utils/jobs.utils";
-import { createActionsColumn } from "@/utils/jobs.utils";
+import { createActionsColumn } from "@/components/Table/ActionsColumn";
+import { deleteJob } from "@/apis/jobs.api";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 
 const { Title } = Typography;
@@ -136,16 +137,13 @@ export default function JobsList() {
         <StatusBadge value={params.value} styleMap={paymentStyleMap} />
       ),
     },
-    createActionsColumn({
+    createActionsColumn<Job>({
       onEdit: (job) => setEditJobData(job),
       onDelete: (jobId) => deleteJobStore(jobId),
+      deleteApi: deleteJob,
+      entityName: "Job",
     }),
   ];
-
-  const rowSelection = {
-    mode: "multiRow" as const,
-    headerCheckbox: true,
-  };
 
   if (error) {
     return <div>Error: {error}</div>;

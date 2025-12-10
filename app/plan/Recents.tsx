@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import BaseTable from "@/components/BaseTable";
+import BaseTable from "@/components/Table/BaseTable";
 import GoogleMaps from "@/components/GoogleMaps";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 import { Job } from "@/types/job.type";
@@ -11,7 +11,7 @@ import {
   priorityStyleMap,
   statusStyleMap,
 } from "@/utils/jobs.utils";
-import { createActionsColumn } from "@/utils/jobs.utils";
+import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { ColDef } from "ag-grid-community";
@@ -174,9 +174,11 @@ const Recents = () => {
         <StatusBadge value={params.value} styleMap={paymentStyleMap} />
       ),
     },
-    createActionsColumn({
+    createActionsColumn<Job>({
       onEdit: (job) => setEditJobData(job),
       onDelete: (jobId) => deleteJobStore(jobId),
+      deleteApi: deleteJob,
+      entityName: "Job",
     }),
   ];
 

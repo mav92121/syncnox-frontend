@@ -1,0 +1,187 @@
+import { useState, useEffect } from "react";
+import { Form, Button, Flex, Menu, message } from "antd";
+import { PlusCircleOutlined } from "@ant-design/icons";
+import { Team } from "@/types/team.type";
+import {
+  MENU_ITEMS,
+  INITIAL_FORM_VALUES,
+  MenuKey,
+  TeamMemberFormProps,
+} from "./teamMemberForm.types";
+import { transformFormToApi, transformApiToForm } from "./teamMemberForm.utils";
+import { createTeam, updateTeam } from "@/apis/team.api";
+import { useTeamStore } from "@/zustand/team.store";
+import BasicInformation from "./BasicInformation";
+import Skills from "./Skills";
+import Cost from "./Cost";
+
+const TeamMemberForm = ({
+  initialData = null,
+  onSubmit,
+}: TeamMemberFormProps) => {
+  const [messageApi, contextHolder] = message.useMessage();
+  const { upsertTeam } = useTeamStore();
+  const [form] = Form.useForm();
+  const [activeSection, setActiveSection] = useState<MenuKey>("basic");
+  const [skills, setSkills] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState("");
+  const [scheduleBreak, setScheduleBreak] = useState(false);
+
+  const onFinish = async (values: any) => {
+    console.log("Form submitted (raw)", values);
+
+    const transformedValues = transformFormToApi(
+      values,
+      skills,
+      scheduleBreak,
+      initialData
+    );
+
+    console.log("Form submitted (transformed)", transformedValues);
+
+    try {
+      if (initialData?.id) {
+        const updatedTeam = await updateTeam(transformedValues);
+        upsertTeam(updatedTeam, updatedTeam.id);
+        messageApi.success("Team member updated successfully");
+        onSubmit?.();
+      } else {
+        const newTeam = await createTeam(transformedValues);
+        upsertTeam(newTeam);
+        messageApi.success("Team member created successfully");
+        onSubmit?.();
+      }
+    } catch (e) {
+      const error = e as Error;
+      console.error(error.message);
+      messageApi.error("Something went wrong");
+    }
+  };
+
+  // Prefill form when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData) {
+      const formValues = transformApiToForm(initialData);
+
+      // Set skills
+      if (initialData.skills && Array.isArray(initialData.skills)) {
+        setSkills(initialData.skills);
+      }
+
+      // Set schedule break flag
+      if (initialData.break_time_start) {
+        setScheduleBreak(true);
+      }
+
+      form.setFieldsValue(formValues);
+    }
+  }, [initialData, form]);
+
+  const handleAddSkill = () => {
+    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
+      setSkills([...skills, skillInput.trim()]);
+      setSkillInput("");
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    setSkills(skills.filter((skill) => skill !== skillToRemove));
+  };
+
+  return (
+    <Flex style={{ height: "100%", overflow: "hidden" }}>
+      {contextHolder}
+
+      {/* Left Sidebar Menu */}
+      <div
+        style={{
+          width: "200px",
+          borderRight: "1px solid #f0f0f0",
+          paddingRight: "12px",
+          paddingTop: "8px",
+        }}
+      >
+        <Menu
+          mode="inline"
+          selectedKeys={[activeSection]}
+          onClick={({ key }) => setActiveSection(key as MenuKey)}
+          items={MENU_ITEMS}
+          style={{
+            border: "none",
+            fontSize: "14px",
+          }}
+        />
+      </div>
+
+      {/* Right Content Area */}
+      <Flex
+        vertical
+        style={{ flex: 1, overflow: "hidden", paddingLeft: "24px" }}
+      >
+        {/* Scrollable Form Area */}
+        <Flex
+          vertical
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            overflowX: "hidden",
+            paddingRight: "8px",
+          }}
+          className="custom-scrollbar"
+        >
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            requiredMark={false}
+            initialValues={INITIAL_FORM_VALUES}
+          >
+            {/* Render all sections but hide inactive ones */}
+            <div
+              style={{ display: activeSection === "basic" ? "block" : "none" }}
+            >
+              <BasicInformation
+                form={form}
+                scheduleBreak={scheduleBreak}
+                onScheduleBreakChange={setScheduleBreak}
+              />
+            </div>
+
+            <div
+              style={{ display: activeSection === "skills" ? "block" : "none" }}
+            >
+              <Skills
+                skills={skills}
+                skillInput={skillInput}
+                onSkillInputChange={setSkillInput}
+                onAddSkill={handleAddSkill}
+                onRemoveSkill={handleRemoveSkill}
+              />
+            </div>
+
+            <div
+              style={{ display: activeSection === "cost" ? "block" : "none" }}
+            >
+              <Cost />
+            </div>
+          </Form>
+        </Flex>
+
+        {/* Fixed Button at Bottom */}
+        <Flex style={{ paddingTop: "12px" }}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            block
+            icon={<PlusCircleOutlined />}
+            onClick={() => form.submit()}
+          >
+            {initialData ? "Update" : "Add Contact"}
+          </Button>
+        </Flex>
+      </Flex>
+    </Flex>
+  );
+};
+
+export default TeamMemberForm;

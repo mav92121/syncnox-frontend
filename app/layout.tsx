@@ -6,7 +6,7 @@ import { SessionProvider } from "next-auth/react";
 import Script from "next/script";
 import theme from "@/config/theme.config";
 import "./globals.css";
-import AppLayout from "../components/AppLayout";
+import AppLayout from "../components/Layout/AppLayout";
 
 const inter = Inter({
   variable: "--font-inter",

@@ -80,6 +80,10 @@ const theme: ThemeConfig = {
       colorSuccess: "#003220",
       fontSize: 12,
     },
+    Menu: {
+      itemSelectedBg: "#003220",
+      itemSelectedColor: "#ffffff",
+    },
   },
 };
 
