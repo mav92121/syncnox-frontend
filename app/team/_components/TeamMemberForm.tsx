@@ -9,7 +9,6 @@ import {
   TeamMemberFormProps,
 } from "./teamMemberForm.types";
 import { transformFormToApi, transformApiToForm } from "./teamMemberForm.utils";
-import { createTeam, updateTeam } from "@/apis/team.api";
 import { useTeamStore } from "@/zustand/team.store";
 import BasicInformation from "./BasicInformation";
 import Skills from "./Skills";
@@ -20,7 +19,7 @@ const TeamMemberForm = ({
   onSubmit,
 }: TeamMemberFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
-  const { upsertTeam } = useTeamStore();
+  const { createTeamAction, updateTeamAction } = useTeamStore();
   const [form] = Form.useForm();
   const [activeSection, setActiveSection] = useState<MenuKey>("basic");
   const [skills, setSkills] = useState<string[]>([]);
@@ -53,13 +52,11 @@ const TeamMemberForm = ({
 
     try {
       if (initialData?.id) {
-        const updatedTeam = await updateTeam(transformedValues);
-        upsertTeam(updatedTeam, updatedTeam.id);
+        await updateTeamAction(transformedValues);
         messageApi.success("Team member updated successfully");
         onSubmit?.();
       } else {
-        const newTeam = await createTeam(transformedValues);
-        upsertTeam(newTeam);
+        await createTeamAction(transformedValues);
         messageApi.success("Team member created successfully");
         onSubmit?.();
       }

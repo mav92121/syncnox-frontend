@@ -31,7 +31,6 @@ import {
   validateJobDuration,
 } from "./jobs.validation";
 import { useJobsStore } from "@/zustand/jobs.store";
-import { createJob, updateJob } from "@/apis/jobs.api";
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -40,7 +39,7 @@ interface JobFormProps {
 
 const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
-  const { upsertJob } = useJobsStore();
+  const { isLoading, createJobAction, updateJobAction } = useJobsStore();
   const [form] = Form.useForm();
 
   const onFinish = async (values: any) => {
@@ -81,13 +80,11 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
 
     try {
       if (initialData?.id) {
-        const newJob = await updateJob(transformedValues);
-        upsertJob(newJob, newJob.id);
+        await updateJobAction(transformedValues);
         messageApi.success("Job updated successfully");
         onSubmit?.();
       } else {
-        const newJob = await createJob(transformedValues);
-        upsertJob(newJob);
+        await createJobAction(transformedValues);
         messageApi.success("Job created successfully");
         onSubmit?.();
       }
@@ -412,6 +409,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
         <Button
           type="primary"
           htmlType="submit"
+          loading={isLoading}
           block
           icon={<PlusCircleOutlined />}
           onClick={() => form.submit()}

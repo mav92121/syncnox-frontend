@@ -5,7 +5,6 @@ import { useTeamStore } from "@/zustand/team.store";
 import { ColDef } from "ag-grid-community";
 import { Typography, Drawer, Flex, Button } from "antd";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
-import { deleteTeam } from "@/apis/team.api";
 import TeamMemberForm from "./TeamMemberForm";
 import AddTeamMemberModal from "./AddTeamMemberModal";
 import dayjs from "dayjs";
@@ -15,7 +14,7 @@ import { statusStyleMap } from "./teamMemberForm.utils";
 const { Title } = Typography;
 
 const TeamList = () => {
-  const { isLoading, teams, deleteTeam: deleteTeamStore } = useTeamStore();
+  const { isLoading, teams, deleteTeamAction } = useTeamStore();
   const [editTeamData, setEditTeamData] = useState<Team | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   console.log("teams -> ", teams);
@@ -113,8 +112,7 @@ const TeamList = () => {
     },
     createActionsColumn<Team>({
       onEdit: (team) => setEditTeamData(team),
-      onDelete: (teamId) => deleteTeamStore(teamId),
-      deleteApi: deleteTeam,
+      onDelete: deleteTeamAction,
       entityName: "Team Member",
     }),
   ];

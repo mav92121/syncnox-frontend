@@ -15,20 +15,14 @@ import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { ColDef } from "ag-grid-community";
-import { Button, Typography, Dropdown, message, Modal, Drawer } from "antd";
+import { Button, Typography, Drawer, Flex } from "antd";
 import { EllipsisVertical, GripHorizontal } from "lucide-react";
-import { deleteJob } from "@/apis/jobs.api";
 import JobForm from "@/components/Jobs/JobForm";
 
 const { Title } = Typography;
 
 const Recents = () => {
-  const {
-    draftJobs,
-    deleteJob: deleteJobStore,
-    isLoading,
-    error,
-  } = useJobsStore();
+  const { draftJobs, deleteJobAction, isLoading, error } = useJobsStore();
   const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapCenter, setMapCenter] = useState<{
@@ -176,8 +170,7 @@ const Recents = () => {
     },
     createActionsColumn<Job>({
       onEdit: (job) => setEditJobData(job),
-      onDelete: (jobId) => deleteJobStore(jobId),
-      deleteApi: deleteJob,
+      onDelete: deleteJobAction,
       entityName: "Job",
     }),
   ];
@@ -213,9 +206,16 @@ const Recents = () => {
         {/* Jobs Section Panel */}
         <Panel defaultSize={60} minSize={5}>
           <div className="flex flex-col h-full">
-            <Title level={4} className="m-0 mb-2 pt-2">
-              Jobs
-            </Title>
+            <Flex justify="space-between" align="center">
+              <Title level={4} className="m-0 mb-2 pt-2">
+                Jobs
+              </Title>
+              <Link href="/plan" onClick={() => setCurrentTab("plan")}>
+                <Button type="primary" block size="small">
+                  Add More Jobs
+                </Button>
+              </Link>
+            </Flex>
 
             {/* Table with explicit height */}
             <div className="flex-1 mb-2">
@@ -243,13 +243,13 @@ const Recents = () => {
             </Drawer>
 
             {/* Add Job Button */}
-            <div>
+            {/* <div>
               <Link href="/plan" onClick={() => setCurrentTab("plan")}>
                 <Button type="primary" block size="middle">
                   Add More Jobs
                 </Button>
               </Link>
-            </div>
+            </div> */}
           </div>
         </Panel>
       </PanelGroup>
