@@ -10,6 +10,7 @@ import AddTeamMemberModal from "./AddTeamMemberModal";
 import dayjs from "dayjs";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 import { statusStyleMap } from "./teamMemberForm.utils";
+import { formatTimeWindow } from "@/utils/app.utils";
 
 const { Title } = Typography;
 
@@ -69,13 +70,19 @@ const TeamList = () => {
     {
       headerName: "Work Timings",
       valueGetter: (params) =>
-        `${params.data?.work_start_time} - ${params.data?.work_end_time}`,
+        formatTimeWindow(
+          params.data?.work_start_time,
+          params.data?.work_end_time
+        ),
       width: 150,
     },
     {
       headerName: "Break",
       valueGetter: (params) =>
-        `${params.data?.break_time_start} - ${params.data?.break_time_end}`,
+        formatTimeWindow(
+          params.data?.break_time_start,
+          params.data?.break_time_end
+        ),
       width: 150,
     },
     {

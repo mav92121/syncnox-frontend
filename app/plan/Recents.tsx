@@ -3,20 +3,13 @@ import Link from "next/link";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import BaseTable from "@/components/Table/BaseTable";
 import GoogleMaps from "@/components/GoogleMaps";
-import StatusBadge from "@/components/Jobs/StatusBanner";
 import { Job } from "@/types/job.type";
-import {
-  formatTimeWindow,
-  paymentStyleMap,
-  priorityStyleMap,
-  statusStyleMap,
-} from "@/utils/jobs.utils";
+import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
-import { ColDef } from "ag-grid-community";
 import { Button, Typography, Drawer, Flex } from "antd";
-import { EllipsisVertical, GripHorizontal } from "lucide-react";
+import { GripHorizontal } from "lucide-react";
 import JobForm from "@/components/Jobs/JobForm";
 
 const { Title } = Typography;
@@ -42,54 +35,9 @@ const Recents = () => {
       description: job.address_formatted || "No address",
     }));
 
-  const columns: ColDef<Job>[] = [
-    {
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 50,
-      pinned: "left",
-      lockPosition: true,
-      filter: false,
-      resizable: false,
-      sortable: false,
-    },
-    {
-      field: "id",
-      headerName: "ID",
-      width: 80,
-      minWidth: 80,
-      pinned: null,
-    },
-    {
-      field: "priority_level",
-      headerName: "Priority",
-      cellRenderer: (params: any) => (
-        <StatusBadge value={params.value} styleMap={priorityStyleMap} />
-      ),
-      width: 130,
-      minWidth: 130,
-    },
-    {
-      field: "first_name",
-      headerName: "First Name",
-      width: 150,
-    },
-    {
-      field: "last_name",
-      headerName: "Last Name",
-      width: 150,
-    },
-    {
-      field: "address_formatted",
-      headerName: "Address",
-      width: 280,
-    },
-    {
-      headerName: "View",
-      width: 120,
-      sortable: false,
-      filter: false,
-      cellRenderer: (params: any) => (
+  const columns = [
+    ...createJobTableColumns({
+      viewColumnRenderer: (params: any) => (
         <Button
           type="link"
           size="small"
@@ -105,69 +53,7 @@ const Recents = () => {
           Map View
         </Button>
       ),
-    },
-    {
-      field: "business_name",
-      headerName: "Business Name",
-    },
-    {
-      field: "status",
-      cellRenderer: (params: any) => (
-        <StatusBadge value={params.value} styleMap={statusStyleMap} />
-      ),
-      width: 130,
-      minWidth: 130,
-    },
-    {
-      field: "phone_number",
-      headerName: "Phone",
-      width: 150,
-    },
-    {
-      field: "service_duration",
-      headerName: "Duration (mins)",
-      width: 150,
-    },
-    {
-      field: "scheduled_date",
-      headerName: "Scheduled Date",
-      width: 150,
-    },
-    {
-      field: "time_window_start",
-      headerName: "Time Window Start",
-      width: 200,
-      valueGetter: (params: any) =>
-        formatTimeWindow(params.data.time_window_start),
-    },
-    {
-      field: "time_window_end",
-      headerName: "Time Window End",
-      width: 200,
-      valueGetter: (params: any) =>
-        formatTimeWindow(params.data.time_window_end),
-    },
-    {
-      field: "customer_preferences",
-      headerName: "Customer Preferences",
-    },
-    {
-      field: "additional_notes",
-      headerName: "Notes",
-      width: 150,
-    },
-    {
-      headerName: "Team",
-    },
-    {
-      field: "payment_status",
-      headerName: "Payment Status",
-      width: 150,
-      minWidth: 150,
-      cellRenderer: (params: any) => (
-        <StatusBadge value={params.value} styleMap={paymentStyleMap} />
-      ),
-    },
+    }),
     createActionsColumn<Job>({
       onEdit: (job) => setEditJobData(job),
       onDelete: deleteJobAction,
