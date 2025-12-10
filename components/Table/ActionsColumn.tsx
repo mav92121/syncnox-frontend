@@ -9,14 +9,16 @@ export interface ActionsColumnConfig<T> {
   onEdit: (data: T) => void;
 
   /**
-   * Callback after successful deletion
+   * Callback that handles the delete operation.
+   * Can be a unified action (handles API + state) or just a state update callback.
    */
-  onDelete: (id: number) => void;
+  onDelete: (id: number) => void | Promise<void>;
 
   /**
-   * API function to delete the entity
+   * (Optional) API function to delete the entity.
+   * If not provided, onDelete is assumed to handle both API call and state update.
    */
-  deleteApi: (id: number) => Promise<void>;
+  deleteApi?: (id: number) => Promise<void>;
 
   /**
    * Entity name for confirmation modal (e.g., "Job", "Team", "User")
@@ -88,9 +90,16 @@ export const createActionsColumn = <T extends { id: number }>(
               cancelText: "Cancel",
               onOk: async () => {
                 try {
-                  await deleteApi(data.id);
-                  onDelete(data.id);
-                  message.success(`${entityName} deleted successfully`);
+                  // If unified action (deleteApi not provided), call onDelete which handles everything
+                  if (!deleteApi) {
+                    await onDelete(data.id);
+                    message.success(`${entityName} deleted successfully`);
+                  } else {
+                    // Legacy pattern: call API then update state
+                    await deleteApi(data.id);
+                    onDelete(data.id);
+                    message.success(`${entityName} deleted successfully`);
+                  }
                 } catch (error) {
                   console.error(
                     `Failed to delete ${entityName.toLowerCase()}`,

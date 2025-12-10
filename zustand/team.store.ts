@@ -2,7 +2,12 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { Team } from "@/types/team.type";
-import { fetchTeams } from "@/apis/team.api";
+import {
+  fetchTeams,
+  createTeam,
+  updateTeam,
+  deleteTeam as deleteTeamApi,
+} from "@/apis/team.api";
 
 interface TeamStore {
   teams: Team[];
@@ -11,8 +16,9 @@ interface TeamStore {
   error: string | null;
   fetchTeams: () => Promise<void>;
   initializeTeams: () => Promise<void>;
-  deleteTeam: (teamId: number) => void;
-  upsertTeam: (team: Team, existingId?: number) => void;
+  createTeamAction: (team: Team) => Promise<Team>; // Create team with API call + state update
+  updateTeamAction: (team: Team) => Promise<Team>; // Update team with API call + state update
+  deleteTeamAction: (teamId: number) => Promise<void>; // Delete team with API call + state update
   hasFetched: boolean;
 }
 
@@ -39,25 +45,86 @@ export const useTeamStore = create(
         }
       },
 
-      deleteTeam: (teamId: number) => {
+      // Create team: API call + state update
+      createTeamAction: async (team: Team) => {
         set((state) => {
-          state.teams = state.teams.filter((team) => team.id !== teamId);
+          state.isLoading = true;
+          state.error = null;
         });
+
+        try {
+          const newTeam = await createTeam(team);
+
+          // Update state with the new team
+          set((state) => {
+            state.teams = [newTeam, ...state.teams];
+            state.isLoading = false;
+          });
+
+          return newTeam;
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to create team";
+          });
+          throw error; // Re-throw so component can handle the error
+        }
       },
 
-      upsertTeam: (team: Team, existingId?: number) => {
+      // Update team: API call + state update
+      updateTeamAction: async (team: Team) => {
         set((state) => {
-          if (existingId) {
-            // Update existing team
-            const index = state.teams.findIndex((t) => t.id === existingId);
-            if (index !== -1) {
-              state.teams[index] = team;
-            }
-          } else {
-            // Add new team
-            state.teams.push(team);
-          }
+          state.isLoading = true;
+          state.error = null;
         });
+
+        try {
+          const updatedTeam = await updateTeam(team);
+
+          // Update state with the updated team
+          set((state) => {
+            const index = state.teams.findIndex((t) => t.id === updatedTeam.id);
+            if (index !== -1) {
+              state.teams[index] = updatedTeam;
+            }
+            state.isLoading = false;
+          });
+
+          return updatedTeam;
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to update team";
+          });
+          throw error; // Re-throw so component can handle the error
+        }
+      },
+
+      // Delete team: API call + state update
+      deleteTeamAction: async (teamId: number) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          await deleteTeamApi(teamId);
+
+          // Update state by removing the deleted team
+          set((state) => {
+            state.teams = state.teams.filter((team) => team.id !== teamId);
+            state.isLoading = false;
+          });
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to delete team";
+          });
+          throw error; // Re-throw so component can handle the error
+        }
       },
 
       initializeTeams: async () => {

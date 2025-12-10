@@ -1,7 +1,7 @@
 export const formatTimeWindow = (timeWindow: string | null) => {
   if (!timeWindow) return "";
-  const [hours, minutes] = timeWindow.split("T")[1].split(":");
-  return `${hours}:${minutes}`;
+  const arr = timeWindow.split(":");
+  return `${arr[0]} - ${arr[1]}`;
 };
 
 export const priorityStyleMap: Record<string, string> = {

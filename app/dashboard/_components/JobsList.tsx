@@ -15,13 +15,12 @@ import {
   paymentStyleMap,
 } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
-import { deleteJob } from "@/apis/jobs.api";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 
 const { Title } = Typography;
 
 export default function JobsList() {
-  const { jobs, isLoading, error, deleteJob: deleteJobStore } = useJobsStore();
+  const { jobs, isLoading, error, deleteJobAction } = useJobsStore();
   const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
 
@@ -139,8 +138,7 @@ export default function JobsList() {
     },
     createActionsColumn<Job>({
       onEdit: (job) => setEditJobData(job),
-      onDelete: (jobId) => deleteJobStore(jobId),
-      deleteApi: deleteJob,
+      onDelete: deleteJobAction,
       entityName: "Job",
     }),
   ];
