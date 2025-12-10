@@ -112,3 +112,25 @@ body {
 .ant-btn-color-default:hover {
   color: #003220 !important;
 }
+.ant-drawer-body,
+.ant-modal-container {
+  padding: 12px !important;
+}
+
+/* Compact Menu Items - Match Button Height */
+.ant-menu-inline .ant-menu-item {
+  height: 32px !important;
+  line-height: 32px !important;
+  margin-top: 0px !important;
+  margin-bottom: 12px !important;
+  padding: 0 12px !important;
+}
+
+.ant-menu-inline .ant-menu-item-selected {
+  background-color: var(--primary) !important;
+  color: white !important;
+}
+
+.ant-menu-inline .ant-menu-item:hover:not(.ant-menu-item-selected) {
+  background-color: var(--secondary) !important;
+}
