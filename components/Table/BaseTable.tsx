@@ -174,6 +174,7 @@ export default function BaseTable<TData = any>({
           rowData={rowData}
           defaultColDef={defaultColumnDef}
           rowSelection={rowSelection}
+          rowHeight={32}
           theme={theme || defaultTheme}
           pagination={pagination}
           paginationPageSize={paginationPageSize}
