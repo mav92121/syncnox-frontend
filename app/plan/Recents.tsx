@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import BaseTable from "@/components/Table/BaseTable";
 import GoogleMaps from "@/components/GoogleMaps";
+import MarkerTooltip from "@/components/MarkerTooltip";
 import { Job } from "@/types/job.type";
 import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
@@ -22,17 +23,26 @@ const Recents = () => {
     lat: number;
     lng: number;
   } | null>(null);
+  const [selectedMarkerId, setSelectedMarkerId] = useState<
+    number | string | null
+  >(null);
 
   // Transform draftJobs into markers for GoogleMaps
   const markers = draftJobs
     .filter((job) => job.location?.lat && job.location?.lng)
-    .map((job) => ({
+    .map((job, index) => ({
       id: job.id,
       position: {
         lat: job.location.lat,
         lng: job.location.lng,
       },
       description: job.address_formatted || "No address",
+      duration: job.service_duration,
+      timeWindowStart: job.time_window_start,
+      timeWindowEnd: job.time_window_end,
+      jobType: job.job_type,
+      jobData: job, // Store full job data for edit functionality
+      sequenceNumber: index + 1, // Sequence number for marker label (1, 2, 3...)
     }));
 
   const columns = [
@@ -47,6 +57,8 @@ const Recents = () => {
                 lat: params.data.location.lat,
                 lng: params.data.location.lng,
               });
+              // Auto-open tooltip when Map View is clicked
+              setSelectedMarkerId(params.data.id);
             }
           }}
         >
@@ -75,6 +87,18 @@ const Recents = () => {
               markers={markers}
               center={mapCenter || undefined}
               zoom={mapCenter ? 17 : undefined}
+              selectedMarkerId={selectedMarkerId}
+              onMarkerSelect={setSelectedMarkerId}
+              InfoWindowModal={({ marker }) => (
+                <MarkerTooltip
+                  jobType={marker.jobType}
+                  address={marker.description}
+                  duration={marker.duration}
+                  timeWindowStart={marker.timeWindowStart}
+                  timeWindowEnd={marker.timeWindowEnd}
+                  onEdit={() => setEditJobData(marker.jobData ?? null)}
+                />
+              )}
             />
           </div>
         </Panel>
@@ -83,7 +107,7 @@ const Recents = () => {
         <PanelResizeHandle className="relative h-1 bg-gray-300 hover:bg-blue-500 transition-colors cursor-ns-resize flex items-center justify-center group">
           <div className="absolute flex items-center justify-center">
             <GripHorizontal
-              size={30}
+              size={20}
               className="text-gray-500 group-hover:text-black transition-colors"
             />
           </div>
