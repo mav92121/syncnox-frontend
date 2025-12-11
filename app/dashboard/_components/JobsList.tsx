@@ -107,7 +107,8 @@ export default function JobsList() {
         onCancel={() => setMapViewJob(null)}
         footer={null}
         width={800}
-        styles={{ body: { height: "600px", padding: 0 } }}
+        centered
+        styles={{ body: { height: "500px", padding: 0 } }}
       >
         {mapViewJob && (
           <GoogleMaps
