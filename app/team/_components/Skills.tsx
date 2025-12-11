@@ -55,8 +55,8 @@ const Skills = ({
             {skills.map((skill) => (
               <Tag
                 style={{
-                  padding: "5px",
-                  gap: "5px",
+                  padding: "8px 20px",
+                  gap: "8px",
                   display: "flex",
                   alignItems: "center",
                 }}

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -9,6 +9,8 @@ import {
 } from "@react-google-maps/api";
 import { Button, Dropdown, Radio, Spin } from "antd";
 import { Layers } from "lucide-react";
+import { Job, JobType } from "@/types/job.type";
+import { createCustomMarkerIcon } from "@/utils/customMapMarker";
 
 type MapType = "roadmap" | "satellite" | "hybrid" | "terrain";
 
@@ -38,6 +40,12 @@ interface MarkerData {
   position: google.maps.LatLngLiteral;
   title?: string;
   description?: string;
+  duration?: number;
+  timeWindowStart?: string;
+  timeWindowEnd?: string;
+  jobType?: JobType;
+  jobData?: Job;
+  sequenceNumber?: number; // Optional sequence number for marker label
 }
 
 interface PolylineData {
@@ -51,6 +59,8 @@ interface GoogleMapsProps {
   markers?: MarkerData[];
   polylines?: PolylineData[];
   InfoWindowModal?: React.FC<{ marker: MarkerData }>;
+  selectedMarkerId?: string | number | null;
+  onMarkerSelect?: (markerId: string | number | null) => void;
   showMapTypeControl?: boolean;
   showZoomControl?: boolean;
 }
@@ -61,6 +71,8 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   markers = [],
   polylines = [],
   InfoWindowModal,
+  selectedMarkerId,
+  onMarkerSelect,
   showMapTypeControl = true,
   showZoomControl = true,
 }) => {
@@ -89,6 +101,14 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   const handleMapTypeChange = (type: MapType) => {
     setMapTypeId(type);
   };
+
+  // Sync selected marker with external selectedMarkerId prop
+  useEffect(() => {
+    if (selectedMarkerId !== undefined) {
+      const marker = markers.find((m) => m.id === selectedMarkerId);
+      setSelectedMarker(marker || null);
+    }
+  }, [selectedMarkerId, markers]);
 
   if (!isLoaded) {
     return <></>;
@@ -152,14 +172,33 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
         </Dropdown>
       )}
       {/* Child components, such as markers, info windows, etc. */}
-      {markers.map((marker) => (
-        <Marker
-          key={marker.id}
-          position={marker.position}
-          title={marker.title}
-          onClick={() => setSelectedMarker(marker)}
-        />
-      ))}
+      {markers.map((marker) => {
+        // Determine the number to display on the marker
+        const markerNumber =
+          marker.sequenceNumber ?? marker.jobData?.id ?? marker.id;
+
+        // Get job status for color
+        const status = marker.jobData?.status || "draft";
+
+        // Check if this marker is selected
+        const isSelected = selectedMarker?.id === marker.id;
+
+        // Create custom icon
+        const icon = createCustomMarkerIcon(markerNumber, status, isSelected);
+
+        return (
+          <Marker
+            key={marker.id}
+            position={marker.position}
+            title={marker.title}
+            icon={icon}
+            onClick={() => {
+              setSelectedMarker(marker);
+              onMarkerSelect?.(marker.id);
+            }}
+          />
+        );
+      })}
 
       {polylines.map((line, index) => (
         <Polyline key={index} path={line.path} options={line.options} />
@@ -168,23 +207,18 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
       {selectedMarker && (
         <InfoWindow
           position={selectedMarker.position}
-          onCloseClick={() => setSelectedMarker(null)}
+          onCloseClick={() => {
+            setSelectedMarker(null);
+            onMarkerSelect?.(null);
+          }}
+          options={{
+            pixelOffset: new window.google.maps.Size(0, -30),
+          }}
         >
           {InfoWindowModal ? (
             <InfoWindowModal marker={selectedMarker} />
           ) : (
-            <div
-              style={{
-                minWidth: "200px",
-                minHeight: "100px",
-                resize: "both",
-                overflow: "auto",
-                padding: "10px",
-              }}
-            >
-              <h3 className="font-bold text-lg">
-                {selectedMarker.title || "Marker Details"}
-              </h3>
+            <div style={{ padding: "10px" }}>
               <p>{selectedMarker.description || "No description available."}</p>
             </div>
           )}
