@@ -17,6 +17,7 @@ export interface Location {
 export interface Job {
   id: number;
   tenant_id: number;
+  assigned_to?: number;
   status: JobStatus;
   scheduled_date: string;
   job_type: JobType;
