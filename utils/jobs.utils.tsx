@@ -2,7 +2,22 @@ import { ColDef } from "ag-grid-community";
 import { Job } from "@/types/job.type";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 import { formatTimeWindow } from "./app.utils";
+import { COUNTRY_CODES } from "@/constants/country";
 
+export const filterCountryOptions = (input: string, option: any): boolean => {
+  const searchText = input.toLowerCase();
+  const country = COUNTRY_CODES.find(
+    (c) => `${c.flag} ${c.code}` === option?.value
+  );
+  if (!country) return false;
+
+  // Search in country name, code, and country abbreviation
+  return (
+    country.name.toLowerCase().includes(searchText) ||
+    country.code.toLowerCase().includes(searchText) ||
+    country.country.toLowerCase().includes(searchText)
+  );
+};
 
 export const priorityStyleMap: Record<string, string> = {
   low: "bg-green-100 text-green-700 border border-green-200",
@@ -120,7 +135,10 @@ export const createJobTableColumns = (options?: {
     {
       headerName: "Time Window",
       valueGetter: (params: any) =>
-        formatTimeWindow(params.data.time_window_start, params.data.time_window_end),
+        formatTimeWindow(
+          params.data.time_window_start,
+          params.data.time_window_end
+        ),
       width: 200,
     },
     {

@@ -54,16 +54,18 @@ const TeamMemberForm = ({
       if (initialData?.id) {
         await updateTeamAction(transformedValues);
         messageApi.success("Team member updated successfully");
+        form.resetFields();
         onSubmit?.();
       } else {
         await createTeamAction(transformedValues);
         messageApi.success("Team member created successfully");
+        form.resetFields();
         onSubmit?.();
       }
-    } catch (e) {
-      const error = e as Error;
-      console.error(error.message);
-      messageApi.error("Something went wrong");
+    } catch (e: any) {
+      const error = e;
+      console.error(error?.detail);
+      messageApi.error(error?.detail ?? "Something went wrong");
     }
   };
 

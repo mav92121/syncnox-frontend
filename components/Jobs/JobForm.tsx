@@ -31,6 +31,7 @@ import {
   validateJobDuration,
 } from "./jobs.validation";
 import { useJobsStore } from "@/zustand/jobs.store";
+import { filterCountryOptions } from "@/utils/jobs.utils";
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -82,16 +83,18 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
       if (initialData?.id) {
         await updateJobAction(transformedValues);
         messageApi.success("Job updated successfully");
+        form.resetFields();
         onSubmit?.();
       } else {
         await createJobAction(transformedValues);
         messageApi.success("Job created successfully");
+        form.resetFields();
         onSubmit?.();
       }
-    } catch (e) {
-      const error = e as Error;
-      console.error(error.message);
-      messageApi.error("Something went wrong");
+    } catch (e: any) {
+      const error = e;
+      console.error(error?.detail);
+      messageApi.error(error?.detail ?? "Something went wrong");
     }
   };
 
@@ -251,12 +254,12 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
                 >
                   <Select
                     showSearch
-                    optionFilterProp="children"
                     className="w-full"
+                    filterOption={filterCountryOptions}
                   >
                     {COUNTRY_CODES.map((item) => (
                       <Select.Option
-                        key={item.code}
+                        key={`${item.country}-${item.code}`}
                         value={`${item.flag} ${item.code}`}
                       >
                         {item.flag} {item.code} &nbsp; {item.name}
