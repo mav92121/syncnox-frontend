@@ -20,6 +20,7 @@ interface TeamStore {
   updateTeamAction: (team: Team) => Promise<Team>; // Update team with API call + state update
   deleteTeamAction: (teamId: number) => Promise<void>; // Delete team with API call + state update
   hasFetched: boolean;
+  getTeamsMap: () => Record<number, string>;
 }
 
 export const useTeamStore = create(
@@ -131,6 +132,14 @@ export const useTeamStore = create(
         const { hasFetched, isLoading } = get();
         if (hasFetched || isLoading) return;
         await get().fetchTeams();
+      },
+
+      getTeamsMap: () => {
+        const { teams } = get();
+        return teams.reduce((acc, team) => {
+          acc[team.id] = team.name;
+          return acc;
+        }, {} as Record<number, string>);
       },
     }))
   )

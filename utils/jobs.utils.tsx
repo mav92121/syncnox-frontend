@@ -47,6 +47,7 @@ export const statusStyleMap: Record<string, string> = {
  */
 export const createJobTableColumns = (options?: {
   viewColumnRenderer?: (params: any) => any;
+  teamsMap?: Record<number, string>;
 }): ColDef<Job>[] => {
   return [
     {
@@ -152,6 +153,11 @@ export const createJobTableColumns = (options?: {
     },
     {
       headerName: "Team",
+      field: "assigned_to",
+      valueFormatter: (params: any) => {
+        if (!params.value) return "";
+        return options?.teamsMap?.[params.value] || "Unknown";
+      },
     },
     {
       field: "payment_status",

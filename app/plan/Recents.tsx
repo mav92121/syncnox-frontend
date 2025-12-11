@@ -9,6 +9,7 @@ import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
+import { useTeamStore } from "@/zustand/team.store";
 import { Button, Typography, Drawer, Flex } from "antd";
 import { GripHorizontal } from "lucide-react";
 import JobForm from "@/components/Jobs/JobForm";
@@ -17,6 +18,7 @@ const { Title } = Typography;
 
 const Recents = () => {
   const { draftJobs, deleteJobAction, isLoading, error } = useJobsStore();
+  const { getTeamsMap } = useTeamStore();
   const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapCenter, setMapCenter] = useState<{
@@ -65,6 +67,7 @@ const Recents = () => {
           Map View
         </Button>
       ),
+      teamsMap: getTeamsMap(),
     }),
     createActionsColumn<Job>({
       onEdit: (job) => setEditJobData(job),
@@ -117,14 +120,19 @@ const Recents = () => {
         <Panel defaultSize={60} minSize={5}>
           <div className="flex flex-col h-full">
             <Flex justify="space-between" align="center">
-              <Title level={4} className="m-0 mb-2 pt-2">
+              <Title level={5} className="m-0 mb-2 pt-2">
                 Jobs
               </Title>
-              <Link href="/plan" onClick={() => setCurrentTab("plan")}>
+              <div className="flex gap-2">
+                <Link href="/plan" onClick={() => setCurrentTab("plan")}>
+                  <Button block size="small">
+                    Add More Jobs
+                  </Button>
+                </Link>
                 <Button type="primary" block size="small">
-                  Add More Jobs
+                  Create New Route
                 </Button>
-              </Link>
+              </div>
             </Flex>
 
             {/* Table with explicit height */}
