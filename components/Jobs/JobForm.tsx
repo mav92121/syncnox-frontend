@@ -32,6 +32,7 @@ import {
 } from "./jobs.validation";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { filterCountryOptions } from "@/utils/jobs.utils";
+import { useTeamStore } from "@/zustand/team.store";
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -41,6 +42,9 @@ interface JobFormProps {
 const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const { isLoading, createJobAction, updateJobAction } = useJobsStore();
+  const { teams } = useTeamStore();
+  console.log("team -> ", teams);
+
   const [form] = Form.useForm();
 
   const onFinish = async (values: any) => {
@@ -196,10 +200,13 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Assign Drivers" name="drivers">
-                <Select placeholder="Select">
-                  <Select.Option value="rahul">Rahul +1</Select.Option>
-                  {/* Add more options as needed */}
+              <Form.Item label="Assign Drivers" name="assigned_to">
+                <Select placeholder="Select" allowClear>
+                  {teams.map((team) => (
+                    <Select.Option key={team.id} value={team.id}>
+                      {team.name}
+                    </Select.Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
