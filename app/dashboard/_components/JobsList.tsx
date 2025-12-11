@@ -3,6 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Typography, Button, Drawer, Modal } from "antd";
 import { useJobsStore } from "@/zustand/jobs.store";
+import { useTeamStore } from "@/zustand/team.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { Job } from "@/types/job.type";
 import BaseTable from "@/components/Table/BaseTable";
@@ -16,6 +17,7 @@ const { Title } = Typography;
 
 export default function JobsList() {
   const { jobs, isLoading, error, deleteJobAction } = useJobsStore();
+  const { getTeamsMap } = useTeamStore();
   const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapViewJob, setMapViewJob] = useState<Job | null>(null);
@@ -53,6 +55,7 @@ export default function JobsList() {
           Map View
         </Button>
       ),
+      teamsMap: getTeamsMap(),
     }),
     createActionsColumn<Job>({
       onEdit: (job) => setEditJobData(job),
@@ -67,7 +70,7 @@ export default function JobsList() {
 
   return (
     <div className="flex flex-col h-full">
-      <Title level={4} className="m-0">
+      <Title level={5} className="m-0">
         Jobs
       </Title>
 
