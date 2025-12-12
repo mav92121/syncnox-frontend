@@ -45,7 +45,8 @@ interface MarkerData {
   timeWindowEnd?: string;
   jobType?: JobType;
   jobData?: Job;
-  sequenceNumber?: number; // Optional sequence number for marker label
+  sequenceNumber?: number;
+  color?: string; // Custom color override
 }
 
 interface PolylineData {
@@ -184,7 +185,12 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
         const isSelected = selectedMarker?.id === marker.id;
 
         // Create custom icon
-        const icon = createCustomMarkerIcon(markerNumber, status, isSelected);
+        const icon = createCustomMarkerIcon(
+          markerNumber,
+          status,
+          isSelected,
+          marker.color
+        );
 
         return (
           <Marker
