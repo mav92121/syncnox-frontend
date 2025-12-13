@@ -4,24 +4,28 @@ import { GripHorizontal } from "lucide-react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Typography, Flex } from "antd";
 import GoogleMaps from "@/components/GoogleMaps";
-import { currentRoute } from "./tempRoute.temp";
 import { decodePolyline } from "@/utils/googleMaps.utils";
 import TimelineView from "./TimelineView";
 import { getRouteColor } from "@/utils/timeline.utils";
+import { Route } from "@/types/routes.type";
 
 const { Title, Text } = Typography;
 
-const OptimizationView = () => {
+interface OptimizationViewProps {
+  route: Route;
+}
+
+const OptimizationView = ({ route }: OptimizationViewProps) => {
   // Decode polyline for the map
   const routePolylines = useMemo(() => {
-    if (!currentRoute?.result?.routes) return [];
+    if (!route?.result?.routes) return [];
 
-    return currentRoute.result.routes.flatMap((route, index) => {
-      if (!route.route_polyline) return [];
+    return route.result.routes.flatMap((routeItem, index) => {
+      if (!routeItem.route_polyline) return [];
       const color = getRouteColor(index);
       return [
         {
-          path: decodePolyline(route.route_polyline),
+          path: decodePolyline(routeItem.route_polyline),
           options: {
             strokeColor: color,
             strokeOpacity: 0.8,
@@ -30,7 +34,7 @@ const OptimizationView = () => {
         },
       ];
     });
-  }, []);
+  }, [route]);
 
   const [center, setCenter] = React.useState<google.maps.LatLngLiteral>({
     lat: 37.7749,
@@ -38,10 +42,10 @@ const OptimizationView = () => {
   });
 
   const markers = useMemo(() => {
-    if (!currentRoute?.result?.routes) return [];
-    return currentRoute.result.routes.flatMap((route, index) => {
+    if (!route?.result?.routes) return [];
+    return route.result.routes.flatMap((routeItem, index) => {
       const color = getRouteColor(index);
-      return route.stops
+      return routeItem.stops
         .filter(
           (stop: any) =>
             typeof stop.latitude === "number" &&
@@ -56,9 +60,17 @@ const OptimizationView = () => {
             color: "white",
             fontWeight: "bold",
           },
+          title: stop.address_formatted || "Unknown location",
+          description: stop.arrival_time
+            ? `ETA: ${new Date(stop.arrival_time).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: true,
+              })}`
+            : undefined,
         }));
     });
-  }, []);
+  }, [route]);
 
   const handleStopClick = (stop: any) => {
     if (stop.latitude && stop.longitude) {
@@ -95,16 +107,16 @@ const OptimizationView = () => {
                 <Flex justify="space-between" align="center">
                   <div className="flex gap-4 items-baseline">
                     <Title level={5} className="m-0">
-                      {currentRoute.route_name}
+                      {route.route_name}
                     </Title>
-                    <Text type="secondary">{currentRoute.scheduled_date}</Text>
+                    <Text type="secondary">{route.scheduled_date}</Text>
                   </div>
                   {/* Legend could go here */}
                 </Flex>
               </div>
               <div className="flex-1 overflow-hidden">
                 <TimelineView
-                  routes={currentRoute.result?.routes || []}
+                  routes={route.result?.routes || []}
                   onStopClick={handleStopClick}
                 />
               </div>

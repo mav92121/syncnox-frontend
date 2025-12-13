@@ -178,6 +178,7 @@ const Recents = () => {
               <CreateRouteModal
                 open={showCreateRouteModal}
                 setOpen={setShowCreateRouteModal}
+                selectedJobIds={selectedJobIds}
               />
             )}
 

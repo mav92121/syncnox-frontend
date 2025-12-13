@@ -8,11 +8,12 @@ type OptimizationStatus =
   | "success";
 
 interface Stop {
-  job_id: number;
+  job_id: number | null;
   stop_type: string;
   arrival_time: string;
-  latitude?: number;
-  longitude?: number;
+  latitude: number;
+  longitude: number;
+  address_formatted: string;
 }
 
 interface Routes {

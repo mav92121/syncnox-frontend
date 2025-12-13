@@ -84,6 +84,9 @@ const theme: ThemeConfig = {
       itemSelectedBg: "#003220",
       itemSelectedColor: "#ffffff",
     },
+    Progress: {
+      colorPrimary: "#003220",
+    },
   },
 };
 
