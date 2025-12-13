@@ -118,24 +118,26 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                     style={{ width: timelineWidth }}
                   >
                     {/* Connection Line */}
-                    <div
-                      className="absolute top-1/2 left-0 h-0.5"
-                      style={{
-                        backgroundColor: routeColor,
-                        opacity: 0.3,
-                        left: getPosition(
-                          route.stops[0].arrival_time,
-                          startTime
-                        ),
-                        width:
-                          getPosition(
-                            route.stops[route.stops.length - 1].arrival_time,
+                    {route.stops?.length > 0 && (
+                      <div
+                        className="absolute top-1/2 left-0 h-0.5"
+                        style={{
+                          backgroundColor: routeColor,
+                          opacity: 0.3,
+                          left: getPosition(
+                            route.stops[0].arrival_time,
                             startTime
-                          ) -
-                          getPosition(route.stops[0].arrival_time, startTime),
-                        transform: "translateY(-50%)",
-                      }}
-                    />
+                          ),
+                          width:
+                            getPosition(
+                              route.stops[route.stops.length - 1].arrival_time,
+                              startTime
+                            ) -
+                            getPosition(route.stops[0].arrival_time, startTime),
+                          transform: "translateY(-50%)",
+                        }}
+                      />
+                    )}
 
                     {/* Stops */}
                     {route.stops.map((stop: any, stopIndex: number) => {
@@ -154,7 +156,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                                     `Job #${stop.job_id}`}
                               </div>
                               <div className="text-xs text-gray-400">
-                                {dayjs(stop.arrival_time).format("HH:mm")}
+                                {dayjs(stop.arrival_time).isValid()
+                                  ? dayjs(stop.arrival_time).format("HH:mm")
+                                  : "--:--"}
                               </div>
                             </div>
                           }

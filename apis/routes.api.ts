@@ -1,8 +1,8 @@
 import apiClient from "@/config/apiClient.config";
-import { Route } from "@/types/routes.type";
+import { AllRoutes, Route } from "@/types/routes.type";
 
-export const fetchRoutes = async (): Promise<Route[]> => {
-  const response = await apiClient.get("optimization/routes");
+export const fetchRoutes = async (): Promise<AllRoutes[]> => {
+  const response = await apiClient.get("routes");
   return response.data;
 };
 

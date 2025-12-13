@@ -7,7 +7,7 @@ type OptimizationStatus =
   | "failed"
   | "success";
 
-interface Stop {
+export interface Stop {
   job_id: number | null;
   stop_type: string;
   arrival_time: string;
@@ -16,7 +16,7 @@ interface Stop {
   address_formatted: string;
 }
 
-interface Routes {
+export interface Routes {
   stops: Stop[];
   vehicle_id: number;
   route_polyline: string;
@@ -50,6 +50,29 @@ export interface Route {
   completed_at: string | null;
   error_message: string | null;
   result: RouteResult;
+  created_at: string;
+  updated_at: string;
+}
+
+interface TeamMember {
+  id: number;
+  name: string;
+  avatar_url: string;
+}
+
+export interface AllRoutes {
+  id: number;
+  optimization_id: number;
+  name: string;
+  status: string;
+  total_distance: number;
+  total_time: number;
+  completed_stops: number;
+  failed_stops: number;
+  attempted_stops: number;
+  rating: number;
+  scheduled_date: string;
+  assigned_team_members: TeamMember[];
   created_at: string;
   updated_at: string;
 }

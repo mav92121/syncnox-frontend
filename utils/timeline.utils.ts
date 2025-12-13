@@ -1,15 +1,16 @@
+import { Routes, Stop } from "@/types/routes.type";
 import dayjs from "dayjs";
 
 export const PIXELS_PER_MINUTE = 4; // Width of 1 minute in pixels
 export const HEADER_HEIGHT = 40;
 export const ROW_HEIGHT = 80;
 
-export const calculateTimeRange = (routes: any[]) => {
+export const calculateTimeRange = (routes: Routes[]) => {
   let minTime: dayjs.Dayjs | null = null;
   let maxTime: dayjs.Dayjs | null = null;
 
   routes.forEach((route) => {
-    route.stops.forEach((stop: any) => {
+    route.stops.forEach((stop: Stop) => {
       const time = dayjs(stop.arrival_time);
       if (!minTime || time.isBefore(minTime)) minTime = time;
       if (!maxTime || time.isAfter(maxTime)) maxTime = time;

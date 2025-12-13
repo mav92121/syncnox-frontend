@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { GripHorizontal } from "lucide-react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Typography, Flex } from "antd";
@@ -36,11 +36,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     });
   }, [route]);
 
-  const [center, setCenter] = React.useState<google.maps.LatLngLiteral>({
-    lat: 37.7749,
-    lng: -122.4194,
-  });
-
+  /* Move markers useMemo before center state to derive initial center */
   const markers = useMemo(() => {
     if (!route?.result?.routes) return [];
     return route.result.routes.flatMap((routeItem, index) => {
@@ -72,8 +68,22 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     });
   }, [route]);
 
+  const initialCenter = useMemo<google.maps.LatLngLiteral>(() => {
+    return markers[0]?.position ?? { lat: 37.7749, lng: -122.4194 };
+  }, [markers]);
+
+  const [center, setCenter] =
+    useState<google.maps.LatLngLiteral>(initialCenter);
+
+  useEffect(() => {
+    setCenter(initialCenter);
+  }, [initialCenter]);
+
   const handleStopClick = (stop: any) => {
-    if (stop.latitude && stop.longitude) {
+    if (
+      typeof stop.latitude === "number" &&
+      typeof stop.longitude === "number"
+    ) {
       setCenter({ lat: stop.latitude, lng: stop.longitude });
     }
   };

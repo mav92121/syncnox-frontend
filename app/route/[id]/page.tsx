@@ -7,26 +7,38 @@ import { useOptimizationStore } from "@/zustand/optimization.store";
 
 const RoutePage = () => {
   const params = useParams();
-  const id = params?.id ? Number(params.id) : null;
+
+  const rawId =
+    typeof params?.id === "string"
+      ? params.id
+      : Array.isArray(params?.id)
+      ? params.id[0]
+      : undefined;
+  const parsedId = rawId ? Number(rawId) : NaN;
+  const id = Number.isFinite(parsedId) && parsedId > 0 ? parsedId : null;
+
   const { fetchOptimization, currentOptimization, error } =
     useOptimizationStore();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (id) {
-      // Check if we already have this optimization in the store (from polling)
-      if (currentOptimization && currentOptimization.id === id) {
-        // Already have the data, no need to fetch
-        setIsLoading(false);
-        return;
-      }
-
-      // Need to fetch the data
-      setIsLoading(true);
-      fetchOptimization(id)
-        .then(() => setIsLoading(false))
-        .catch(() => setIsLoading(false));
+    if (!id) {
+      setIsLoading(false);
+      return;
     }
+
+    // Check if we already have this optimization in the store (from polling)
+    if (currentOptimization && currentOptimization.id === id) {
+      // Already have the data, no need to fetch
+      setIsLoading(false);
+      return;
+    }
+
+    // Need to fetch the data
+    setIsLoading(true);
+    fetchOptimization(id)
+      .then(() => setIsLoading(false))
+      .catch(() => setIsLoading(false));
   }, [id, fetchOptimization, currentOptimization]);
 
   if (isLoading) {

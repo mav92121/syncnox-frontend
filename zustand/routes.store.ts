@@ -1,17 +1,18 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import { Route } from "@/types/routes.type";
+import { AllRoutes, Route } from "@/types/routes.type";
 import { fetchRoutes } from "@/apis/routes.api";
 
 interface RouteStore {
-  routes: Route[];
+  routes: AllRoutes[];
   currentRoute: Route | null;
   isLoading: boolean;
   error: string | null;
   fetchRoutes: () => Promise<void>;
   initializeRoutes: () => Promise<void>;
   hasFetched: boolean;
+  setCurrentRoute: (route: Route | null) => void;
 }
 
 export const useRouteStore = create(
