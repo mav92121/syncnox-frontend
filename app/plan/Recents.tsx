@@ -13,6 +13,7 @@ import { useTeamStore } from "@/zustand/team.store";
 import { Button, Typography, Drawer, Flex } from "antd";
 import { GripHorizontal } from "lucide-react";
 import JobForm from "@/components/Jobs/JobForm";
+import CreateRouteModal from "./_components/CreateRouteModal";
 
 const { Title } = Typography;
 
@@ -28,6 +29,8 @@ const Recents = () => {
   const [selectedMarkerId, setSelectedMarkerId] = useState<
     number | string | null
   >(null);
+  const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
+  const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
 
   // Transform draftJobs into markers for GoogleMaps
   const markers = draftJobs
@@ -129,7 +132,13 @@ const Recents = () => {
                     Add More Jobs
                   </Button>
                 </Link>
-                <Button type="primary" block size="small">
+                <Button
+                  disabled={selectedJobIds.length === 0}
+                  type="primary"
+                  block
+                  size="small"
+                  onClick={() => setShowCreateRouteModal(true)}
+                >
                   Create New Route
                 </Button>
               </div>
@@ -145,6 +154,12 @@ const Recents = () => {
                 emptyMessage="No jobs to show"
                 pagination={true}
                 containerStyle={{ height: "100%" }}
+                onSelectionChanged={(event) => {
+                  const selectedRows = event.api
+                    .getSelectedRows()
+                    .map((row: Job) => row.id);
+                  setSelectedJobIds(selectedRows);
+                }}
               />
             </div>
             <Drawer
@@ -159,6 +174,13 @@ const Recents = () => {
                 initialData={editJobData}
               />
             </Drawer>
+            {showCreateRouteModal && (
+              <CreateRouteModal
+                open={showCreateRouteModal}
+                setOpen={setShowCreateRouteModal}
+                selectedJobIds={selectedJobIds}
+              />
+            )}
 
             {/* Add Job Button */}
             {/* <div>

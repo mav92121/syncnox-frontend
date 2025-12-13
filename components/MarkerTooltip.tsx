@@ -45,7 +45,7 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
       className="bg-white shadow-xl"
       style={{
         minWidth: 220,
-        maxWidth: 280,
+        // maxWidth: 280,
         borderRadius: 0,
         overflow: "hidden",
         border: "1px solid #e0e0e0",
@@ -78,11 +78,11 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
               </span>
             </Flex>
           )}
-          {onEdit && (
+          {/* {onEdit && (
             <Button
               type="text"
               size="small"
-              icon={<Edit size={13} strokeWidth={2.5} />}
+              icon={<Edit size={13} />}
               onClick={onEdit}
               className="hover:bg-black/10"
               style={{
@@ -93,7 +93,8 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
                 marginLeft: "auto",
               }}
             />
-          )}
+          )} */}
+          {onEdit && <Edit className="cursor-pointer" onClick={onEdit} size={20} />}
         </Flex>
       )}
 

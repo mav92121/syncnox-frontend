@@ -19,9 +19,10 @@ const STATUS_COLORS: Record<JobStatus, string> = {
 export const createCustomMarkerIcon = (
   number: string | number,
   status: JobStatus,
-  isSelected: boolean = false
+  isSelected: boolean = false,
+  colorOverride?: string
 ): google.maps.Icon => {
-  const color = STATUS_COLORS[status] || STATUS_COLORS.draft;
+  const color = colorOverride || STATUS_COLORS[status] || STATUS_COLORS.draft;
   const scale = isSelected ? 1.2 : 1;
   const width = 32 * scale;
   const height = 45 * scale;

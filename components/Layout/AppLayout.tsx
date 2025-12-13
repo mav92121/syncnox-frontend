@@ -8,6 +8,8 @@ import { useJobsStore } from "@/zustand/jobs.store";
 import { useTeamStore } from "@/zustand/team.store";
 import SideBar from "@/components/Layout/SideBar";
 import NavBar from "@/components/Layout/NavBar";
+import { useRouteStore } from "@/zustand/routes.store";
+import { useDepotStore } from "@/zustand/depots.store";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -16,6 +18,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { data: session } = useSession();
   const { setUser, clearUser } = useIndexStore();
   const { initializeTeams } = useTeamStore();
+  const { initializeRoutes } = useRouteStore();
+  const { initializeDepots } = useDepotStore();
 
   // Register AG Grid modules on client side only to prevent hydration issues
   useEffect(() => {
@@ -43,6 +47,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       hasInitialized.current = true;
       initializeJobs();
       initializeTeams();
+      initializeRoutes();
+      initializeDepots();
     }
   }, [isSignInPage, initializeJobs, initializeTeams]);
 
@@ -57,7 +63,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         <Suspense fallback={null}>
           <NavBar />
         </Suspense>
-        <main className="flex-1 overflow-y-auto p-2">{children}</main>
+        <main className="flex-1 overflow-y-auto p-2 relative">{children}</main>
       </div>
     </div>
   );
