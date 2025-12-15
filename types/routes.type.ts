@@ -74,6 +74,7 @@ export interface AllRoutes {
   rating: number;
   scheduled_date: string;
   assigned_team_members: TeamMember[];
+  progress_percentage: number;
   created_at: string;
   updated_at: string;
 }
