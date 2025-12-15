@@ -60,7 +60,9 @@ export default function RoutesView() {
     },
     {
       headerName: "Progress",
-      cellRenderer: (params: any) => <Progress percent={params.value} />,
+      cellRenderer: (params: any) => (
+        <Progress percent={params.data?.progress_percentage} />
+      ),
     },
     {
       headerName: "Team Members",
