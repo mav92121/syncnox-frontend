@@ -18,7 +18,6 @@ const TeamList = () => {
   const { isLoading, teams, deleteTeamAction } = useTeamStore();
   const [editTeamData, setEditTeamData] = useState<Team | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  console.log("teams -> ", teams);
 
   const columns: ColDef<Team>[] = [
     {
