@@ -101,20 +101,18 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     string | number | null
   >(null);
 
-  const handleStopClick = (stop: any) => {
+  const handleStopClick = (
+    stop: any,
+    routeIndex: number,
+    stopIndex: number
+  ) => {
     if (
       typeof stop.latitude === "number" &&
       typeof stop.longitude === "number"
     ) {
       setCenter({ lat: stop.latitude, lng: stop.longitude });
-      const marker = markers.find(
-        (m) =>
-          Math.abs(m.position.lat - stop.latitude) < 0.0001 &&
-          Math.abs(m.position.lng - stop.longitude) < 0.0001
-      );
-      if (marker) {
-        setSelectedMarkerId(marker.id);
-      }
+      const markerId = `${routeIndex}-${stopIndex}`;
+      setSelectedMarkerId(markerId);
     }
   };
 

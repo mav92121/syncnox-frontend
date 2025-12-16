@@ -14,7 +14,7 @@ import {
 
 interface TimelineViewProps {
   routes: any[];
-  onStopClick?: (stop: any) => void;
+  onStopClick?: (stop: any, routeIndex: number, stopIndex: number) => void;
 }
 
 const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
@@ -173,7 +173,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                               left: left - 14,
                               borderColor: isDepot ? undefined : routeColor,
                             }}
-                            onClick={() => onStopClick?.(stop)}
+                            onClick={() =>
+                              onStopClick?.(stop, routeIndex, stopIndex)
+                            }
                           >
                             {isDepot ? (
                               <HomeFilled className="text-white text-base" />

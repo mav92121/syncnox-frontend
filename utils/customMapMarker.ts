@@ -1,7 +1,6 @@
 import { JobStatus } from "@/types/job.type";
 import { STATUS_COLORS } from "./jobs.utils";
 
-
 /**
  * Creates a custom map marker icon as an SVG data URL
  * @param number - The number to display on the marker
@@ -21,12 +20,23 @@ export const createCustomMarkerIcon = (
     : colorOverride || STATUS_COLORS[status] || STATUS_COLORS.draft;
 
   const scale = isSelected ? 1.2 : 1;
+  /* 
+    Depot markers are square (36x36 base) and centred.
+    Stop markers are pins (32x45 base) and bottom-anchored.
+    We need consistent base dimensions for scaling but dynamic viewboxes for the SVG content.
+  */
+  // Base dimensions for the SVG coordinate system
+  const baseWidth = 32;
+  const baseHeight = isDepot ? 32 : 45; // Depots are square, pins are taller
+
+  // Rendered dimensions
   const width = (isDepot ? 36 : 32) * scale;
   const height = (isDepot ? 36 : 45) * scale;
 
   // SVG marker icon - teardrop pin with number and dot trail
   const svg = `
-    <svg width="${width}" height="${height}" viewBox="0 0 32 45" xmlns="http://www.w3.org/2000/svg">
+
+    <svg width="${width}" height="${height}" viewBox="0 0 ${baseWidth} ${baseHeight}" xmlns="http://www.w3.org/2000/svg">
       <!-- Drop shadow -->
       <defs>
         <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
