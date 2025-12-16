@@ -45,6 +45,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   /* Move markers useMemo before center state to derive initial center */
   const markers = useMemo(() => {
     if (!route?.result?.routes) return [];
+    const jobsMap = new Map(jobs.map((j) => [j.id, j]));
     return route.result.routes.flatMap((routeItem, index) => {
       const color = getRouteColor(index);
       return routeItem.stops
@@ -54,9 +55,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             typeof stop.longitude === "number"
         )
         .map((stop: any, stopIndex: number) => {
-          const job = stop.job_id
-            ? jobs.find((j) => j.id === stop.job_id)
-            : undefined;
+          const job = stop.job_id ? jobsMap.get(stop.job_id) : undefined;
 
           return {
             id: `${index}-${stopIndex}`,
