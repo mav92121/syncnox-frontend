@@ -1,5 +1,5 @@
 import { ColDef } from "ag-grid-community";
-import { Job } from "@/types/job.type";
+import { Job, JobStatus } from "@/types/job.type";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 import { formatTimeWindow } from "./app.utils";
 import { COUNTRY_CODES } from "@/constants/country";
@@ -17,6 +17,15 @@ export const filterCountryOptions = (input: string, option: any): boolean => {
     country.code.toLowerCase().includes(searchText) ||
     country.country.toLowerCase().includes(searchText)
   );
+};
+
+// Status color mapping
+export const STATUS_COLORS: Record<JobStatus, string> = {
+  draft: "#722ed1", // Bright purple instead of dull gray
+  assigned: "#1677ff",
+  in_progress: "#fa8c16",
+  completed: "#52c41a",
+  cancelled: "#ff4d4f",
 };
 
 export const priorityStyleMap: Record<string, string> = {

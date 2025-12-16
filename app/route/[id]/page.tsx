@@ -88,7 +88,7 @@ const RoutePage = () => {
       {currentOptimization.result?.unassigned_job_ids &&
         currentOptimization.result.unassigned_job_ids.length > 0 && (
           <div
-            className="fixed z-1000001 shadow-lg"
+            className="fixed shadow-lg"
             style={{
               bottom: "20px",
               right: "20px",

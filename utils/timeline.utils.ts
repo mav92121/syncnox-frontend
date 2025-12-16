@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 
 export const PIXELS_PER_MINUTE = 4; // Width of 1 minute in pixels
 export const HEADER_HEIGHT = 40;
-export const ROW_HEIGHT = 80;
+export const ROW_HEIGHT = 60;
 
 export const calculateTimeRange = (routes: Routes[]) => {
   let minTime: dayjs.Dayjs | null = null;
