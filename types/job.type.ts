@@ -1,6 +1,6 @@
 export type JobStatus =
   | "draft"
-  | "scheduled"
+  | "assigned"
   | "in_progress"
   | "completed"
   | "cancelled";

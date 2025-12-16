@@ -10,6 +10,7 @@ import { getRouteColor } from "@/utils/timeline.utils";
 import { Route, Stop } from "@/types/routes.type";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { exportToExcel } from "@/utils/export.utils";
+import RouteInfoWindow from "./RouteInfoWindow";
 
 const { Title, Text } = Typography;
 
@@ -52,26 +53,38 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             typeof stop.latitude === "number" &&
             typeof stop.longitude === "number"
         )
-        .map((stop: any, stopIndex: number) => ({
-          id: `${index}-${stopIndex}`,
-          color: color, // Pass color string to be handled by GoogleMaps
-          position: { lat: stop.latitude, lng: stop.longitude },
-          label: {
-            text: (stopIndex + 1).toString(),
-            color: "white",
-            fontWeight: "bold",
-          },
-          title: stop.address_formatted || "Unknown location",
-          description: stop.arrival_time
-            ? `ETA: ${new Date(stop.arrival_time).toLocaleTimeString("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: true,
-              })}`
-            : undefined,
-        }));
+        .map((stop: any, stopIndex: number) => {
+          const job = stop.job_id
+            ? jobs.find((j) => j.id === stop.job_id)
+            : undefined;
+
+          return {
+            id: `${index}-${stopIndex}`,
+            color: color, // Pass color string to be handled by GoogleMaps
+            position: { lat: stop.latitude, lng: stop.longitude },
+            label: {
+              text: (stopIndex + 1).toString(),
+              color: "white",
+              fontWeight: "bold",
+            },
+            title: stop.address_formatted || "Unknown location",
+            description: stop.arrival_time
+              ? `ETA: ${new Date(stop.arrival_time).toLocaleTimeString(
+                  "en-US",
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  }
+                )}`
+              : undefined,
+            jobData: job,
+            sequenceNumber: stopIndex + 1,
+            isDepot: stop.stop_type === "depot",
+          };
+        });
     });
-  }, [route]);
+  }, [route, jobs]);
 
   const initialCenter = useMemo<google.maps.LatLngLiteral>(() => {
     return markers[0]?.position ?? { lat: 37.7749, lng: -122.4194 };
@@ -84,13 +97,29 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     setCenter(initialCenter);
   }, [initialCenter]);
 
+  const [selectedMarkerId, setSelectedMarkerId] = useState<
+    string | number | null
+  >(null);
+
   const handleStopClick = (stop: any) => {
     if (
       typeof stop.latitude === "number" &&
       typeof stop.longitude === "number"
     ) {
       setCenter({ lat: stop.latitude, lng: stop.longitude });
+      const marker = markers.find(
+        (m) =>
+          Math.abs(m.position.lat - stop.latitude) < 0.0001 &&
+          Math.abs(m.position.lng - stop.longitude) < 0.0001
+      );
+      if (marker) {
+        setSelectedMarkerId(marker.id);
+      }
     }
+  };
+
+  const handleMarkerSelect = (markerId: string | number | null) => {
+    setSelectedMarkerId(markerId);
   };
 
   const handleExportRoutes = () => {
@@ -157,6 +186,10 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                 markers={markers}
                 center={center}
                 zoom={12}
+                InfoWindowModal={RouteInfoWindow}
+                selectedMarkerId={selectedMarkerId}
+                onMarkerSelect={handleMarkerSelect}
+                showDirectionArrows={true}
               />
             </div>
           </Panel>

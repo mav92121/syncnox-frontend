@@ -166,11 +166,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                           <div
                             className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center border-2 shadow-md transition-all hover:scale-110 cursor-pointer ${
                               isDepot
-                                ? "w-10 h-10 rounded-lg bg-linear-to-br from-slate-700 to-slate-900 border-slate-600 z-10 shadow-lg text-white"
+                                ? "w-8 h-8 rounded-lg bg-linear-to-br from-slate-700 to-slate-900 border-slate-600 z-10 shadow-lg text-white"
                                 : "w-8 h-8 rounded bg-white z-0"
                             }`}
                             style={{
-                              left: left - (isDepot ? 16 : 14), // Adjust for larger depot icon
+                              left: left - 14,
                               borderColor: isDepot ? undefined : routeColor,
                             }}
                             onClick={() => onStopClick?.(stop)}
