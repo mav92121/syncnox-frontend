@@ -49,14 +49,23 @@ export default function RoutesView() {
       width: 150,
     },
     {
-      headerName: "Total Distance (km)",
+      headerName: "Distance (km)",
       field: "total_distance",
-      width: 180,
+      valueFormatter: (params) => (params.value / 1000)?.toFixed(2) || "-",
+      width: 140,
     },
     {
-      headerName: "Total Time (min)",
+      headerName: "Time",
       field: "total_time",
-      width: 150,
+      valueFormatter: (params) => {
+        if (!params.value) return "-";
+        const totalSeconds = Number(params.value);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = Math.floor(totalSeconds % 60);
+        return `${h} h ${m} m ${s} s`;
+      },
+      width: 120,
     },
     {
       headerName: "Progress",
