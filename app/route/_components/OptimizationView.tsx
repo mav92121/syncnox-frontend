@@ -180,7 +180,6 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      block
                       size="small"
                       onClick={handleExportRoutes}
                       loading={isExporting}
@@ -188,8 +187,8 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                       Export Routes
                     </Button>
                     <Tooltip title="Not implemented yet">
-                      <Button type="primary" block size="small">
-                        Share to app
+                      <Button type="primary" size="small">
+                        Share to App
                       </Button>
                     </Tooltip>
                   </div>

@@ -23,7 +23,7 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-resizable-panels": "^3.0.6",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.19.3/xlsx-0.19.3.tgz",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
