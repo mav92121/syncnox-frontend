@@ -11,7 +11,10 @@ import {
 } from "antd";
 import { useDepotStore } from "@/zustand/depots.store";
 import { useTeamStore } from "@/zustand/team.store";
-import { useOptimizationStore } from "@/zustand/optimization.store";
+import {
+  useOptimizationStore,
+  useOptimizationCleanup,
+} from "@/zustand/optimization.store";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
@@ -44,13 +47,7 @@ const CreateRouteModal = ({
   } = useOptimizationStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Clear previous optimization state when modal opens
-  useEffect(() => {
-    if (open) {
-      clearOptimization();
-      setIsSubmitting(false);
-    }
-  }, [open, clearOptimization]);
+  useOptimizationCleanup();
 
   // Get status message based on optimization status
   const getStatusMessage = () => {
@@ -84,13 +81,12 @@ const CreateRouteModal = ({
         setOpen(false);
         fetchRoutes();
         fetchJobs();
-        clearOptimization();
         form.resetFields();
       }, 1000);
 
       return () => clearTimeout(timeout);
     }
-  }, [currentOptimization, router, setOpen, clearOptimization, form]);
+  }, [currentOptimization, router, setOpen, form, fetchRoutes, fetchJobs]);
 
   const handleFinish = async (values: any) => {
     setIsSubmitting(true);
@@ -113,7 +109,6 @@ const CreateRouteModal = ({
   const handleCancel = () => {
     if (!isPolling && !isSubmitting) {
       setOpen(false);
-      clearOptimization();
       form.resetFields();
     }
   };
