@@ -47,6 +47,7 @@ interface MarkerData {
   jobData?: Job;
   sequenceNumber?: number;
   color?: string; // Custom color override
+  isDepot?: boolean;
 }
 
 interface PolylineData {
@@ -64,6 +65,7 @@ interface GoogleMapsProps {
   onMarkerSelect?: (markerId: string | number | null) => void;
   showMapTypeControl?: boolean;
   showZoomControl?: boolean;
+  showDirectionArrows?: boolean;
 }
 
 const GoogleMaps: React.FC<GoogleMapsProps> = ({
@@ -76,6 +78,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   onMarkerSelect,
   showMapTypeControl = true,
   showZoomControl = true,
+  showDirectionArrows = false,
 }) => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -189,7 +192,8 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
           markerNumber,
           status,
           isSelected,
-          marker.color
+          marker.color,
+          marker.isDepot
         );
 
         return (
@@ -206,9 +210,28 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
         );
       })}
 
-      {polylines.map((line, index) => (
-        <Polyline key={index} path={line.path} options={line.options} />
-      ))}
+      {polylines.map((line, index) => {
+        const polylineOptions = { ...line.options };
+        if (showDirectionArrows && window.google) {
+          polylineOptions.icons = [
+            {
+              icon: {
+                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                scale: 2,
+                strokeColor: "white",
+                strokeWeight: 1.5,
+                fillColor: line.options?.strokeColor || "#1890ff",
+                fillOpacity: 1,
+              },
+              offset: "50px",
+              repeat: "100px",
+            },
+          ];
+        }
+        return (
+          <Polyline key={index} path={line.path} options={polylineOptions} />
+        );
+      })}
 
       {selectedMarker && (
         <InfoWindow

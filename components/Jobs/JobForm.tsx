@@ -43,7 +43,6 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const { isLoading, createJobAction, updateJobAction } = useJobsStore();
   const { teams } = useTeamStore();
-  console.log("team -> ", teams);
 
   const [form] = Form.useForm();
 

@@ -195,7 +195,7 @@ const SideBar = () => {
             ) : (
               <Link onClick={() => setCurrentTab(item.tabKey)} href={item.path}>
                 <button
-                  className={`w-full flex items-center pl-2 py-2.5 transition-all duration-200 cursor-pointer ${
+                  className={`w-full flex items-center pl-2.5 py-2.5 transition-all duration-200 cursor-pointer ${
                     isActive(item.path)
                       ? "bg-[#F6FFED] text-primary"
                       : "hover:bg-gray-50 text-gray-700"
@@ -246,7 +246,7 @@ const SideBar = () => {
           <button
             key={index}
             onClick={item.action}
-            className={`w-full flex items-center pl-2 py-2.5 transition-all duration-200 cursor-pointer ${
+            className={`w-full flex items-center pl-2.5 py-2.5 transition-all duration-200 cursor-pointer ${
               item.isDanger
                 ? "text-red-600 hover:bg-red-50"
                 : "text-gray-700 hover:bg-gray-50"

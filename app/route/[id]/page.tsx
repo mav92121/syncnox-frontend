@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Spin, Alert } from "antd";
+import { Spin, Alert, Card, List, Button, Typography } from "antd";
+import { DownOutlined, UpOutlined } from "@ant-design/icons";
 import OptimizationView from "../_components/OptimizationView";
 import { useOptimizationStore } from "@/zustand/optimization.store";
 
@@ -20,6 +21,7 @@ const RoutePage = () => {
   const { fetchOptimization, currentOptimization, error } =
     useOptimizationStore();
   const [isLoading, setIsLoading] = useState(true);
+  const [isUnassignedExpanded, setIsUnassignedExpanded] = useState(true);
 
   useEffect(() => {
     if (!id) {
@@ -77,52 +79,84 @@ const RoutePage = () => {
 
   return (
     <div className="absolute inset-0 flex flex-col">
-      {/* Unassigned Jobs Warning */}
-      {currentOptimization.result?.unassigned_job_ids &&
-        currentOptimization.result.unassigned_job_ids.length > 0 && (
-          <div className="p-3 border-b bg-orange-50">
-            <Alert
-              message={`${currentOptimization.result.unassigned_job_ids.length} Job(s) Unassigned`}
-              description={
-                <div>
-                  <p className="mb-2">
-                    The following jobs could not be assigned to any route:{" "}
-                    <strong>
-                      #
-                      {currentOptimization.result.unassigned_job_ids.join(
-                        ", #"
-                      )}
-                    </strong>
-                  </p>
-                  <p className="text-sm">
-                    <strong>Common reasons:</strong>
-                  </p>
-                  <ul className="text-sm list-disc ml-5 mt-1">
-                    <li>Job time windows don't fit driver working hours</li>
-                    <li>
-                      Route would exceed driver's maximum distance or working
-                      time
-                    </li>
-                    <li>Not enough drivers assigned to handle all jobs</li>
-                    <li>Job location too far from depot or other jobs</li>
-                  </ul>
-                  <p className="text-sm mt-2">
-                    <strong>Suggestions:</strong> Add more drivers, adjust time
-                    windows, or increase maximum distance limits.
-                  </p>
-                </div>
-              }
-              type="warning"
-              showIcon
-              closable
-            />
-          </div>
-        )}
-
-      {/* Optimization View */}
+      {/* Optimization View - Full screen */}
       <div className="flex-1 min-h-0">
         <OptimizationView route={currentOptimization} />
       </div>
+
+      {/* Unassigned Jobs Panel - Floating Bottom Right */}
+      {currentOptimization.result?.unassigned_job_ids &&
+        currentOptimization.result.unassigned_job_ids.length > 0 && (
+          <div
+            className="fixed shadow-lg"
+            style={{
+              bottom: "20px",
+              right: "20px",
+              width: "320px",
+              maxWidth: "calc(100vw - 40px)",
+            }}
+          >
+            <Card
+              className="rounded-lg border border-gray-200"
+              bodyStyle={{
+                padding: isUnassignedExpanded ? "12px 16px" : "0",
+                maxHeight: isUnassignedExpanded ? "300px" : "0",
+                overflow: "hidden",
+                transition: "all 0.3s ease",
+              }}
+              title={
+                <div className="flex items-center justify-between py-1">
+                  <Typography.Text strong className="text-base">
+                    Unassigned Jobs (
+                    {currentOptimization.result.unassigned_job_ids.length})
+                  </Typography.Text>
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={
+                      isUnassignedExpanded ? <UpOutlined /> : <DownOutlined />
+                    }
+                    onClick={() =>
+                      setIsUnassignedExpanded(!isUnassignedExpanded)
+                    }
+                    className="text-gray-500 hover:text-gray-700"
+                  />
+                </div>
+              }
+            >
+              {isUnassignedExpanded && (
+                <div className="overflow-y-auto" style={{ maxHeight: "200px" }}>
+                  <List
+                    size="small"
+                    dataSource={currentOptimization.result.unassigned_job_ids}
+                    locale={{
+                      emptyText: "No unassigned jobs",
+                    }}
+                    renderItem={(jobId) => (
+                      <List.Item className="px-2 hover:bg-gray-50 cursor-pointer transition-colors">
+                        <List.Item.Meta
+                          title={
+                            <Typography.Text className="text-sm">
+                              Job #{jobId}
+                            </Typography.Text>
+                          }
+                          description={
+                            <Typography.Text
+                              type="secondary"
+                              className="text-xs"
+                            >
+                              Could not be assigned to any route
+                            </Typography.Text>
+                          }
+                        />
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
     </div>
   );
 };

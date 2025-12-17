@@ -2,21 +2,76 @@
 import BaseTable from "@/components/Table/BaseTable";
 import { AllRoutes } from "@/types/routes.type";
 import { useRouteStore } from "@/zustand/routes.store";
-import { Typography } from "antd";
+import { Typography, Progress, Button } from "antd";
 import { ColDef } from "ag-grid-community";
+import { useRouter } from "next/navigation";
 
 const { Title } = Typography;
 
 export default function RoutesView() {
+  const router = useRouter();
   const { routes, isLoading } = useRouteStore();
   const columns: ColDef<AllRoutes>[] = [
     {
-      headerName: "Route ID",
+      headerName: "ID",
       field: "id",
+      width: 100,
     },
     {
-      headerName: "Route Name",
+      headerName: "Name",
       field: "name",
+    },
+    {
+      headerName: "Route Status",
+      field: "status",
+      width: 150,
+    },
+    {
+      headerName: "View",
+      cellRenderer: (params: any) => {
+        return (
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              router.push(`/route/${params.data.optimization_id}`);
+            }}
+          >
+            Map View
+          </Button>
+        );
+      },
+      width: 120,
+    },
+    {
+      headerName: "Scheduled Date",
+      field: "scheduled_date",
+      width: 150,
+    },
+    {
+      headerName: "Distance (km)",
+      field: "total_distance",
+      valueFormatter: (params) => (params.value / 1000)?.toFixed(2) || "-",
+      width: 140,
+    },
+    {
+      headerName: "Time",
+      field: "total_time",
+      valueFormatter: (params) => {
+        if (!params.value) return "-";
+        const totalSeconds = Number(params.value);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = Math.floor(totalSeconds % 60);
+        return `${h} h ${m} m ${s} s`;
+      },
+      width: 120,
+    },
+    {
+      headerName: "Progress",
+      cellRenderer: (params: any) => (
+        <Progress percent={params.data?.progress_percentage} />
+      ),
     },
     {
       headerName: "Team Members",
@@ -25,8 +80,29 @@ export default function RoutesView() {
         params.value?.map((m: any) => m.name).join(", ") || "-",
     },
     {
-      headerName: "Route Status",
-      field: "status",
+      headerName: "Total Stops",
+      field: "total_stops",
+      width: 150,
+    },
+    {
+      headerName: "Completed Stops",
+      field: "completed_stops",
+      width: 150,
+    },
+    {
+      headerName: "Attempted Stops",
+      field: "attempted_stops",
+      width: 150,
+    },
+    {
+      headerName: "Failed Stops",
+      field: "failed_stops",
+      width: 150,
+    },
+    {
+      headerName: "Rating",
+      field: "rating",
+      width: 150,
     },
   ];
   return (

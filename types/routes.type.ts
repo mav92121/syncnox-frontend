@@ -67,12 +67,14 @@ export interface AllRoutes {
   status: string;
   total_distance: number;
   total_time: number;
+  total_stops: number;
   completed_stops: number;
   failed_stops: number;
   attempted_stops: number;
   rating: number;
   scheduled_date: string;
   assigned_team_members: TeamMember[];
+  progress_percentage: number;
   created_at: string;
   updated_at: string;
 }
