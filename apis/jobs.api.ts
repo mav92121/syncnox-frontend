@@ -13,6 +13,9 @@ export const fetchJobs = async (params?: FetchJobsParams): Promise<Job[]> => {
   if (params?.status) {
     queryParams.append("status", params.status);
   }
+  if (params?.date) {
+    queryParams.append("date", params.date);
+  }
 
   const queryString = queryParams.toString();
   const url = queryString ? `/jobs?${queryString}` : "/jobs";
