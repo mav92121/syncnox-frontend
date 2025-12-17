@@ -62,7 +62,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             color: color, // Pass color string to be handled by GoogleMaps
             position: { lat: stop.latitude, lng: stop.longitude },
             label: {
-              text: (stopIndex + 1).toString(),
+              text: (stopIndex).toString(),
               color: "white",
               fontWeight: "bold",
             },
