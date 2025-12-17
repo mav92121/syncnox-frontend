@@ -14,6 +14,8 @@ export interface Stop {
   latitude: number;
   longitude: number;
   address_formatted: string;
+  time_to_next_stop_seconds?: number;
+  distance_to_next_stop_meters?: number;
 }
 
 export interface Routes {
@@ -26,12 +28,18 @@ export interface Routes {
   total_duration_seconds: number;
 }
 
+export interface UnassignedJob {
+  job_id: number;
+  reason: string;
+  address_formatted?: string;
+}
+
 interface RouteResult {
   routes: Routes[];
   status: OptimizationStatus;
   generated_at: string;
   optimization_goal: OptimizationGoal;
-  unassigned_job_ids: number[];
+  unassigned_jobs: UnassignedJob[];
   total_distance_meters: number;
   total_duration_seconds: number;
 }

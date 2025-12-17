@@ -1,12 +1,12 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
-import { Avatar, Tooltip } from "antd";
+import { Avatar, Tooltip, Select } from "antd";
 import { UserOutlined, HomeFilled } from "@ant-design/icons";
 import {
   calculateTimeRange,
   generateTimeMarkers,
   getPosition,
-  PIXELS_PER_MINUTE,
+  getPixelsPerMinute,
   ROW_HEIGHT,
   HEADER_HEIGHT,
   getRouteColor,
@@ -17,18 +17,34 @@ interface TimelineViewProps {
   onStopClick?: (stop: any, routeIndex: number, stopIndex: number) => void;
 }
 
+const INTERVAL_OPTIONS = [
+  { value: 5, label: "5 min" },
+  { value: 10, label: "10 min" },
+  { value: 15, label: "15 min" },
+  { value: 20, label: "20 min" },
+  { value: 25, label: "25 min" },
+  { value: 30, label: "30 min" },
+  { value: 60, label: "60 min" },
+];
+
 const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [intervalMinutes, setIntervalMinutes] = useState(30);
 
   const { startTime, endTime } = useMemo(
     () => calculateTimeRange(routes),
     [routes]
   );
+
+  // Dynamic pixels per minute based on interval - smaller intervals get more spread
+  const pixelsPerMinute = getPixelsPerMinute(intervalMinutes);
+
   const totalDurationMinutes = endTime.diff(startTime, "minute");
-  const timelineWidth = totalDurationMinutes * PIXELS_PER_MINUTE;
+  const timelineWidth = totalDurationMinutes * pixelsPerMinute;
   const timeMarkers = useMemo(
-    () => generateTimeMarkers(startTime, endTime),
-    [startTime, endTime]
+    () =>
+      generateTimeMarkers(startTime, endTime, intervalMinutes, pixelsPerMinute),
+    [startTime, endTime, intervalMinutes, pixelsPerMinute]
   );
 
   return (
@@ -45,10 +61,18 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
           >
             {/* Sticky Driver Column Header */}
             <div
-              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 px-4 flex items-center font-medium text-gray-500 shadow-sm"
+              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 px-4 flex items-center justify-between font-medium text-gray-500 shadow-sm"
               style={{ width: 250, minWidth: 250 }}
             >
-              Driver
+              <span>Driver</span>
+              <Select
+                value={intervalMinutes}
+                onChange={setIntervalMinutes}
+                options={INTERVAL_OPTIONS}
+                size="small"
+                style={{ width: 85 }}
+                className="text-xs"
+              />
             </div>
 
             {/* Time Axis */}
@@ -107,7 +131,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                       </span>
                       <span className="text-xs text-gray-400 truncate">
                         {route.stops.length} stops •{" "}
-                        {Math.round(route.total_distance_meters / 1609.34)} mi
+                        {Math.round(route.total_distance_meters / 1000)} km
                       </span>
                     </div>
                   </div>
@@ -117,31 +141,56 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                     className="relative z-0"
                     style={{ width: timelineWidth }}
                   >
-                    {/* Connection Line */}
-                    {route.stops?.length > 0 && (
-                      <div
-                        className="absolute top-1/2 left-0 h-0.5"
-                        style={{
-                          backgroundColor: routeColor,
-                          opacity: 0.3,
-                          left: getPosition(
-                            route.stops[0].arrival_time,
-                            startTime
-                          ),
-                          width:
-                            getPosition(
-                              route.stops[route.stops.length - 1].arrival_time,
-                              startTime
-                            ) -
-                            getPosition(route.stops[0].arrival_time, startTime),
-                          transform: "translateY(-50%)",
-                        }}
-                      />
-                    )}
+                    {/* Connection Lines (Segments) */}
+                    {route.stops?.map((stop: any, index: number) => {
+                      if (index === route.stops.length - 1) return null; // Skip last stop
+
+                      const nextStop = route.stops[index + 1];
+                      const startPos = getPosition(
+                        stop.arrival_time,
+                        startTime,
+                        pixelsPerMinute
+                      );
+                      const endPos = getPosition(
+                        nextStop.arrival_time,
+                        startTime,
+                        pixelsPerMinute
+                      );
+                      const width = endPos - startPos;
+
+                      const distanceKm =
+                        (stop.distance_to_next_stop_meters ?? 0) / 1000;
+                      const timeMin = Math.round(
+                        (stop.time_to_next_stop_seconds ?? 0) / 60
+                      );
+
+                      return (
+                        <Tooltip
+                          key={`link-${index}`}
+                          title={`${timeMin} min, ${distanceKm.toFixed(2)} km`}
+                        >
+                          <div
+                            className="absolute top-1/2 left-0 h-0.5 hover:opacity-100 transition-opacity cursor-pointer"
+                            style={{
+                              height: "5px",
+                              backgroundColor: routeColor,
+                              opacity: 0.3,
+                              left: startPos,
+                              width: width,
+                              transform: "translateY(-50%)",
+                            }}
+                          />
+                        </Tooltip>
+                      );
+                    })}
 
                     {/* Stops */}
                     {route.stops.map((stop: any, stopIndex: number) => {
-                      const left = getPosition(stop.arrival_time, startTime);
+                      const left = getPosition(
+                        stop.arrival_time,
+                        startTime,
+                        pixelsPerMinute
+                      );
                       const isDepot = stop.stop_type === "depot";
 
                       return (
@@ -184,7 +233,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                                 className="text-xs font-bold"
                                 style={{ color: routeColor }}
                               >
-                                {stopIndex + 1}
+                                {stopIndex}
                               </span>
                             )}
                           </div>

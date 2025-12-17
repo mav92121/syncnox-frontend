@@ -95,8 +95,8 @@ const RoutePage = () => {
       </div>
 
       {/* Unassigned Jobs Panel - Floating Bottom Right */}
-      {currentOptimization.result?.unassigned_job_ids &&
-        currentOptimization.result.unassigned_job_ids.length > 0 && (
+      {currentOptimization.result?.unassigned_jobs &&
+        currentOptimization.result.unassigned_jobs.length > 0 && (
           <div
             className="fixed shadow-lg"
             style={{
@@ -118,7 +118,7 @@ const RoutePage = () => {
                 <div className="flex items-center justify-between py-1">
                   <Typography.Text strong className="text-base">
                     Unassigned Jobs (
-                    {currentOptimization.result.unassigned_job_ids.length})
+                    {currentOptimization.result.unassigned_jobs.length})
                   </Typography.Text>
                   <Button
                     type="text"
@@ -138,16 +138,16 @@ const RoutePage = () => {
                 <div className="overflow-y-auto" style={{ maxHeight: "200px" }}>
                   <List
                     size="small"
-                    dataSource={currentOptimization.result.unassigned_job_ids}
+                    dataSource={currentOptimization.result.unassigned_jobs}
                     locale={{
                       emptyText: "No unassigned jobs",
                     }}
-                    renderItem={(jobId) => (
+                    renderItem={(job) => (
                       <List.Item className="px-2 hover:bg-gray-50 cursor-pointer transition-colors">
                         <List.Item.Meta
                           title={
                             <Typography.Text className="text-sm">
-                              Job #{jobId}
+                              {job.address_formatted}
                             </Typography.Text>
                           }
                           description={
@@ -155,7 +155,7 @@ const RoutePage = () => {
                               type="secondary"
                               className="text-xs"
                             >
-                              Could not be assigned to any route
+                              {job.reason}
                             </Typography.Text>
                           }
                         />

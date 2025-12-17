@@ -2,15 +2,56 @@
 import BaseTable from "@/components/Table/BaseTable";
 import { AllRoutes } from "@/types/routes.type";
 import { useRouteStore } from "@/zustand/routes.store";
-import { Typography, Progress, Button } from "antd";
+import { Typography, Progress, Button, Select } from "antd";
 import { ColDef } from "ag-grid-community";
 import { useRouter } from "next/navigation";
+import StatusBadge from "@/components/Jobs/StatusBanner";
+import { useState } from "react";
 
 const { Title } = Typography;
+
+export const statusStyleMap: Record<string, string> = {
+  Empty: "bg-gray-100 text-gray-700 border border-gray-200",
+  Scheduled: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+  "In Progress": "bg-blue-100 text-blue-800 border border-blue-200",
+  Completed: "bg-green-100 text-green-700 border border-green-200",
+  Failed: "bg-red-100 text-red-800 border border-red-200",
+  default: "bg-gray-100 text-gray-700 border border-gray-200",
+};
+
+const DistanceHeader = (props: any) => {
+  const { displayName, unit, setUnit, progressSort } = props;
+
+  const onSortRequested = (event: any) => {
+    progressSort(event.shiftKey);
+  };
+
+  return (
+    <div
+      className="flex items-center gap-2 w-full cursor-pointer"
+      onClick={onSortRequested}
+    >
+      <span className="grow flex items-center gap-1">{displayName}</span>
+      <div onClick={(e) => e.stopPropagation()}>
+        <Select
+          value={unit}
+          onChange={(val) => setUnit(val as "km" | "mi")}
+          size="small"
+          options={[
+            { label: "km", value: "km" },
+            { label: "mi", value: "mi" },
+          ]}
+          style={{ width: 60 }}
+        />
+      </div>
+    </div>
+  );
+};
 
 export default function RoutesView() {
   const router = useRouter();
   const { routes, isLoading } = useRouteStore();
+  const [distanceUnit, setDistanceUnit] = useState<"km" | "mi">("km");
   const columns: ColDef<AllRoutes>[] = [
     {
       headerName: "ID",
@@ -24,6 +65,9 @@ export default function RoutesView() {
     {
       headerName: "Route Status",
       field: "status",
+      cellRenderer: (params: any) => (
+        <StatusBadge value={params.value} styleMap={statusStyleMap} />
+      ),
       width: 150,
     },
     {
@@ -49,10 +93,23 @@ export default function RoutesView() {
       width: 150,
     },
     {
-      headerName: "Distance (km)",
+      headerName: "Distance",
+      headerComponent: DistanceHeader,
+      headerComponentParams: {
+        unit: distanceUnit,
+        setUnit: setDistanceUnit,
+      },
       field: "total_distance",
-      valueFormatter: (params) => (params.value / 1000)?.toFixed(2) || "-",
-      width: 140,
+      valueFormatter: (params) => {
+        if (!params.value) return "-";
+        const val = params.value / 1000;
+        if (distanceUnit === "km") {
+          return val.toFixed(2);
+        } else {
+          return (val * 0.621371).toFixed(2);
+        }
+      },
+      width: 180,
     },
     {
       headerName: "Time",
