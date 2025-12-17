@@ -38,6 +38,8 @@ export interface Job {
   documents: Record<string, unknown>[];
   payment_status: PaymentStatus;
   pod_notes: string;
+  route_name?: string;
+  optimization_id?: number;
 }
 
 export interface FetchJobsParams {

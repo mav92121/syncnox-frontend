@@ -1,4 +1,5 @@
 import { ColDef } from "ag-grid-community";
+import Link from "next/link";
 import { Job, JobStatus } from "@/types/job.type";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 import { formatTimeWindow } from "./app.utils";
@@ -126,6 +127,25 @@ export const createJobTableColumns = (options?: {
       ),
       width: 130,
       minWidth: 130,
+    },
+    {
+      field: "route_name",
+      headerName: "Route Name",
+      width: 150,
+      cellRenderer: (params: any) => {
+        if (!params.data.optimization_id || !params.value) {
+          return params.value || "-";
+        }
+        return (
+          <Link
+            href={`/route/${params.data.optimization_id}`}
+            className="text-blue-600 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {params.value}
+          </Link>
+        );
+      },
     },
     {
       field: "phone_number",

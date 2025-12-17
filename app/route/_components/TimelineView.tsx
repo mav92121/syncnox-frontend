@@ -141,34 +141,48 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                     className="relative z-0"
                     style={{ width: timelineWidth }}
                   >
-                    {/* Connection Line */}
-                    {route.stops?.length > 0 && (
-                      <div
-                        className="absolute top-1/2 left-0 h-0.5"
-                        style={{
-                          height: "4px",
-                          backgroundColor: routeColor,
-                          opacity: 0.3,
-                          left: getPosition(
-                            route.stops[0].arrival_time,
-                            startTime,
-                            pixelsPerMinute
-                          ),
-                          width:
-                            getPosition(
-                              route.stops[route.stops.length - 1].arrival_time,
-                              startTime,
-                              pixelsPerMinute
-                            ) -
-                            getPosition(
-                              route.stops[0].arrival_time,
-                              startTime,
-                              pixelsPerMinute
-                            ),
-                          transform: "translateY(-50%)",
-                        }}
-                      />
-                    )}
+                    {/* Connection Lines (Segments) */}
+                    {route.stops?.map((stop: any, index: number) => {
+                      if (index === route.stops.length - 1) return null; // Skip last stop
+
+                      const nextStop = route.stops[index + 1];
+                      const startPos = getPosition(
+                        stop.arrival_time,
+                        startTime,
+                        pixelsPerMinute
+                      );
+                      const endPos = getPosition(
+                        nextStop.arrival_time,
+                        startTime,
+                        pixelsPerMinute
+                      );
+                      const width = endPos - startPos;
+
+                      const distanceKm =
+                        (stop.distance_to_next_stop_meters ?? 0) / 1000;
+                      const timeMin = Math.round(
+                        (stop.time_to_next_stop_seconds ?? 0) / 60
+                      );
+
+                      return (
+                        <Tooltip
+                          key={`link-${index}`}
+                          title={`${timeMin} min, ${distanceKm.toFixed(2)} km`}
+                        >
+                          <div
+                            className="absolute top-1/2 left-0 h-0.5 hover:opacity-100 transition-opacity cursor-pointer"
+                            style={{
+                              height: "5px",
+                              backgroundColor: routeColor,
+                              opacity: 0.3,
+                              left: startPos,
+                              width: width,
+                              transform: "translateY(-50%)",
+                            }}
+                          />
+                        </Tooltip>
+                      );
+                    })}
 
                     {/* Stops */}
                     {route.stops.map((stop: any, stopIndex: number) => {
