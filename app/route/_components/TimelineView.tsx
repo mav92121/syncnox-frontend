@@ -1,12 +1,12 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
-import { Avatar, Tooltip } from "antd";
+import { Avatar, Tooltip, Select } from "antd";
 import { UserOutlined, HomeFilled } from "@ant-design/icons";
 import {
   calculateTimeRange,
   generateTimeMarkers,
   getPosition,
-  PIXELS_PER_MINUTE,
+  getPixelsPerMinute,
   ROW_HEIGHT,
   HEADER_HEIGHT,
   getRouteColor,
@@ -17,18 +17,34 @@ interface TimelineViewProps {
   onStopClick?: (stop: any, routeIndex: number, stopIndex: number) => void;
 }
 
+const INTERVAL_OPTIONS = [
+  { value: 5, label: "5 min" },
+  { value: 10, label: "10 min" },
+  { value: 15, label: "15 min" },
+  { value: 20, label: "20 min" },
+  { value: 25, label: "25 min" },
+  { value: 30, label: "30 min" },
+  { value: 60, label: "60 min" },
+];
+
 const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [intervalMinutes, setIntervalMinutes] = useState(30);
 
   const { startTime, endTime } = useMemo(
     () => calculateTimeRange(routes),
     [routes]
   );
+
+  // Dynamic pixels per minute based on interval - smaller intervals get more spread
+  const pixelsPerMinute = getPixelsPerMinute(intervalMinutes);
+
   const totalDurationMinutes = endTime.diff(startTime, "minute");
-  const timelineWidth = totalDurationMinutes * PIXELS_PER_MINUTE;
+  const timelineWidth = totalDurationMinutes * pixelsPerMinute;
   const timeMarkers = useMemo(
-    () => generateTimeMarkers(startTime, endTime),
-    [startTime, endTime]
+    () =>
+      generateTimeMarkers(startTime, endTime, intervalMinutes, pixelsPerMinute),
+    [startTime, endTime, intervalMinutes, pixelsPerMinute]
   );
 
   return (
@@ -45,10 +61,18 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
           >
             {/* Sticky Driver Column Header */}
             <div
-              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 px-4 flex items-center font-medium text-gray-500 shadow-sm"
+              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 px-4 flex items-center justify-between font-medium text-gray-500 shadow-sm"
               style={{ width: 250, minWidth: 250 }}
             >
-              Driver
+              <span>Driver</span>
+              <Select
+                value={intervalMinutes}
+                onChange={setIntervalMinutes}
+                options={INTERVAL_OPTIONS}
+                size="small"
+                style={{ width: 85 }}
+                className="text-xs"
+              />
             </div>
 
             {/* Time Axis */}
@@ -127,14 +151,20 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                           opacity: 0.3,
                           left: getPosition(
                             route.stops[0].arrival_time,
-                            startTime
+                            startTime,
+                            pixelsPerMinute
                           ),
                           width:
                             getPosition(
                               route.stops[route.stops.length - 1].arrival_time,
-                              startTime
+                              startTime,
+                              pixelsPerMinute
                             ) -
-                            getPosition(route.stops[0].arrival_time, startTime),
+                            getPosition(
+                              route.stops[0].arrival_time,
+                              startTime,
+                              pixelsPerMinute
+                            ),
                           transform: "translateY(-50%)",
                         }}
                       />
@@ -142,7 +172,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
 
                     {/* Stops */}
                     {route.stops.map((stop: any, stopIndex: number) => {
-                      const left = getPosition(stop.arrival_time, startTime);
+                      const left = getPosition(
+                        stop.arrival_time,
+                        startTime,
+                        pixelsPerMinute
+                      );
                       const isDepot = stop.stop_type === "depot";
 
                       return (
