@@ -131,7 +131,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                       </span>
                       <span className="text-xs text-gray-400 truncate">
                         {route.stops.length} stops •{" "}
-                        {Math.round(route.total_distance_meters / 1609.34)} mi
+                        {Math.round(route.total_distance_meters / 1000)} km
                       </span>
                     </div>
                   </div>
