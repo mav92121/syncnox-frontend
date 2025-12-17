@@ -44,4 +44,5 @@ export interface FetchJobsParams {
   skip?: number;
   limit?: number;
   status?: JobStatus;
+  date?: string;
 }

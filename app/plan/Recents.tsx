@@ -10,7 +10,8 @@ import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { useTeamStore } from "@/zustand/team.store";
-import { Button, Typography, Drawer, Flex } from "antd";
+import { Button, Typography, Drawer, Flex, DatePicker } from "antd";
+import dayjs from "dayjs";
 import { GripHorizontal } from "lucide-react";
 import JobForm from "@/components/Jobs/JobForm";
 import CreateRouteModal from "./_components/CreateRouteModal";
@@ -18,7 +19,15 @@ import CreateRouteModal from "./_components/CreateRouteModal";
 const { Title } = Typography;
 
 const Recents = () => {
-  const { draftJobs, deleteJobAction, isLoading, error } = useJobsStore();
+  const {
+    draftJobs,
+    deleteJobAction,
+    isLoading,
+    error,
+    selectedDate,
+    setSelectedDate,
+    draftJobDates,
+  } = useJobsStore();
   const { getTeamsMap } = useTeamStore();
   const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
@@ -123,9 +132,36 @@ const Recents = () => {
         <Panel defaultSize={60} minSize={5}>
           <div className="flex flex-col h-full">
             <Flex justify="space-between" align="center">
-              <Title level={5} className="m-0 mb-2 pt-2">
-                Jobs
-              </Title>
+              <Flex gap={24} align="center">
+                <Title level={5} className="m-0 mb-2 pt-2">
+                  Jobs
+                </Title>
+                <DatePicker
+                  size="small"
+                  allowClear={false}
+                  value={selectedDate ? dayjs(selectedDate) : null}
+                  onChange={(date) => {
+                    if (date) {
+                      setSelectedDate(date.format("YYYY-MM-DD"));
+                    }
+                  }}  
+                  cellRender={(current, info) => {
+                    if (info.type !== "date") return info.originNode;
+                    const dateStr = dayjs(current).format("YYYY-MM-DD");
+                    const hasDraftJobs = draftJobDates.includes(dateStr);
+
+                    if (hasDraftJobs) {
+                      return (
+                        <div className="ant-picker-cell-inner relative!">
+                          {dayjs(current).date()}
+                          <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>
+                        </div>
+                      );
+                    }
+                    return info.originNode;
+                  }}
+                />
+              </Flex>
               <div className="flex gap-2">
                 <Link href="/plan" onClick={() => setCurrentTab("plan")}>
                   <Button block size="small">
@@ -151,7 +187,7 @@ const Recents = () => {
                 rowData={draftJobs}
                 rowSelection="multiple"
                 loading={isLoading}
-                emptyMessage="No jobs to show"
+                emptyMessage="No jobs on the selected date"
                 pagination={true}
                 containerStyle={{ height: "100%" }}
                 onSelectionChanged={(event) => {
