@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useEffect } from "react";
 import {
   createOptimizationRequest,
   getOptimizationRequest,
@@ -139,3 +140,15 @@ export const useOptimizationStore = create<OptimizationStore>((set, get) => ({
     }
   },
 }));
+
+export const useOptimizationCleanup = () => {
+  const clearOptimization = useOptimizationStore(
+    (state) => state.clearOptimization
+  );
+
+  useEffect(() => {
+    return () => {
+      clearOptimization();
+    };
+  }, [clearOptimization]);
+};

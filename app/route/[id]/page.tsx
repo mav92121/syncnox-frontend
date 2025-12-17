@@ -30,18 +30,28 @@ const RoutePage = () => {
     }
 
     // Check if we already have this optimization in the store (from polling)
-    if (currentOptimization && currentOptimization.id === id) {
+    const currentId = currentOptimization?.id;
+    if (currentId === id) {
       // Already have the data, no need to fetch
       setIsLoading(false);
       return;
     }
 
     // Need to fetch the data
+    let cancelled = false;
     setIsLoading(true);
     fetchOptimization(id)
-      .then(() => setIsLoading(false))
-      .catch(() => setIsLoading(false));
-  }, [id, fetchOptimization, currentOptimization]);
+      .then(() => {
+        if (!cancelled) setIsLoading(false);
+      })
+      .catch(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id, fetchOptimization]);
 
   if (isLoading) {
     return (
