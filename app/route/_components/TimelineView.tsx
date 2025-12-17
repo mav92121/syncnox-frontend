@@ -122,6 +122,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                       <div
                         className="absolute top-1/2 left-0 h-0.5"
                         style={{
+                          height: "4px",
                           backgroundColor: routeColor,
                           opacity: 0.3,
                           left: getPosition(
@@ -184,7 +185,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                                 className="text-xs font-bold"
                                 style={{ color: routeColor }}
                               >
-                                {stopIndex + 1}
+                                {stopIndex}
                               </span>
                             )}
                           </div>

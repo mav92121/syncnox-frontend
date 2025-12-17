@@ -33,7 +33,7 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
       </div>
 
       {/* Time & Status Row */}
-      <div className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
+      <div className="flex justify-between items-center">
         {/* Left: Time Info */}
         <div className="flex gap-3 items-start">
           <ClockCircleOutlined className="text-gray-400 text-lg shrink-0 mt-0.5" />

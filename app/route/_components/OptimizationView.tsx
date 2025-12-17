@@ -78,7 +78,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                 )}`
               : undefined,
             jobData: job,
-            sequenceNumber: stopIndex + 1,
+            sequenceNumber: stopIndex,
             isDepot: stop.stop_type === "depot",
           };
         });
