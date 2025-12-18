@@ -61,8 +61,9 @@ export const createJobTableColumns = (options?: {
 }): ColDef<Job>[] => {
   return [
     {
-      checkboxSelection: true,
+      checkboxSelection: (params: any) => params.data?.status === "draft",
       headerCheckboxSelection: true,
+      headerCheckboxSelectionFilteredOnly: true,
       width: 50,
       pinned: "left",
       lockPosition: true,

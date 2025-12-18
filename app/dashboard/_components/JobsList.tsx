@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { Typography, Button, Drawer, Modal } from "antd";
+import { Typography, Button, Drawer, Modal, Flex } from "antd";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useTeamStore } from "@/zustand/team.store";
 import { useIndexStore } from "@/zustand/index.store";
@@ -12,6 +12,7 @@ import GoogleMaps from "@/components/GoogleMaps";
 import MarkerTooltip from "@/components/MarkerTooltip";
 import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
+import CreateRouteModal from "@/app/plan/_components/CreateRouteModal";
 
 const { Title } = Typography;
 
@@ -21,6 +22,8 @@ export default function JobsList() {
   const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapViewJob, setMapViewJob] = useState<Job | null>(null);
+  const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
+  const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
 
   // Transform jobs into markers for GoogleMaps
   const markers = jobs
@@ -69,10 +72,20 @@ export default function JobsList() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      <Title level={5} className="m-0">
-        Jobs
-      </Title>
+    <div className="flex flex-col h-full relative top-[-8px]">
+      <Flex justify="space-between" align="center">
+        <Title level={5} className="m-0 pt-2">
+          Jobs
+        </Title>
+        <Button
+          disabled={selectedJobIds.length === 0}
+          type="primary"
+          size="small"
+          onClick={() => setShowCreateRouteModal(true)}
+        >
+          Create New Route
+        </Button>
+      </Flex>
 
       <div className="flex-1 min-h-0">
         <BaseTable<Job>
@@ -83,6 +96,13 @@ export default function JobsList() {
           emptyMessage="No jobs to show"
           pagination={true}
           containerStyle={{ height: "100%" }}
+          isRowSelectable={(node: any) => node.data?.status === "draft"}
+          onSelectionChanged={(event) => {
+            const selectedRows = event.api
+              .getSelectedRows()
+              .map((row: Job) => row.id);
+            setSelectedJobIds(selectedRows);
+          }}
         />
       </div>
 
@@ -99,6 +119,14 @@ export default function JobsList() {
           initialData={editJobData}
         />
       </Drawer>
+
+      {showCreateRouteModal && (
+        <CreateRouteModal
+          open={showCreateRouteModal}
+          setOpen={setShowCreateRouteModal}
+          selectedJobIds={selectedJobIds}
+        />
+      )}
 
       {/* Map View Modal */}
       <Modal

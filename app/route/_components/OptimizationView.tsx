@@ -16,6 +16,7 @@ import {
   generateMapMarkers,
   prepareExportData,
 } from "./optimizationView.utils";
+import ResizeHandle from "@/components/ResizeHandle";
 
 const { Title, Text } = Typography;
 
@@ -151,12 +152,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             </div>
           </Panel>
 
-          <PanelResizeHandle className="relative h-2 bg-gray-100 hover:bg-blue-50 transition-colors cursor-ns-resize flex items-center justify-center group border-y border-gray-200">
-            <GripHorizontal
-              size={16}
-              className="text-gray-400 group-hover:text-blue-500"
-            />
-          </PanelResizeHandle>
+          <ResizeHandle />
 
           <Panel defaultSize={40} minSize={20}>
             <div className="flex flex-col h-full bg-gray-50 border-t border-gray-200">
