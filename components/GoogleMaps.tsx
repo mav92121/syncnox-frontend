@@ -218,8 +218,8 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
               icon: {
                 path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
                 scale: 2,
-                strokeColor: "white",
-                strokeWeight: 1.5,
+                strokeColor: line.options?.strokeColor ?? "red",
+                strokeWeight: 2,
                 fillColor: line.options?.strokeColor || "#1890ff",
                 fillOpacity: 1,
               },
