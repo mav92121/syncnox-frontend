@@ -2,15 +2,20 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { GripHorizontal } from "lucide-react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { Typography, Flex, Button, Tooltip } from "antd";
+import { Typography, Flex, Button, Tooltip, Input, message } from "antd";
 import GoogleMaps from "@/components/GoogleMaps";
-import { decodePolyline } from "@/utils/googleMaps.utils";
 import TimelineView from "./TimelineView";
-import { getRouteColor } from "@/utils/timeline.utils";
-import { Route, Stop } from "@/types/routes.type";
+import { Route } from "@/types/routes.type";
 import { useJobsStore } from "@/zustand/jobs.store";
+import { useOptimizationStore } from "@/zustand/optimization.store";
+import { useRouteStore } from "@/zustand/routes.store";
 import { exportToExcel } from "@/utils/export.utils";
 import RouteInfoWindow from "./RouteInfoWindow";
+import {
+  generateRoutePolylines,
+  generateMapMarkers,
+  prepareExportData,
+} from "./optimizationView.utils";
 
 const { Title, Text } = Typography;
 
@@ -20,69 +25,56 @@ interface OptimizationViewProps {
 
 const OptimizationView = ({ route }: OptimizationViewProps) => {
   const { jobs } = useJobsStore();
+  const { updateOptimization } = useOptimizationStore();
+  const { updateRoute } = useRouteStore();
   const [isExporting, setIsExporting] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempRouteName, setTempRouteName] = useState(route.route_name);
+  const [isSavingName, setIsSavingName] = useState(false);
 
-  // Decode polyline for the map
+  useEffect(() => {
+    setTempRouteName(route.route_name);
+  }, [route.route_name]);
+
+  const handleNameClick = () => {
+    setIsEditingName(true);
+  };
+
+  const handleNameSave = async () => {
+    if (tempRouteName.trim() === "" || tempRouteName === route.route_name) {
+      setIsEditingName(false);
+      setTempRouteName(route.route_name);
+      return;
+    }
+
+    try {
+      setIsSavingName(true);
+      const updatedRoute = await updateOptimization(route.id, {
+        route_name: tempRouteName,
+      });
+      updateRoute(updatedRoute);
+      message.success("Route name updated successfully");
+      setIsEditingName(false);
+    } catch (error) {
+      message.error("Failed to update route name");
+      setTempRouteName(route.route_name);
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.currentTarget.blur();
+    }
+  };
+
   const routePolylines = useMemo(() => {
-    if (!route?.result?.routes) return [];
-
-    return route.result.routes.flatMap((routeItem, index) => {
-      if (!routeItem.route_polyline) return [];
-      const color = getRouteColor(index);
-      return [
-        {
-          path: decodePolyline(routeItem.route_polyline),
-          options: {
-            strokeColor: color,
-            strokeOpacity: 0.8,
-            strokeWeight: 4,
-          },
-        },
-      ];
-    });
+    return generateRoutePolylines(route);
   }, [route]);
 
-  /* Move markers useMemo before center state to derive initial center */
   const markers = useMemo(() => {
-    if (!route?.result?.routes) return [];
-    const jobsMap = new Map(jobs.map((j) => [j.id, j]));
-    return route.result.routes.flatMap((routeItem, index) => {
-      const color = getRouteColor(index);
-      return routeItem.stops
-        .filter(
-          (stop: any) =>
-            typeof stop.latitude === "number" &&
-            typeof stop.longitude === "number"
-        )
-        .map((stop: any, stopIndex: number) => {
-          const job = stop.job_id ? jobsMap.get(stop.job_id) : undefined;
-
-          return {
-            id: `${index}-${stopIndex}`,
-            color: color, // Pass color string to be handled by GoogleMaps
-            position: { lat: stop.latitude, lng: stop.longitude },
-            label: {
-              text: (stopIndex).toString(),
-              color: "white",
-              fontWeight: "bold",
-            },
-            title: stop.address_formatted || "Unknown location",
-            description: stop.arrival_time
-              ? `ETA: ${new Date(stop.arrival_time).toLocaleTimeString(
-                  "en-US",
-                  {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  }
-                )}`
-              : undefined,
-            jobData: job,
-            sequenceNumber: stopIndex,
-            isDepot: stop.stop_type === "depot",
-          };
-        });
-    });
+    return generateMapMarkers(route, jobs);
   }, [route, jobs]);
 
   const initialCenter = useMemo<google.maps.LatLngLiteral>(() => {
@@ -122,39 +114,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const handleExportRoutes = () => {
     try {
       setIsExporting(true);
-      const flattenData: any[] = [];
-
-      if (route.result?.routes) {
-        route.result.routes.forEach((routeItem) => {
-          routeItem.stops.forEach((stop: Stop) => {
-            // Find primitive job details if available
-            const jobDetails = stop.job_id
-              ? jobs.find((j) => j.id === stop.job_id)
-              : null;
-
-            // Calculate duration (using primitive difference if next stop exists, or 0)
-            // Ideally this comes from the route/stop data if available.
-            // Current types show total_duration_seconds for route, but only arrival_time for stops.
-            // We can leave duration empty or calculate gaps if needed. Sticking to simple for now.
-
-            flattenData.push({
-              Priority: jobDetails?.priority_level || "Medium",
-              Address: stop.address_formatted,
-              ETA: stop.arrival_time
-                ? new Date(stop.arrival_time).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })
-                : "-",
-              "Phone Number": jobDetails?.phone_number || "-",
-              Duration: jobDetails?.service_duration,
-              "Team Member (Driver)":
-                routeItem.team_member_name || "Unassigned",
-            });
-          });
-        });
-      }
+      const flattenData = prepareExportData(route, jobs);
 
       exportToExcel(flattenData, {
         fileName: `${route.route_name}_Report`,
@@ -203,10 +163,30 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
               <div className="py-2 bg-white border-b border-gray-200">
                 <Flex justify="space-between" align="center">
                   <div className="flex gap-4 items-baseline">
-                    <Title level={5} className="m-0">
-                      {route.route_name}
-                    </Title>
-                    <Text type="secondary">{route.scheduled_date}</Text>
+                    {isEditingName ? (
+                      <Input
+                        size="small"
+                        value={tempRouteName}
+                        onChange={(e) => setTempRouteName(e.target.value)}
+                        onBlur={handleNameSave}
+                        onKeyDown={handleNameKeyDown}
+                        autoFocus
+                        disabled={isSavingName}
+                        maxLength={50}
+                      />
+                    ) : (
+                      <Title
+                        level={5}
+                        className="m-0 cursor-pointer hover:text-blue-600 hover:underline decoration-dashed underline-offset-4 transition-all"
+                        onClick={handleNameClick}
+                        title="Click to edit route name"
+                      >
+                        {route.route_name}
+                      </Title>
+                    )}
+                    <Text type="secondary" className="whitespace-nowrap">
+                      {route.scheduled_date}
+                    </Text>
                   </div>
                   <div className="flex gap-2">
                     <Button

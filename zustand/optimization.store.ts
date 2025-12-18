@@ -3,7 +3,9 @@ import { useEffect } from "react";
 import {
   createOptimizationRequest,
   getOptimizationRequest,
+  updateOptimizationRequest,
   CreateOptimizationRequestPayload,
+  UpdateOptimizationRequestPayload,
 } from "@/apis/routes.api";
 import { Route } from "@/types/routes.type";
 
@@ -21,6 +23,10 @@ interface OptimizationStore {
   stopPolling: () => void;
   clearOptimization: () => void;
   fetchOptimization: (id: number) => Promise<Route>;
+  updateOptimization: (
+    id: number,
+    payload: UpdateOptimizationRequestPayload
+  ) => Promise<Route>;
 }
 
 const POLL_INTERVAL_MS = 2000; // 2 seconds
@@ -135,6 +141,25 @@ export const useOptimizationStore = create<OptimizationStore>((set, get) => ({
         error.response?.data?.detail ||
         error.message ||
         "Failed to fetch optimization";
+      set({ error: errorMessage });
+      throw new Error(errorMessage);
+    }
+  },
+
+  updateOptimization: async (
+    id: number,
+    payload: UpdateOptimizationRequestPayload
+  ) => {
+    try {
+      set({ error: null });
+      const optimization = await updateOptimizationRequest(id, payload);
+      set({ currentOptimization: optimization });
+      return optimization;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Failed to update optimization";
       set({ error: errorMessage });
       throw new Error(errorMessage);
     }
