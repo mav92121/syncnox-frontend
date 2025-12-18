@@ -26,3 +26,22 @@ export const getOptimizationRequest = async (id: number): Promise<Route> => {
   const response = await apiClient.get(`optimization/requests/${id}`);
   return response.data;
 };
+
+export interface UpdateOptimizationRequestPayload {
+  route_name?: string;
+}
+
+export const updateOptimizationRequest = async (
+  id: number,
+  payload: UpdateOptimizationRequestPayload
+): Promise<Route> => {
+  const response = await apiClient.patch(
+    `optimization/requests/${id}`,
+    payload
+  );
+  return response.data;
+};
+
+export const deleteOptimizationRequest = async (id: number): Promise<void> => {
+  await apiClient.delete(`optimization/requests/${id}`);
+};

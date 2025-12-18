@@ -7,6 +7,7 @@ import { ColDef } from "ag-grid-community";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 import { useState } from "react";
+import { createActionsColumn } from "@/components/Table/ActionsColumn";
 
 const { Title } = Typography;
 
@@ -50,7 +51,7 @@ const DistanceHeader = (props: any) => {
 
 export default function RoutesView() {
   const router = useRouter();
-  const { routes, isLoading } = useRouteStore();
+  const { routes, isLoading, deleteRoute } = useRouteStore();
   const [distanceUnit, setDistanceUnit] = useState<"km" | "mi">("km");
   const columns: ColDef<AllRoutes>[] = [
     {
@@ -161,6 +162,13 @@ export default function RoutesView() {
       field: "rating",
       width: 150,
     },
+    createActionsColumn<AllRoutes>({
+      onEdit: (route) => {
+        router.push(`/route/${route.id}`);
+      },
+      onDelete: deleteRoute,
+      entityName: "Route",
+    }),
   ];
   return (
     <div className="flex flex-col h-full">

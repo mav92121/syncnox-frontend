@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { AllRoutes, Route } from "@/types/routes.type";
-import { fetchRoutes } from "@/apis/routes.api";
+import { fetchRoutes, deleteOptimizationRequest } from "@/apis/routes.api";
 
 interface RouteStore {
   routes: AllRoutes[];
@@ -13,6 +13,8 @@ interface RouteStore {
   initializeRoutes: () => Promise<void>;
   hasFetched: boolean;
   setCurrentRoute: (route: Route | null) => void;
+  updateRoute: (route: Route) => void;
+  deleteRoute: (id: number) => Promise<void>;
 }
 
 export const useRouteStore = create(
@@ -42,6 +44,34 @@ export const useRouteStore = create(
         await get().fetchRoutes();
       },
       setCurrentRoute: (route: Route | null) => set({ currentRoute: route }),
+      updateRoute: (updatedRoute: Route) => {
+        set((state) => {
+          const index = state.routes.findIndex((r) => r.id === updatedRoute.id);
+          if (index !== -1) {
+            state.routes[index] = {
+              ...state.routes[index],
+              ["name"]: updatedRoute.route_name,
+            };
+          }
+          if (state.currentRoute?.id === updatedRoute.id) {
+            state.currentRoute = { ...state.currentRoute, ...updatedRoute };
+          }
+        });
+      },
+      deleteRoute: async (id: number) => {
+        try {
+          await deleteOptimizationRequest(id);
+          set((state) => {
+            state.routes = state.routes.filter((r) => r.id !== id);
+            if (state.currentRoute?.id === id) {
+              state.currentRoute = null;
+            }
+          });
+        } catch (error) {
+          console.error("Failed to delete route:", error);
+          throw error;
+        }
+      },
     }))
   )
 );
