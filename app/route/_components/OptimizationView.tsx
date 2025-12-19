@@ -11,6 +11,7 @@ import { useOptimizationStore } from "@/zustand/optimization.store";
 import { useRouteStore } from "@/zustand/routes.store";
 import { exportToExcel } from "@/utils/export.utils";
 import RouteInfoWindow from "./RouteInfoWindow";
+import RouteExportPreview from "./RouteExportPreview";
 import {
   generateRoutePolylines,
   generateMapMarkers,
@@ -32,6 +33,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempRouteName, setTempRouteName] = useState(route.route_name);
   const [isSavingName, setIsSavingName] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     setTempRouteName(route.route_name);
@@ -113,23 +115,8 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   };
 
   const handleExportRoutes = () => {
-    try {
-      setIsExporting(true);
-      const flattenData = prepareExportData(route, jobs);
-
-      exportToExcel(flattenData, {
-        fileName: `${route.route_name}_Report`,
-        metadata: {
-          "Route Name": route.route_name,
-          "Scheduled Date": route.scheduled_date,
-        },
-        columnWidths: [15, 40, 15, 20, 15, 25],
-      });
-    } catch (error) {
-      console.error("Export failed:", error);
-    } finally {
-      setIsExporting(false);
-    }
+    // Open preview modal instead of direct export
+    setShowPreview(true);
   };
 
   return (
@@ -210,6 +197,14 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
           </Panel>
         </PanelGroup>
       </div>
+
+      {/* Route Export Preview Modal */}
+      <RouteExportPreview
+        open={showPreview}
+        onClose={() => setShowPreview(false)}
+        route={route}
+        jobs={jobs}
+      />
     </div>
   );
 };
