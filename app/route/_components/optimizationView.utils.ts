@@ -14,7 +14,6 @@ export const generateRoutePolylines = (route: Route) => {
         path: decodePolyline(routeItem.route_polyline),
         options: {
           strokeColor: color,
-          strokeOpacity: 0.8,
           strokeWeight: 4,
         },
       },
