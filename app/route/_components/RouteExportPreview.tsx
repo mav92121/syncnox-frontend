@@ -128,7 +128,7 @@ const RouteExportPreview: React.FC<RouteExportPreviewProps> = ({
       destroyOnClose
       styles={{ body: { padding: 0, height: "70vh" } }}
       title={
-        <div className="flex justify-between items-center px-6 py-3">
+        <div className="flex justify-between items-center px-1 py-3">
           <Title level={5} className="m-0">
             Route Export Preview
           </Title>

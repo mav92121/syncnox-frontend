@@ -59,7 +59,12 @@ const SideBar = () => {
   };
 
   const menuItems: MenuItem[] = [
-    { icon: RocketOutlined, label: "Plan", path: "/plan", tabKey: "plan" },
+    {
+      icon: RocketOutlined,
+      label: "Plan",
+      path: "/plan",
+      tabKey: "unassigned-jobs",
+    },
     {
       icon: BarChartOutlined,
       label: "Insights",

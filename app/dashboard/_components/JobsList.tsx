@@ -1,11 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Typography, Button, Drawer, Modal, Flex } from "antd";
+import { Typography, Button, Drawer, Modal, Flex, Radio } from "antd";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useTeamStore } from "@/zustand/team.store";
 import { useIndexStore } from "@/zustand/index.store";
-import { Job } from "@/types/job.type";
+import { Job, JobStatus } from "@/types/job.type";
 import BaseTable from "@/components/Table/BaseTable";
 import JobForm from "@/components/Jobs/JobForm";
 import GoogleMaps from "@/components/GoogleMaps";
@@ -17,13 +17,33 @@ import CreateRouteModal from "@/app/plan/_components/CreateRouteModal";
 const { Title } = Typography;
 
 export default function JobsList() {
-  const { jobs, isLoading, error, deleteJobAction } = useJobsStore();
+  const {
+    jobs,
+    isLoading,
+    error,
+    deleteJobAction,
+    fetchJobsByStatus,
+    resetAllJobs,
+  } = useJobsStore();
   const { getTeamsMap } = useTeamStore();
   const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapViewJob, setMapViewJob] = useState<Job | null>(null);
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
+  const [selectedJobStatus, setSelectedJobStatus] =
+    useState<JobStatus>("draft");
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
+
+  const handleJobStatusChange = (e: any) => {
+    setSelectedJobStatus(e.target.value);
+    fetchJobsByStatus(e.target.value as JobStatus);
+  };
+
+  useEffect(() => {
+    return () => {
+      resetAllJobs();
+    };
+  }, []);
 
   // Transform jobs into markers for GoogleMaps
   const markers = jobs
@@ -59,6 +79,7 @@ export default function JobsList() {
         </Button>
       ),
       teamsMap: getTeamsMap(),
+      jobStatus: selectedJobStatus,
     }),
     createActionsColumn<Job>({
       onEdit: (job) => setEditJobData(job),
@@ -77,14 +98,39 @@ export default function JobsList() {
         <Title level={5} className="m-0 pt-2">
           Jobs
         </Title>
-        <Button
-          disabled={selectedJobIds.length === 0}
-          type="primary"
+
+        <Radio.Group
+          onChange={handleJobStatusChange}
+          value={selectedJobStatus}
           size="small"
-          onClick={() => setShowCreateRouteModal(true)}
         >
-          Create New Route
-        </Button>
+          <Radio.Button value="draft">Draft</Radio.Button>
+          <Radio.Button value="assigned">Assigned</Radio.Button>
+          <Radio.Button value="completed">Completed</Radio.Button>
+        </Radio.Group>
+
+        <Flex
+          gap={8}
+          style={{
+            minWidth: 220,
+            justifyContent: "flex-end",
+          }}
+        >
+          <Button
+            type="primary"
+            size="small"
+            disabled={selectedJobIds.length === 0}
+            onClick={() => setShowCreateRouteModal(true)}
+            style={{
+              visibility: selectedJobStatus === "draft" ? "visible" : "hidden",
+            }}
+          >
+            Create New Route
+          </Button>
+          <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
+            <Button size="small">Add Jobs</Button>
+          </Link>
+        </Flex>
       </Flex>
 
       <div className="flex-1 min-h-0">
@@ -96,7 +142,6 @@ export default function JobsList() {
           emptyMessage="No jobs to show"
           pagination={true}
           containerStyle={{ height: "100%" }}
-          isRowSelectable={(node: any) => node.data?.status === "draft"}
           onSelectionChanged={(event) => {
             const selectedRows = event.api
               .getSelectedRows()
@@ -170,14 +215,6 @@ export default function JobsList() {
           />
         )}
       </Modal>
-
-      <div className="pt-2">
-        <Link href="/plan" onClick={() => setCurrentTab("plan")}>
-          <Button type="primary" block size="middle">
-            Add Job
-          </Button>
-        </Link>
-      </div>
     </div>
   );
 }

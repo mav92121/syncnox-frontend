@@ -12,8 +12,8 @@ export type TabKey =
   | "jobs"
   | "routes"
   | "schedule" // /dashboard tabs
-  | "plan"
-  | "recents" // /plan tabs
+  | "add-jobs"
+  | "unassigned-jobs" // /plan tabs
   | "team"
   | "vehicle" // /insights & /analytics tabs
   | "optimization"
