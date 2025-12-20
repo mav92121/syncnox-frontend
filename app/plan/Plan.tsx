@@ -26,7 +26,7 @@ const Plan = () => {
           className="flex gap-1"
           type="primary"
         >
-          <FileAddOutlined /> <p className="text-lg">Manually Add Jobs</p>
+          <FileAddOutlined /> <p className="text-lg">Manually Add Job</p>
         </Button>
       </div>
       <AddJobsModal open={isAddJobsModalOpen} setOpen={setIsAddJobsModalOpen} />

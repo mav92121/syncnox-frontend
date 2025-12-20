@@ -130,16 +130,14 @@ export const useJobsStore = create<JobsState>()(
       },
 
       // Fetch jobs by status and update jobs state
-      fetchJobsByStatus: async (status: JobStatus | "all") => {
+      fetchJobsByStatus: async (status: JobStatus) => {
         set((state) => {
           state.isLoading = true;
           state.error = null;
         });
 
         try {
-          const jobsData = await fetchJobs(
-            status === "all" ? {} : { status: status as JobStatus }
-          );
+          const jobsData = await fetchJobs({ status });
 
           set((state) => {
             state.jobs = jobsData;

@@ -30,7 +30,8 @@ export default function JobsList() {
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapViewJob, setMapViewJob] = useState<Job | null>(null);
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
-  const [selectedJobStatus, setSelectedJobStatus] = useState("draft");
+  const [selectedJobStatus, setSelectedJobStatus] =
+    useState<JobStatus>("draft");
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
 
   const handleJobStatusChange = (e: any) => {
@@ -97,6 +98,7 @@ export default function JobsList() {
         <Title level={5} className="m-0 pt-2">
           Jobs
         </Title>
+
         <Radio.Group
           onChange={handleJobStatusChange}
           value={selectedJobStatus}
@@ -106,15 +108,29 @@ export default function JobsList() {
           <Radio.Button value="assigned">Assigned</Radio.Button>
           <Radio.Button value="completed">Completed</Radio.Button>
         </Radio.Group>
-        <Button
-          className={selectedJobStatus !== "draft" ? "invisible" : ""}
-          disabled={selectedJobIds.length === 0}
-          type="primary"
-          size="small"
-          onClick={() => setShowCreateRouteModal(true)}
+
+        <Flex
+          gap={8}
+          style={{
+            minWidth: 220,
+            justifyContent: "flex-end",
+          }}
         >
-          Create New Route
-        </Button>
+          <Button
+            type="primary"
+            size="small"
+            disabled={selectedJobIds.length === 0}
+            onClick={() => setShowCreateRouteModal(true)}
+            style={{
+              visibility: selectedJobStatus === "draft" ? "visible" : "hidden",
+            }}
+          >
+            Create New Route
+          </Button>
+          <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
+            <Button size="small">Add Jobs</Button>
+          </Link>
+        </Flex>
       </Flex>
 
       <div className="flex-1 min-h-0">
@@ -199,14 +215,6 @@ export default function JobsList() {
           />
         )}
       </Modal>
-
-      <div className="pt-2">
-        <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
-          <Button type="primary" block size="middle">
-            Add Job
-          </Button>
-        </Link>
-      </div>
     </div>
   );
 }

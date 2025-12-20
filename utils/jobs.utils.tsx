@@ -58,7 +58,7 @@ export const statusStyleMap: Record<string, string> = {
 export const createJobTableColumns = (options?: {
   viewColumnRenderer?: (params: any) => any;
   teamsMap?: Record<number, string>;
-  jobStatus?: JobStatus | string;
+  jobStatus?: JobStatus;
 }): ColDef<Job>[] => {
   const allColumns: ColDef<Job>[] = [
     {

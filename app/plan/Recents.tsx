@@ -154,22 +154,19 @@ const Recents = () => {
                   }}
                 />
               </Flex>
-              <div className="flex gap-2">
+              <Flex gap={8}>
                 <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
-                  <Button block size="small">
-                    Add Jobs
-                  </Button>
+                  <Button size="small">Add Jobs</Button>
                 </Link>
                 <Button
                   disabled={selectedJobIds.length === 0}
                   type="primary"
-                  block
                   size="small"
                   onClick={() => setShowCreateRouteModal(true)}
                 >
                   Create New Route
                 </Button>
-              </div>
+              </Flex>
             </Flex>
 
             {/* Table with explicit height */}
@@ -209,15 +206,6 @@ const Recents = () => {
                 selectedJobIds={selectedJobIds}
               />
             )}
-
-            {/* Add Job Button */}
-            {/* <div>
-              <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
-                <Button type="primary" block size="middle">
-                  Add More Jobs
-                </Button>
-              </Link>
-            </div> */}
           </div>
         </Panel>
       </PanelGroup>
