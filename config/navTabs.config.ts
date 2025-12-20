@@ -4,13 +4,12 @@ import {
   EnvironmentOutlined,
   FileTextOutlined,
   CalendarOutlined,
-  UnorderedListOutlined,
-  ClockCircleOutlined,
   TeamOutlined,
   CarOutlined,
   RocketOutlined,
   BarChartOutlined,
   ApiOutlined,
+  FileAddOutlined,
 } from "@ant-design/icons";
 
 // Icon props interface to support className and other common props
@@ -55,14 +54,14 @@ export const routeTabsConfig: RouteTabConfig = {
   ],
   "/plan": [
     {
-      key: "plan",
-      label: "Plan",
-      icon: UnorderedListOutlined,
+      key: "unassigned-jobs",
+      label: "Unassigned Jobs",
+      icon: FileTextOutlined,
     },
     {
-      key: "recents",
-      label: "Recents",
-      icon: ClockCircleOutlined,
+      key: "add-jobs",
+      label: "Add Jobs",
+      icon: FileAddOutlined,
     },
   ],
   "/insights": [

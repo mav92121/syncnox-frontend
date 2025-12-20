@@ -9,12 +9,12 @@ const page = () => {
 
   const renderTabContent = () => {
     switch (currentTab) {
-      case "plan":
+      case "add-jobs":
         return <Plan />;
-      case "recents":
+      case "unassigned-jobs":
         return <Recents />;
       default:
-        return <Plan />;
+        return <Recents />;
     }
   };
 

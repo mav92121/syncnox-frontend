@@ -58,10 +58,11 @@ export const statusStyleMap: Record<string, string> = {
 export const createJobTableColumns = (options?: {
   viewColumnRenderer?: (params: any) => any;
   teamsMap?: Record<number, string>;
+  jobStatus?: JobStatus | string;
 }): ColDef<Job>[] => {
-  return [
+  const allColumns: ColDef<Job>[] = [
     {
-      checkboxSelection: (params: any) => params.data?.status === "draft",
+      checkboxSelection: true,
       headerCheckboxSelection: true,
       headerCheckboxSelectionFilteredOnly: true,
       width: 50,
@@ -199,4 +200,10 @@ export const createJobTableColumns = (options?: {
       ),
     },
   ];
+
+  if (options?.jobStatus === "draft") {
+    return allColumns.filter((col) => col.field !== "route_name");
+  }
+
+  return allColumns;
 };

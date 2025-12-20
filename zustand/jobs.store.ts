@@ -13,36 +13,23 @@ import {
 interface JobsState {
   // Data
   jobs: Job[];
-  filteredJobs: Job[];
   draftJobs: Job[]; // Filtered draft jobs for display
   allDraftJobs: Job[]; // All draft jobs fetched from API
   draftJobDates: string[]; // Set of dates with draft jobs
   selectedDate: string | null; // Currently selected date filter
-
-  // Pagination
-  totalJobs: number;
-  currentPage: number;
-  itemsPerPage: number;
 
   // Loading & Error states
   isLoading: boolean;
   error: string | null;
   hasFetched: boolean; // Track if data has been fetched
 
-  // Filters
-  statusFilter: JobStatus | null;
-
   // Actions
-  initializeJobs: (params?: FetchJobsParams) => Promise<void>; // Smart fetch (only if not already fetched)
-  fetchJobs: (params?: FetchJobsParams) => Promise<void>; // Force fetch
-  fetchDraftJobs: (params?: FetchJobsParams) => Promise<void>; // Fetch only draft jobs
+  initializeJobs: () => Promise<void>; // Initialize with draft jobs only
+  fetchJobs: (params?: FetchJobsParams) => Promise<void>; // Fetch jobs with optional params
+  fetchJobsByStatus: (status: JobStatus) => Promise<void>; // Fetch jobs by status
   createJobAction: (job: Job) => Promise<Job>; // Create job with API call + state update
   updateJobAction: (job: Job) => Promise<Job>; // Update job with API call + state update
   deleteJobAction: (jobId: number) => Promise<void>; // Delete job with API call + state update
-  setStatusFilter: (status: JobStatus | null) => void;
-  setPage: (page: number) => void;
-  setItemsPerPage: (itemsPerPage: number) => void;
-  refreshJobs: () => Promise<void>;
   clearJobs: () => void;
   setSelectedDate: (date: string | null) => void;
   filterDraftJobs: () => void;
@@ -51,6 +38,7 @@ interface JobsState {
   getJobById: (id: number) => Job | undefined;
   getJobsByStatus: (status: JobStatus) => Job[];
   getDraftJobs: () => Job[];
+  resetAllJobs: () => void;
 }
 
 export const useJobsStore = create<JobsState>()(
@@ -58,21 +46,16 @@ export const useJobsStore = create<JobsState>()(
     immer((set, get) => ({
       // Initial state
       jobs: [],
-      filteredJobs: [],
       draftJobs: [],
       allDraftJobs: [],
       draftJobDates: [],
       selectedDate: null,
-      totalJobs: 0,
-      currentPage: 1,
-      itemsPerPage: 10,
       isLoading: false,
       error: null,
       hasFetched: false,
-      statusFilter: null,
 
-      // Initialize jobs (fetch only if not already fetched)
-      initializeJobs: async (params?: FetchJobsParams) => {
+      // Initialize jobs with draft jobs only
+      initializeJobs: async () => {
         const { hasFetched, isLoading } = get();
 
         // Skip if already fetched or currently loading
@@ -80,29 +63,21 @@ export const useJobsStore = create<JobsState>()(
           return;
         }
 
-        await get().fetchJobs(params);
-      },
-
-      // Fetch jobs with optional params (force fetch)
-      fetchJobs: async (params?: FetchJobsParams) => {
         set((state) => {
           state.isLoading = true;
           state.error = null;
         });
 
         try {
-          // Make parallel API calls for all jobs and all draft jobs
-          const [allJobsData, draftJobsData] = await Promise.all([
-            fetchJobs(params),
-            fetchJobs({
-              status: "draft",
-              limit: 1000, // Fetch all/many drafts for proper date filtering
-            }),
-          ]);
+          // Fetch only draft jobs on initialization
+          const draftJobsData = await fetchJobs({
+            status: "draft",
+            limit: 1000, // Fetch all/many drafts
+          });
 
           set((state) => {
-            state.jobs = allJobsData;
-            state.filteredJobs = allJobsData;
+            // Store draft jobs in both jobs and allDraftJobs
+            state.jobs = draftJobsData;
             state.allDraftJobs = draftJobsData;
             state.draftJobDates = [
               ...new Set(draftJobsData.map((job) => job.scheduled_date)),
@@ -116,7 +91,6 @@ export const useJobsStore = create<JobsState>()(
               state.selectedDate = dayjs().format("YYYY-MM-DD");
             }
 
-            state.totalJobs = allJobsData.length;
             state.isLoading = false;
             state.hasFetched = true;
           });
@@ -132,36 +106,51 @@ export const useJobsStore = create<JobsState>()(
         }
       },
 
-      // Fetch draft jobs only (refresh all drafts)
-      fetchDraftJobs: async () => {
+      // Fetch jobs with optional params (for custom fetching)
+      fetchJobs: async (params?: FetchJobsParams) => {
         set((state) => {
           state.isLoading = true;
           state.error = null;
         });
 
         try {
-          // Fetch all/many drafts
-          const draftJobsData = await fetchJobs({
-            status: "draft",
-            limit: 1000,
-          });
+          const jobsData = await fetchJobs(params);
 
           set((state) => {
-            state.allDraftJobs = draftJobsData;
-            state.draftJobDates = [
-              ...new Set(draftJobsData.map((job) => job.scheduled_date)),
-            ].sort();
+            state.jobs = jobsData;
             state.isLoading = false;
           });
+        } catch (error) {
+          set((state) => {
+            state.error =
+              error instanceof Error ? error.message : "Failed to fetch jobs";
+            state.isLoading = false;
+          });
+        }
+      },
 
-          // Re-apply filter
-          get().filterDraftJobs();
+      // Fetch jobs by status and update jobs state
+      fetchJobsByStatus: async (status: JobStatus | "all") => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          const jobsData = await fetchJobs(
+            status === "all" ? {} : { status: status as JobStatus }
+          );
+
+          set((state) => {
+            state.jobs = jobsData;
+            state.isLoading = false;
+          });
         } catch (error) {
           set((state) => {
             state.error =
               error instanceof Error
                 ? error.message
-                : "Failed to fetch draft jobs";
+                : `Failed to fetch ${status} jobs`;
             state.isLoading = false;
           });
         }
@@ -199,8 +188,6 @@ export const useJobsStore = create<JobsState>()(
           // Update state with the new job
           set((state) => {
             state.jobs = [newJob, ...state.jobs];
-            state.filteredJobs = [newJob, ...state.filteredJobs];
-            // state.draftJobs will be handled by filterDraftJobs
 
             // Add to allDraftJobs if it is a draft
             if (newJob.status === "draft") {
@@ -240,9 +227,6 @@ export const useJobsStore = create<JobsState>()(
           // Update state with the updated job
           set((state) => {
             state.jobs = state.jobs.map((j) =>
-              j.id === updatedJob.id ? updatedJob : j
-            );
-            state.filteredJobs = state.filteredJobs.map((j) =>
               j.id === updatedJob.id ? updatedJob : j
             );
 
@@ -299,9 +283,6 @@ export const useJobsStore = create<JobsState>()(
           // Update state by removing the deleted job
           set((state) => {
             state.jobs = state.jobs.filter((job) => job.id !== jobId);
-            state.filteredJobs = state.filteredJobs.filter(
-              (job) => job.id !== jobId
-            );
 
             // Remove from allDraftJobs
             state.allDraftJobs = state.allDraftJobs.filter(
@@ -328,38 +309,9 @@ export const useJobsStore = create<JobsState>()(
         }
       },
 
-      // Set status filter and update filtered jobs
-      setStatusFilter: (status) => {
+      resetAllJobs: () => {
         set((state) => {
-          state.statusFilter = status;
-          state.filteredJobs = status
-            ? state.jobs.filter((job) => job.status === status)
-            : state.jobs;
-          state.currentPage = 1;
-        });
-      },
-
-      // Pagination
-      setPage: (page) =>
-        set((state) => {
-          state.currentPage = page;
-        }),
-
-      setItemsPerPage: (itemsPerPage) =>
-        set((state) => {
-          state.itemsPerPage = itemsPerPage;
-          state.currentPage = 1;
-        }),
-
-      // Refresh jobs (re-fetch with current filters)
-      refreshJobs: async () => {
-        const { statusFilter, currentPage, itemsPerPage } = get();
-        const skip = (currentPage - 1) * itemsPerPage;
-
-        await get().fetchJobs({
-          skip,
-          limit: itemsPerPage,
-          status: statusFilter || undefined,
+          state.jobs = state.allDraftJobs;
         });
       },
 
@@ -367,12 +319,11 @@ export const useJobsStore = create<JobsState>()(
       clearJobs: () =>
         set((state) => {
           state.jobs = [];
-          state.filteredJobs = [];
           state.draftJobs = [];
-          state.totalJobs = 0;
-          state.currentPage = 1;
+          state.allDraftJobs = [];
+          state.draftJobDates = [];
+          state.selectedDate = null;
           state.error = null;
-          state.statusFilter = null;
           state.hasFetched = false; // Reset fetch flag
         }),
 

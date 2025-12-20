@@ -1,7 +1,6 @@
 "use client";
 import React, { useMemo, useState, useEffect } from "react";
-import { GripHorizontal } from "lucide-react";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { Panel, PanelGroup } from "react-resizable-panels";
 import { Typography, Flex, Button, Tooltip, Input, message } from "antd";
 import GoogleMaps from "@/components/GoogleMaps";
 import TimelineView from "./TimelineView";
@@ -9,13 +8,11 @@ import { Route } from "@/types/routes.type";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useOptimizationStore } from "@/zustand/optimization.store";
 import { useRouteStore } from "@/zustand/routes.store";
-import { exportToExcel } from "@/utils/export.utils";
 import RouteInfoWindow from "./RouteInfoWindow";
 import RouteExportPreview from "./RouteExportPreview";
 import {
   generateRoutePolylines,
   generateMapMarkers,
-  prepareExportData,
 } from "./optimizationView.utils";
 import ResizeHandle from "@/components/ResizeHandle";
 

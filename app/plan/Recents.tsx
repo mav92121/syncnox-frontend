@@ -155,9 +155,9 @@ const Recents = () => {
                 />
               </Flex>
               <div className="flex gap-2">
-                <Link href="/plan" onClick={() => setCurrentTab("plan")}>
+                <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
                   <Button block size="small">
-                    Add More Jobs
+                    Add Jobs
                   </Button>
                 </Link>
                 <Button
@@ -212,7 +212,7 @@ const Recents = () => {
 
             {/* Add Job Button */}
             {/* <div>
-              <Link href="/plan" onClick={() => setCurrentTab("plan")}>
+              <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
                 <Button type="primary" block size="middle">
                   Add More Jobs
                 </Button>
