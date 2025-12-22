@@ -37,3 +37,7 @@ export const updateJob = async (job: Job): Promise<Job> => {
 export const deleteJob = async (jobId: number): Promise<void> => {
   await apiClient.delete(`/jobs/${jobId}`);
 };
+
+export const deleteJobsBulk = async (jobIds: number[]): Promise<void> => {
+  await apiClient.post("/jobs/bulk/delete", jobIds);
+};

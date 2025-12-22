@@ -114,6 +114,33 @@ export const createJobTableColumns = (options?: {
       width: 150,
     },
     {
+      field: "route_name",
+      headerName: "Route Name",
+      width: 150,
+      cellRenderer: (params: any) => {
+        if (!params.data.optimization_id || !params.value) {
+          return params.value || "-";
+        }
+        return (
+          <Link
+            href={`/route/${params.data.optimization_id}`}
+            className="text-blue-600 hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {params.value}
+          </Link>
+        );
+      },
+    },
+    {
+      headerName: "Team",
+      field: "assigned_to",
+      valueFormatter: (params: any) => {
+        if (!params.value) return "";
+        return options?.teamsMap?.[params.value] || "Unknown";
+      },
+    },
+    {
       field: "phone_number",
       headerName: "Phone",
       width: 150,
@@ -155,25 +182,6 @@ export const createJobTableColumns = (options?: {
       headerName: "Business Name",
     },
     {
-      field: "route_name",
-      headerName: "Route Name",
-      width: 150,
-      cellRenderer: (params: any) => {
-        if (!params.data.optimization_id || !params.value) {
-          return params.value || "-";
-        }
-        return (
-          <Link
-            href={`/route/${params.data.optimization_id}`}
-            className="text-blue-600 hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {params.value}
-          </Link>
-        );
-      },
-    },
-    {
       field: "customer_preferences",
       headerName: "Customer Preferences",
     },
@@ -181,14 +189,6 @@ export const createJobTableColumns = (options?: {
       field: "additional_notes",
       headerName: "Notes",
       width: 150,
-    },
-    {
-      headerName: "Team",
-      field: "assigned_to",
-      valueFormatter: (params: any) => {
-        if (!params.value) return "";
-        return options?.teamsMap?.[params.value] || "Unknown";
-      },
     },
     {
       field: "payment_status",

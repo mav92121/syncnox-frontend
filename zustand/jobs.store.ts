@@ -8,6 +8,7 @@ import {
   createJob,
   updateJob,
   deleteJob as deleteJobApi,
+  deleteJobsBulk,
 } from "@/apis/jobs.api";
 
 interface JobsState {
@@ -30,6 +31,7 @@ interface JobsState {
   createJobAction: (job: Job) => Promise<Job>; // Create job with API call + state update
   updateJobAction: (job: Job) => Promise<Job>; // Update job with API call + state update
   deleteJobAction: (jobId: number) => Promise<void>; // Delete job with API call + state update
+  deleteJobsAction: (jobIds: number[], status: JobStatus) => Promise<void>; // Bulk delete jobs
   refreshDraftJobs: () => Promise<void>;
   clearJobs: () => void;
   setSelectedDate: (date: string | null) => void;
@@ -305,6 +307,29 @@ export const useJobsStore = create<JobsState>()(
               error instanceof Error ? error.message : "Failed to delete job";
           });
           throw error; // Re-throw so component can handle the error
+        }
+      },
+
+      deleteJobsAction: async (jobIds: number[], status: JobStatus) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          await deleteJobsBulk(jobIds);
+          if (status === "draft") {
+            await get().refreshDraftJobs();
+          } else {
+            await get().fetchJobsByStatus(status);
+          }
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to delete jobs";
+          });
+          throw error;
         }
       },
 
