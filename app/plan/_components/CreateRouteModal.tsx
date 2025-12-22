@@ -36,7 +36,7 @@ const CreateRouteModal = ({
   const router = useRouter();
   const { depots } = useDepotStore();
   const { teams } = useTeamStore();
-  const { fetchRoutes } = useRouteStore();
+  const { fetchRoutes, setSelectedStatus } = useRouteStore();
   const { refreshDraftJobs } = useJobsStore();
   const {
     startOptimization,
@@ -79,7 +79,8 @@ const CreateRouteModal = ({
       const timeout = setTimeout(() => {
         router.push(`/route/${currentOptimization.id}`);
         setOpen(false);
-        fetchRoutes();
+        // Reset status to scheduled and fetch corresponding routes
+        setSelectedStatus("scheduled");
         // Use refreshDraftJobs to specifically update the draft jobs store
         refreshDraftJobs();
         form.resetFields();

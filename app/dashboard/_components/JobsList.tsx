@@ -45,7 +45,7 @@ export default function JobsList() {
     if (selectedJobIds.length === 0) return;
 
     Modal.confirm({
-      title: "Delete Job",
+      title: "Delete Jobs",
       icon: <ExclamationCircleFilled />,
       content: `Are you sure you want to delete ${selectedJobIds.length} jobs?`,
       okText: "Delete",
