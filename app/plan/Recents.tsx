@@ -10,11 +10,11 @@ import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useIndexStore } from "@/zustand/index.store";
 import { useTeamStore } from "@/zustand/team.store";
-import { Button, Typography, Drawer, Flex, DatePicker } from "antd";
-import dayjs from "dayjs";
+import { Button, Typography, Drawer, Flex } from "antd";
 import JobForm from "@/components/Jobs/JobForm";
 import CreateRouteModal from "./_components/CreateRouteModal";
 import ResizeHandle from "@/components/ResizeHandle";
+import DraftJobsDatePicker from "@/components/Jobs/DraftJobsDatePicker";
 
 const { Title } = Typography;
 
@@ -64,6 +64,7 @@ const Recents = () => {
       viewColumnRenderer: (params: any) => (
         <Button
           type="link"
+          size="small"
           onClick={() => {
             if (params.data.location?.lat && params.data.location?.lng) {
               setMapCenter({
@@ -127,29 +128,10 @@ const Recents = () => {
                 <Title level={4} className="m-0 pt-2">
                   Jobs
                 </Title>
-                <DatePicker
-                  allowClear={false}
-                  value={selectedDate ? dayjs(selectedDate) : null}
-                  onChange={(date) => {
-                    if (date) {
-                      setSelectedDate(date.format("YYYY-MM-DD"));
-                    }
-                  }}
-                  cellRender={(current, info) => {
-                    if (info.type !== "date") return info.originNode;
-                    const dateStr = dayjs(current).format("YYYY-MM-DD");
-                    const hasDraftJobs = draftJobDates.includes(dateStr);
-
-                    if (hasDraftJobs) {
-                      return (
-                        <div className="ant-picker-cell-inner relative!">
-                          {dayjs(current).date()}
-                          <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>
-                        </div>
-                      );
-                    }
-                    return info.originNode;
-                  }}
+                <DraftJobsDatePicker
+                  selectedDate={selectedDate}
+                  setSelectedDate={setSelectedDate}
+                  draftJobDates={draftJobDates}
                 />
               </Flex>
               <Flex gap={8}>
