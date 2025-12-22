@@ -68,7 +68,6 @@ export default function JobsList() {
       viewColumnRenderer: (params: any) => (
         <Button
           type="link"
-          size="small"
           onClick={() => {
             if (params.data.location?.lat && params.data.location?.lng) {
               setMapViewJob(params.data);
@@ -93,16 +92,16 @@ export default function JobsList() {
   }
 
   return (
-    <div className="flex flex-col h-full relative top-[-8px]">
-      <Flex justify="space-between" align="center">
-        <Title level={5} className="m-0 pt-2">
+    <div className="flex flex-col h-full">
+      <Flex justify="space-between" align="center" className="my-4">
+        <Title level={4} className="m-0 pt-2">
           Jobs
         </Title>
 
         <Radio.Group
+          buttonStyle="solid"
           onChange={handleJobStatusChange}
           value={selectedJobStatus}
-          size="small"
         >
           <Radio.Button value="draft">Draft</Radio.Button>
           <Radio.Button value="assigned">Assigned</Radio.Button>
@@ -118,7 +117,6 @@ export default function JobsList() {
         >
           <Button
             type="primary"
-            size="small"
             disabled={selectedJobIds.length === 0}
             onClick={() => setShowCreateRouteModal(true)}
             style={{
@@ -128,12 +126,12 @@ export default function JobsList() {
             Create New Route
           </Button>
           <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
-            <Button size="small">Add Jobs</Button>
+            <Button>Add Jobs</Button>
           </Link>
         </Flex>
       </Flex>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 mt-2">
         <BaseTable<Job>
           columnDefs={columns}
           rowData={jobs}

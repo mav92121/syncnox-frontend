@@ -64,7 +64,6 @@ const Recents = () => {
       viewColumnRenderer: (params: any) => (
         <Button
           type="link"
-          size="small"
           onClick={() => {
             if (params.data.location?.lat && params.data.location?.lng) {
               setMapCenter({
@@ -122,14 +121,13 @@ const Recents = () => {
 
         {/* Jobs Section Panel */}
         <Panel defaultSize={60} minSize={5}>
-          <div className="flex flex-col h-full">
-            <Flex justify="space-between" align="center">
+          <div className="flex flex-col h-full mt-2">
+            <Flex justify="space-between" align="center" className="my-4">
               <Flex gap={24} align="center">
-                <Title level={5} className="m-0 mb-2 pt-2">
+                <Title level={4} className="m-0 pt-2">
                   Jobs
                 </Title>
                 <DatePicker
-                  size="small"
                   allowClear={false}
                   value={selectedDate ? dayjs(selectedDate) : null}
                   onChange={(date) => {
@@ -156,12 +154,11 @@ const Recents = () => {
               </Flex>
               <Flex gap={8}>
                 <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
-                  <Button size="small">Add Jobs</Button>
+                  <Button>Add Jobs</Button>
                 </Link>
                 <Button
                   disabled={selectedJobIds.length === 0}
                   type="primary"
-                  size="small"
                   onClick={() => setShowCreateRouteModal(true)}
                 >
                   Create New Route
@@ -170,7 +167,7 @@ const Recents = () => {
             </Flex>
 
             {/* Table with explicit height */}
-            <div className="flex-1 mb-2">
+            <div className="flex-1 mb-2 mt-2">
               <BaseTable<Job>
                 columnDefs={columns}
                 rowData={draftJobs}

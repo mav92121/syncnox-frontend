@@ -88,16 +88,6 @@ export const createJobTableColumns = (options?: {
       minWidth: 130,
     },
     {
-      field: "first_name",
-      headerName: "First Name",
-      width: 150,
-    },
-    {
-      field: "last_name",
-      headerName: "Last Name",
-      width: 150,
-    },
-    {
       field: "address_formatted",
       headerName: "Address",
       width: 280,
@@ -119,8 +109,19 @@ export const createJobTableColumns = (options?: {
       }),
     },
     {
-      field: "business_name",
-      headerName: "Business Name",
+      field: "scheduled_date",
+      headerName: "Scheduled Date",
+      width: 150,
+    },
+    {
+      field: "phone_number",
+      headerName: "Phone",
+      width: 150,
+    },
+    {
+      field: "service_duration",
+      headerName: "Duration (mins)",
+      width: 150,
     },
     {
       field: "status",
@@ -129,6 +130,29 @@ export const createJobTableColumns = (options?: {
       ),
       width: 130,
       minWidth: 130,
+    },
+    {
+      headerName: "Time Window",
+      valueGetter: (params: any) =>
+        formatTimeWindow(
+          params.data.time_window_start,
+          params.data.time_window_end
+        ),
+      width: 200,
+    },
+    {
+      field: "first_name",
+      headerName: "First Name",
+      width: 150,
+    },
+    {
+      field: "last_name",
+      headerName: "Last Name",
+      width: 150,
+    },
+    {
+      field: "business_name",
+      headerName: "Business Name",
     },
     {
       field: "route_name",
@@ -148,30 +172,6 @@ export const createJobTableColumns = (options?: {
           </Link>
         );
       },
-    },
-    {
-      field: "phone_number",
-      headerName: "Phone",
-      width: 150,
-    },
-    {
-      field: "service_duration",
-      headerName: "Duration (mins)",
-      width: 150,
-    },
-    {
-      field: "scheduled_date",
-      headerName: "Scheduled Date",
-      width: 150,
-    },
-    {
-      headerName: "Time Window",
-      valueGetter: (params: any) =>
-        formatTimeWindow(
-          params.data.time_window_start,
-          params.data.time_window_end
-        ),
-      width: 200,
     },
     {
       field: "customer_preferences",

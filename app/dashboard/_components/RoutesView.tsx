@@ -77,7 +77,6 @@ export default function RoutesView() {
         return (
           <Button
             type="link"
-            size="small"
             onClick={() => {
               router.push(`/route/${params.data.optimization_id}`);
             }}
@@ -172,7 +171,7 @@ export default function RoutesView() {
   ];
   return (
     <div className="flex flex-col h-full">
-      <Title level={5} className="m-0">
+      <Title level={4} className="m-0">
         Routes
       </Title>
       <div className="flex-1 min-h-0">
