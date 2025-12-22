@@ -9,9 +9,11 @@ interface RouteStore {
   currentRoute: Route | null;
   isLoading: boolean;
   error: string | null;
-  fetchRoutes: () => Promise<void>;
+  fetchRoutes: (status?: string) => Promise<void>;
   initializeRoutes: () => Promise<void>;
   hasFetched: boolean;
+  selectedStatus: string;
+  setSelectedStatus: (status: string) => void;
   setCurrentRoute: (route: Route | null) => void;
   updateRoute: (route: Route) => void;
   deleteRoute: (id: number) => Promise<void>;
@@ -25,11 +27,12 @@ export const useRouteStore = create(
       isLoading: false,
       error: null,
       hasFetched: false,
+      selectedStatus: "scheduled",
 
-      fetchRoutes: async () => {
+      fetchRoutes: async (status?: string) => {
         set({ isLoading: true });
         try {
-          const routes = await fetchRoutes();
+          const routes = await fetchRoutes(status);
           set({ routes });
           set({ hasFetched: true });
         } catch (error) {
@@ -39,9 +42,13 @@ export const useRouteStore = create(
         }
       },
       initializeRoutes: async () => {
-        const { hasFetched, isLoading } = get();
+        const { hasFetched, isLoading, selectedStatus } = get();
         if (hasFetched || isLoading) return;
-        await get().fetchRoutes();
+        await get().fetchRoutes(selectedStatus);
+      },
+      setSelectedStatus: (status: string) => {
+        set({ selectedStatus: status });
+        get().fetchRoutes(status);
       },
       setCurrentRoute: (route: Route | null) => set({ currentRoute: route }),
       updateRoute: (updatedRoute: Route) => {

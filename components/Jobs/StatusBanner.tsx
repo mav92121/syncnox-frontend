@@ -10,7 +10,10 @@ const StatusBadge = ({
   return (
     <div className="flex text-center items-center justify-start h-full w-full">
       <span className={`${style} px-3 text-sm font-medium min-w-[100px]`}>
-        {value[0].toUpperCase() + value.slice(1)}
+        {value
+          .split("_")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ")}
       </span>
     </div>
   );
