@@ -120,7 +120,7 @@ const TeamMemberForm = ({
         style={{
           width: "200px",
           borderRight: "1px solid #f0f0f0",
-          paddingRight: "12px",
+          paddingRight: "8px",
           paddingTop: "12px",
         }}
       >
@@ -152,7 +152,7 @@ const TeamMemberForm = ({
             flex: 1,
             overflowY: "auto",
             overflowX: "hidden",
-            paddingRight: "8px",
+            // paddingRight: "8px",
           }}
           className="custom-scrollbar"
         >

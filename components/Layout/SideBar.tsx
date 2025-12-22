@@ -184,7 +184,7 @@ const SideBar = () => {
             {item.label === "Plan" ? (
               <Link onClick={() => setCurrentTab(item.tabKey)} href={item.path}>
                 <button className="w-full bg-primary text-white py-2.5 flex items-center transition-all duration-200 hover:opacity-90 cursor-pointer">
-                  <div className="w-5 h-5 flex items-center justify-center ml-2.5 shrink-0">
+                  <div className="w-5 h-5 flex items-center justify-center ml-[13px] shrink-0">
                     <item.icon className="text-xl text-white" />
                   </div>
                   <span
@@ -200,7 +200,7 @@ const SideBar = () => {
             ) : (
               <Link onClick={() => setCurrentTab(item.tabKey)} href={item.path}>
                 <button
-                  className={`w-full flex items-center pl-2.5 py-2.5 transition-all duration-200 cursor-pointer ${
+                  className={`w-full flex items-center pl-3 py-2.5 transition-all duration-200 cursor-pointer ${
                     isActive(item.path)
                       ? "bg-[#F6FFED] text-primary"
                       : "hover:bg-gray-50 text-gray-700"
@@ -228,7 +228,7 @@ const SideBar = () => {
       <div className="border-t pt-3 pb-4 px-2">
         {/* User Profile */}
         <div
-          className={`flex items-center px-2 mb-3 cursor-pointer ${
+          className={`flex items-center pl-1 mb-3 cursor-pointer ${
             isExpanded ? "" : "justify-center"
           }`}
         >
@@ -251,7 +251,7 @@ const SideBar = () => {
           <button
             key={index}
             onClick={item.action}
-            className={`w-full flex items-center pl-2.5 py-2.5 transition-all duration-200 cursor-pointer ${
+            className={`w-full flex items-center pl-3 py-2.5 transition-all duration-200 cursor-pointer ${
               item.isDanger
                 ? "text-red-600 hover:bg-red-50"
                 : "text-gray-700 hover:bg-gray-50"

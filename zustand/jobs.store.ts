@@ -30,6 +30,7 @@ interface JobsState {
   createJobAction: (job: Job) => Promise<Job>; // Create job with API call + state update
   updateJobAction: (job: Job) => Promise<Job>; // Update job with API call + state update
   deleteJobAction: (jobId: number) => Promise<void>; // Delete job with API call + state update
+  refreshDraftJobs: () => Promise<void>;
   clearJobs: () => void;
   setSelectedDate: (date: string | null) => void;
   filterDraftJobs: () => void;
@@ -304,6 +305,48 @@ export const useJobsStore = create<JobsState>()(
               error instanceof Error ? error.message : "Failed to delete job";
           });
           throw error; // Re-throw so component can handle the error
+        }
+      },
+
+      refreshDraftJobs: async () => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          const draftJobsData = await fetchJobs({
+            status: "draft",
+            limit: 1000,
+          });
+
+          set((state) => {
+            state.jobs = draftJobsData;
+            state.allDraftJobs = draftJobsData;
+            state.draftJobDates = [
+              ...new Set(draftJobsData.map((job) => job.scheduled_date)),
+            ].sort();
+
+            // Update selectedDate if needed or keep existing logic
+            if (!state.selectedDate && state.draftJobDates.length > 0) {
+              state.selectedDate =
+                state.draftJobDates[state.draftJobDates.length - 1];
+            } else if (!state.selectedDate) {
+              state.selectedDate = dayjs().format("YYYY-MM-DD");
+            }
+
+            state.isLoading = false;
+          });
+
+          get().filterDraftJobs();
+        } catch (error) {
+          set((state) => {
+            state.error =
+              error instanceof Error
+                ? error.message
+                : "Failed to refresh draft jobs";
+            state.isLoading = false;
+          });
         }
       },
 

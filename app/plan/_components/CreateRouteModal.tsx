@@ -37,7 +37,7 @@ const CreateRouteModal = ({
   const { depots } = useDepotStore();
   const { teams } = useTeamStore();
   const { fetchRoutes } = useRouteStore();
-  const { fetchJobs } = useJobsStore();
+  const { refreshDraftJobs } = useJobsStore();
   const {
     startOptimization,
     currentOptimization,
@@ -80,13 +80,21 @@ const CreateRouteModal = ({
         router.push(`/route/${currentOptimization.id}`);
         setOpen(false);
         fetchRoutes();
-        fetchJobs();
+        // Use refreshDraftJobs to specifically update the draft jobs store
+        refreshDraftJobs();
         form.resetFields();
       }, 1000);
 
       return () => clearTimeout(timeout);
     }
-  }, [currentOptimization, router, setOpen, form, fetchRoutes, fetchJobs]);
+  }, [
+    currentOptimization,
+    router,
+    setOpen,
+    form,
+    fetchRoutes,
+    refreshDraftJobs,
+  ]);
 
   const handleFinish = async (values: any) => {
     setIsSubmitting(true);
