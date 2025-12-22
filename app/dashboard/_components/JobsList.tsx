@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Typography, Button, Drawer, Modal, Flex, Radio } from "antd";
+import { Typography, Button, Drawer, Modal, Flex, Radio, message } from "antd";
+import { DeleteOutlined, ExclamationCircleFilled } from "@ant-design/icons";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useTeamStore } from "@/zustand/team.store";
 import { useIndexStore } from "@/zustand/index.store";
@@ -24,6 +25,7 @@ export default function JobsList() {
     isLoading,
     error,
     deleteJobAction,
+    deleteJobsAction,
     fetchJobsByStatus,
     resetAllJobs,
     selectedDate,
@@ -39,8 +41,32 @@ export default function JobsList() {
     useState<JobStatus>("draft");
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
 
+  const handleDeleteJobsRequest = () => {
+    if (selectedJobIds.length === 0) return;
+
+    Modal.confirm({
+      title: "Delete Job",
+      icon: <ExclamationCircleFilled />,
+      content: `Are you sure you want to delete ${selectedJobIds.length} jobs?`,
+      okText: "Delete",
+      okButtonProps: { danger: true },
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await deleteJobsAction(selectedJobIds, selectedJobStatus);
+          message.success(`Successfully deleted ${selectedJobIds.length} jobs`);
+          setSelectedJobIds([]);
+        } catch (err) {
+          message.error("Failed to delete jobs");
+          console.error(err);
+        }
+      },
+    });
+  };
+
   const handleJobStatusChange = (e: any) => {
     setSelectedJobStatus(e.target.value);
+    setSelectedJobIds([]);
     fetchJobsByStatus(e.target.value as JobStatus);
   };
 
@@ -133,8 +159,20 @@ export default function JobsList() {
           }}
         >
           <Button
-            type="primary"
+            style={{
+              visibility: selectedJobStatus === "draft" ? "visible" : "hidden",
+            }}
+            danger
             disabled={selectedJobIds.length === 0}
+            onClick={handleDeleteJobsRequest}
+            loading={isLoading}
+            icon={<DeleteOutlined />}
+          />
+          <Button
+            type="primary"
+            disabled={
+              selectedJobIds.length === 0 || selectedJobStatus !== "draft"
+            }
             onClick={() => setShowCreateRouteModal(true)}
             style={{
               visibility: selectedJobStatus === "draft" ? "visible" : "hidden",
