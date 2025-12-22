@@ -77,6 +77,7 @@ export default function RoutesView() {
         return (
           <Button
             type="link"
+            size="small"
             onClick={() => {
               router.push(`/route/${params.data.optimization_id}`);
             }}

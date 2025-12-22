@@ -1,7 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Typography, Button, Drawer, Modal, Flex, Radio } from "antd";
+import {
+  Typography,
+  Button,
+  Drawer,
+  Modal,
+  Flex,
+  Radio,
+  DatePicker,
+} from "antd";
+import dayjs from "dayjs";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useTeamStore } from "@/zustand/team.store";
 import { useIndexStore } from "@/zustand/index.store";
@@ -19,11 +28,15 @@ const { Title } = Typography;
 export default function JobsList() {
   const {
     jobs,
+    draftJobs,
     isLoading,
     error,
     deleteJobAction,
     fetchJobsByStatus,
     resetAllJobs,
+    selectedDate,
+    setSelectedDate,
+    draftJobDates,
   } = useJobsStore();
   const { getTeamsMap } = useTeamStore();
   const { setCurrentTab } = useIndexStore();
@@ -46,7 +59,8 @@ export default function JobsList() {
   }, []);
 
   // Transform jobs into markers for GoogleMaps
-  const markers = jobs
+  const displayedJobs = selectedJobStatus === "draft" ? draftJobs : jobs;
+  const markers = displayedJobs
     .filter((job) => job.location?.lat && job.location?.lng)
     .map((job, index) => ({
       id: job.id,
@@ -68,6 +82,7 @@ export default function JobsList() {
       viewColumnRenderer: (params: any) => (
         <Button
           type="link"
+          size="small"
           onClick={() => {
             if (params.data.location?.lat && params.data.location?.lng) {
               setMapViewJob(params.data);
@@ -94,9 +109,38 @@ export default function JobsList() {
   return (
     <div className="flex flex-col h-full">
       <Flex justify="space-between" align="center" className="my-4">
-        <Title level={4} className="m-0 pt-2">
-          Jobs
-        </Title>
+        <Flex gap={24} align="center">
+          <Title level={4} className="m-0 pt-2">
+            Jobs
+          </Title>
+          <DatePicker
+            allowClear={false}
+            value={selectedDate ? dayjs(selectedDate) : null}
+            onChange={(date) => {
+              if (date) {
+                setSelectedDate(date.format("YYYY-MM-DD"));
+              }
+            }}
+            cellRender={(current, info) => {
+              if (info.type !== "date") return info.originNode;
+              const dateStr = dayjs(current).format("YYYY-MM-DD");
+              const hasDraftJobs = draftJobDates.includes(dateStr);
+
+              if (hasDraftJobs) {
+                return (
+                  <div className="ant-picker-cell-inner relative!">
+                    {dayjs(current).date()}
+                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-500 rounded-full"></div>
+                  </div>
+                );
+              }
+              return info.originNode;
+            }}
+            style={{
+              visibility: selectedJobStatus === "draft" ? "visible" : "hidden",
+            }}
+          />
+        </Flex>
 
         <Radio.Group
           buttonStyle="solid"
@@ -134,10 +178,14 @@ export default function JobsList() {
       <div className="flex-1 min-h-0 mt-2">
         <BaseTable<Job>
           columnDefs={columns}
-          rowData={jobs}
+          rowData={selectedJobStatus === "draft" ? draftJobs : jobs}
           rowSelection="multiple"
           loading={isLoading}
-          emptyMessage="No jobs to show"
+          emptyMessage={
+            selectedJobStatus === "draft"
+              ? "No jobs on the selected date"
+              : "No jobs to show"
+          }
           pagination={true}
           containerStyle={{ height: "100%" }}
           onSelectionChanged={(event) => {
@@ -192,7 +240,7 @@ export default function JobsList() {
             selectedMarkerId={mapViewJob.id}
             onMarkerSelect={(id) => {
               // Find and set the new job when marker is clicked
-              const selectedJob = jobs.find((job) => job.id === id);
+              const selectedJob = displayedJobs.find((job) => job.id === id);
               if (selectedJob) {
                 setMapViewJob(selectedJob);
               }

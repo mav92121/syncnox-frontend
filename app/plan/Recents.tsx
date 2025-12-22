@@ -64,6 +64,7 @@ const Recents = () => {
       viewColumnRenderer: (params: any) => (
         <Button
           type="link"
+          size="small"
           onClick={() => {
             if (params.data.location?.lat && params.data.location?.lng) {
               setMapCenter({
