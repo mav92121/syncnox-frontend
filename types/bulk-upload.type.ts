@@ -42,8 +42,27 @@ export interface BulkGeocodeRequest {
   scheduled_date?: string;
 }
 
+export interface JobCreate {
+  location: { lat: number; lng: number };
+  address_formatted: string;
+  scheduled_date?: string;
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  email?: string;
+  business_name?: string;
+  time_window_start?: string;
+  time_window_end?: string;
+  service_duration?: number;
+  job_type?: string;
+  priority_level?: string;
+  customer_preferences?: string;
+  additional_notes?: string;
+  [key: string]: any; // Additional fields from CSV/original data
+}
+
 export interface BulkImportRequest {
-  jobs: any[]; // JobCreate[]
+  jobs: JobCreate[];
   save_mapping: boolean;
   mapping_config: Record<string, string> | null;
 }
