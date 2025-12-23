@@ -35,7 +35,7 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
       open={open}
       onCancel={handleClose}
       footer={null}
-      width={800}
+      width="70vw"
       destroyOnClose
     >
       <div>

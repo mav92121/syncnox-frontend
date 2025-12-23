@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { AgGridReact } from "ag-grid-react";
-import { Button, Alert, Badge, Space, message } from "antd";
+import { Button, Badge, Space, message } from "antd";
 import {
   CheckCircleOutlined,
   WarningOutlined,
@@ -22,7 +22,7 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
   const gridRef = useRef<AgGridReact>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const { geocodedData, columnMapping, saveAsDefault, updateGeocodedRow } =
+  const { geocodedData, columnMapping, saveAsDefault, defaultScheduledDate } =
     useBulkUploadStore();
   const { refreshDraftJobs } = useJobsStore();
 
@@ -43,12 +43,13 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
     }));
   }, [geocodedData]);
 
-  const columnDefs: ColDef[] = useMemo(
-    () => [
+  const columnDefs: ColDef[] = useMemo(() => {
+    const columns: ColDef[] = [
       {
         headerName: "Status",
         field: "status",
         width: 100,
+        pinned: "left",
         cellRenderer: (params: any) => {
           // Show error only if there's an error message or no coordinates
           if (
@@ -76,11 +77,15 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
           );
         },
       },
+    ];
+
+    // Add geocoding result columns
+    columns.push(
       {
         headerName: "Address",
         field: "address",
-        flex: 2,
-        editable: true,
+        width: 250,
+        pinned: "left",
         cellStyle: (params: any) => {
           if (params.data.error) return { backgroundColor: "#fff1f0" };
           if (params.data.isDuplicate) return { backgroundColor: "#e6f7ff" };
@@ -100,21 +105,44 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
       {
         headerName: "Formatted Address",
         field: "formattedAddress",
-        flex: 2,
-      },
-      {
-        headerName: "Customer",
-        field: "firstName",
-        flex: 1,
-        valueGetter: (params) => {
-          const first = params.data.firstName || "";
-          const last = params.data.lastName || "";
-          return `${first} ${last}`.trim();
-        },
-      },
-    ],
-    []
-  );
+        width: 250,
+      }
+    );
+
+    // Dynamically add columns for all mapped fields
+    // Create a mapping of field identifiers to user-friendly names
+    const fieldLabels: Record<string, string> = {
+      first_name: "First Name",
+      last_name: "Last Name",
+      phone_number: "Phone",
+      email: "Email",
+      business_name: "Business Name",
+      time_window_start: "Time Start",
+      time_window_end: "Time End",
+      service_duration: "Duration (min)",
+      additional_notes: "Notes",
+      customer_preferences: "Preferences",
+      priority_level: "Priority",
+      job_type: "Job Type",
+      scheduled_date: "Scheduled Date",
+    };
+
+    // Get all mapped fields from columnMapping (excluding address since we already show it)
+    Object.keys(columnMapping).forEach((identifier) => {
+      if (identifier !== "address_formatted" && columnMapping[identifier]) {
+        columns.push({
+          headerName: fieldLabels[identifier] || identifier,
+          field: identifier,
+          width: 150,
+          valueGetter: (params) => {
+            return params.data[identifier] || "";
+          },
+        });
+      }
+    });
+
+    return columns;
+  }, [columnMapping]);
 
   const handleImport = async () => {
     setIsImporting(true);
@@ -129,15 +157,26 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
             row.geocode_result.lat != null &&
             row.geocode_result.lng != null
         )
-        .map((row) => ({
-          ...row.original_data,
-          location: {
-            lat: row.geocode_result.lat!,
-            lng: row.geocode_result.lng!,
-          },
-          address_formatted:
-            row.geocode_result.formatted_address || row.geocode_result.address,
-        }));
+        .map((row) => {
+          const jobData: any = {
+            ...row.original_data,
+            location: {
+              lat: row.geocode_result.lat!,
+              lng: row.geocode_result.lng!,
+            },
+            address_formatted:
+              row.geocode_result.formatted_address ||
+              row.geocode_result.address,
+          };
+
+          // Apply default scheduled date if not present in original data
+          // Excel date takes priority over default date
+          if (!jobData.scheduled_date && defaultScheduledDate) {
+            jobData.scheduled_date = defaultScheduledDate;
+          }
+
+          return jobData;
+        });
 
       const response = await importBulkJobs({
         jobs,

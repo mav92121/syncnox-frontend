@@ -10,6 +10,9 @@ interface BulkUploadStore {
   uploadedFile: File | null;
   uploadResponse: BulkUploadResponse | null;
 
+  // Default scheduled date for bulk upload
+  defaultScheduledDate: string | null;
+
   // Column mapping
   columnMapping: Record<string, string>; // {identifier: excel_column_name}
   saveAsDefault: boolean;
@@ -22,6 +25,7 @@ interface BulkUploadStore {
   setCurrentStep: (step: number) => void;
   setUploadedFile: (file: File | null) => void;
   setUploadResponse: (response: BulkUploadResponse | null) => void;
+  setDefaultScheduledDate: (date: string | null) => void;
   setColumnMapping: (mapping: Record<string, string>) => void;
   setSaveAsDefault: (save: boolean) => void;
   setGeocodedData: (data: GeocodedRow[]) => void;
@@ -34,6 +38,7 @@ const initialState = {
   currentStep: 1,
   uploadedFile: null,
   uploadResponse: null,
+  defaultScheduledDate: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD
   columnMapping: {},
   saveAsDefault: true, // Default to checked
   geocodedData: [],
@@ -59,6 +64,12 @@ export const useBulkUploadStore = create<BulkUploadStore>()(
     setUploadResponse: (response: BulkUploadResponse | null) => {
       set((state) => {
         state.uploadResponse = response;
+      });
+    },
+
+    setDefaultScheduledDate: (date: string | null) => {
+      set((state) => {
+        state.defaultScheduledDate = date;
       });
     },
 
