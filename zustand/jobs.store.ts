@@ -10,6 +10,7 @@ import {
   deleteJob as deleteJobApi,
   deleteJobsBulk,
 } from "@/apis/jobs.api";
+import { findClosestDateToToday } from "@/utils/date.utils";
 
 interface JobsState {
   // Data
@@ -86,12 +87,9 @@ export const useJobsStore = create<JobsState>()(
               ...new Set(draftJobsData.map((job) => job.scheduled_date)),
             ].sort();
 
-            // Set initial selected date to latest available if exists, else today
-            if (!state.selectedDate && state.draftJobDates.length > 0) {
-              state.selectedDate =
-                state.draftJobDates[state.draftJobDates.length - 1];
-            } else if (!state.selectedDate) {
-              state.selectedDate = dayjs().format("YYYY-MM-DD");
+            // Set initial selected date to the date closest to today
+            if (!state.selectedDate) {
+              state.selectedDate = findClosestDateToToday(state.draftJobDates);
             }
 
             state.isLoading = false;
@@ -352,13 +350,8 @@ export const useJobsStore = create<JobsState>()(
               ...new Set(draftJobsData.map((job) => job.scheduled_date)),
             ].sort();
 
-            // Update selectedDate if needed or keep existing logic
-            if (!state.selectedDate && state.draftJobDates.length > 0) {
-              state.selectedDate =
-                state.draftJobDates[state.draftJobDates.length - 1];
-            } else if (!state.selectedDate) {
-              state.selectedDate = dayjs().format("YYYY-MM-DD");
-            }
+            // Always set selectedDate to the date closest to today
+            state.selectedDate = findClosestDateToToday(state.draftJobDates);
 
             state.isLoading = false;
           });
