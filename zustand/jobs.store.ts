@@ -352,12 +352,26 @@ export const useJobsStore = create<JobsState>()(
               ...new Set(draftJobsData.map((job) => job.scheduled_date)),
             ].sort();
 
-            // Update selectedDate if needed or keep existing logic
-            if (!state.selectedDate && state.draftJobDates.length > 0) {
-              state.selectedDate =
-                state.draftJobDates[state.draftJobDates.length - 1];
-            } else if (!state.selectedDate) {
-              state.selectedDate = dayjs().format("YYYY-MM-DD");
+            // Always set selectedDate to the date closest to today
+            const today = dayjs().format("YYYY-MM-DD");
+
+            if (state.draftJobDates.length > 0) {
+              // Find the date closest to today
+              let closestDate = state.draftJobDates[0];
+              let minDiff = Math.abs(dayjs(closestDate).diff(today, "day"));
+
+              for (const date of state.draftJobDates) {
+                const diff = Math.abs(dayjs(date).diff(today, "day"));
+                if (diff < minDiff) {
+                  minDiff = diff;
+                  closestDate = date;
+                }
+              }
+
+              state.selectedDate = closestDate;
+            } else {
+              // If no draft jobs, default to today
+              state.selectedDate = today;
             }
 
             state.isLoading = false;

@@ -3,9 +3,12 @@ import { Button } from "antd";
 import GoogleMaps from "@/components/GoogleMaps";
 import { FileAddOutlined, UploadOutlined } from "@ant-design/icons";
 import AddJobsModal from "./AddJobsModal";
+import BulkUploadModal from "@/components/BulkUploadModal";
 
 const Plan = () => {
   const [isAddJobsModalOpen, setIsAddJobsModalOpen] = useState(false);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+
   return (
     <div className="h-full w-full overflow-y-hidden">
       <div className="h-full w-full opacity-30">
@@ -17,7 +20,11 @@ const Plan = () => {
         />
       </div>
       <div className="absolute top-1/3 right-1/2 transform translate-x-1/2 translate-y-1/2 flex flex-col gap-5 w-[500px]">
-        <Button size="middle" className="flex gap-1">
+        <Button
+          onClick={() => setIsBulkUploadOpen(true)}
+          size="middle"
+          className="flex gap-1"
+        >
           <UploadOutlined /> <p className="text-lg">Bulk Upload Jobs</p>
         </Button>
         <Button
@@ -30,6 +37,10 @@ const Plan = () => {
         </Button>
       </div>
       <AddJobsModal open={isAddJobsModalOpen} setOpen={setIsAddJobsModalOpen} />
+      <BulkUploadModal
+        open={isBulkUploadOpen}
+        onClose={() => setIsBulkUploadOpen(false)}
+      />
     </div>
   );
 };
