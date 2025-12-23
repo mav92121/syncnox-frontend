@@ -28,12 +28,17 @@ export const uploadBulkFile = async (
 
 export const geocodeBulkData = async (
   file: File,
-  columnMapping: Record<string, string>
+  columnMapping: Record<string, string>,
+  defaultScheduledDate: string | null = null
 ): Promise<BulkGeocodeResponse> => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("column_mapping", JSON.stringify(columnMapping));
   formData.append("data", JSON.stringify([])); // Empty, backend re-parses file
+
+  if (defaultScheduledDate) {
+    formData.append("default_scheduled_date", defaultScheduledDate);
+  }
 
   const response = await apiClient.post<BulkGeocodeResponse>(
     "/jobs/bulk/geocode",

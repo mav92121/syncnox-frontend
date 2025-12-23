@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Alert, Upload, message } from "antd";
+import { Alert, Upload, message, DatePicker } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import type { UploadFile } from "antd";
+import dayjs, { Dayjs } from "dayjs";
 import { useBulkUploadStore } from "@/zustand/bulkUploadStore";
 import { uploadBulkFile } from "@/apis/bulk-upload.api";
 
@@ -18,6 +19,8 @@ const FileUploadStep = () => {
     setUploadResponse,
     setCurrentStep,
     setColumnMapping,
+    defaultScheduledDate,
+    setDefaultScheduledDate,
   } = useBulkUploadStore();
 
   const handleUpload = async (file: File) => {
@@ -106,6 +109,27 @@ const FileUploadStep = () => {
           Supported: CSV, Excel or Tab-delimited text files
         </p>
       </Dragger>
+
+      {/* Default Scheduled Date */}
+      <div className="space-y-2 mt-4">
+        <label className="block text-sm font-medium text-gray-700">
+          Default Scheduled Date (Optional)
+        </label>
+        <DatePicker
+          value={defaultScheduledDate ? dayjs(defaultScheduledDate) : null}
+          onChange={(date: Dayjs | null) => {
+            setDefaultScheduledDate(date ? date.format("YYYY-MM-DD") : null);
+          }}
+          format="YYYY-MM-DD"
+          className="w-full"
+          placeholder="Select default date for all jobs"
+          disabled={isUploading}
+        />
+        <p className="text-xs text-gray-500 mt-2">
+          This date will be applied to all jobs. If your Excel file has a
+          "Scheduled Date" column, those dates will override this default.
+        </p>
+      </div>
     </div>
   );
 };

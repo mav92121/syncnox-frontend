@@ -19,6 +19,7 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
     setSaveAsDefault,
     setGeocodedData,
     setIsGeocoding,
+    defaultScheduledDate,
   } = useBulkUploadStore();
 
   const [localMapping, setLocalMapping] = useState<Record<string, string>>({});
@@ -82,7 +83,11 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
         apiMapping[identifier] = columnName;
       });
 
-      const response = await geocodeBulkData(uploadedFile, apiMapping);
+      const response = await geocodeBulkData(
+        uploadedFile,
+        apiMapping,
+        defaultScheduledDate
+      );
 
       setColumnMapping(apiMapping);
       setGeocodedData(response.data);
