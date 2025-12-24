@@ -10,6 +10,7 @@ import SideBar from "@/components/Layout/SideBar";
 import NavBar from "@/components/Layout/NavBar";
 import { useRouteStore } from "@/zustand/routes.store";
 import { useDepotStore } from "@/zustand/depots.store";
+import { useAutoSyncTab } from "@/hooks/useAutoSyncTab";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -25,6 +26,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     ModuleRegistry.registerModules([AllCommunityModule]);
   }, []);
+  useAutoSyncTab();
 
   // Sync session with user store (for page refreshes and session changes)
   useEffect(() => {

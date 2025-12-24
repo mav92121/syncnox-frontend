@@ -33,7 +33,6 @@ export default function JobsList() {
     draftJobDates,
   } = useJobsStore();
   const { getTeamsMap } = useTeamStore();
-  const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapViewJob, setMapViewJob] = useState<Job | null>(null);
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
@@ -178,8 +177,7 @@ export default function JobsList() {
             danger
             disabled={selectedJobIds.length === 0}
             onClick={handleDeleteJobsRequest}
-            loading={isLoading}
-            icon={<DeleteOutlined />}
+            icon={<DeleteOutlined style={{ fontSize: 18 }} />}
           />
           <Button
             type="primary"
@@ -193,7 +191,7 @@ export default function JobsList() {
           >
             Create New Route
           </Button>
-          <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
+          <Link href="/plan">
             <Button>Add Jobs</Button>
           </Link>
         </Flex>

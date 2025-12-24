@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 import { useState } from "react";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
+import Link from "next/link";
 
 const { Title } = Typography;
 
@@ -199,11 +200,11 @@ export default function RoutesView() {
           <Radio.Button value="in_transit">In Transit</Radio.Button>
           <Radio.Button value="completed">Completed</Radio.Button>
         </Radio.Group>
-        <div>
-          <Button style={{ visibility: "hidden" }} type="primary">
-            Add Route
-          </Button>
-        </div>
+        <Flex gap={8}>
+          <Link href="plan">
+            <Button type="primary">Create New Route</Button>
+          </Link>
+        </Flex>
       </Flex>
       <div className="flex-1 min-h-0 mt-2">
         <BaseTable<AllRoutes>

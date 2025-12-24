@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Avatar } from "antd";
+import { Avatar, Modal, Typography } from "antd";
 import {
   RocketOutlined,
   BarChartOutlined,
@@ -16,7 +16,8 @@ import {
 } from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/zustand/index.store";
 import { signOut } from "next-auth/react";
-import { useJobsStore } from "@/zustand/jobs.store";
+
+const { Title } = Typography;
 
 interface MenuItem {
   icon: React.ComponentType<any>;
@@ -36,7 +37,7 @@ const SideBar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
-  const { user, clearUser, setCurrentTab } = useIndexStore();
+  const { user, clearUser } = useIndexStore();
 
   // Clean up timers on unmount
   useEffect(() => {
@@ -47,13 +48,22 @@ const SideBar = () => {
     };
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      clearUser();
-      await signOut({ callbackUrl: "/sign-in" });
-    } catch (error) {
-      console.log("error -> ", error);
-    }
+  const handleLogout = () => {
+    Modal.confirm({
+      title: <Title level={5}>Confirm Logout</Title>,
+      content: "Are you sure you want to logout?",
+      okText: "Logout",
+      cancelText: "Cancel",
+      okType: "danger",
+      onOk: async () => {
+        try {
+          clearUser();
+          await signOut({ callbackUrl: "/sign-in" });
+        } catch (error) {
+          console.log("error -> ", error);
+        }
+      },
+    });
   };
 
   const menuItems: MenuItem[] = [
@@ -144,7 +154,7 @@ const SideBar = () => {
       <div className="pt-3 px-4 mb-4 h-16 flex items-center">
         <div className="transition-all duration-300 ease-in-out w-full">
           {isExpanded ? (
-            <Link onClick={() => setCurrentTab("dashboard")} href="/dashboard">
+            <Link href="/dashboard">
               <div className="flex items-center cursor-pointer">
                 <Image
                   src="/syncnox.svg"
@@ -180,7 +190,7 @@ const SideBar = () => {
         {menuItems.map((item, index) => (
           <div key={index} className="mb-1">
             {item.label === "Plan" ? (
-              <Link onClick={() => setCurrentTab(item.tabKey)} href={item.path}>
+              <Link href={item.path}>
                 <button className="w-full bg-primary text-white py-2.5 flex items-center transition-all duration-200 hover:opacity-90 cursor-pointer">
                   <div className="w-5 h-5 flex items-center justify-center ml-[13px] shrink-0">
                     <item.icon className="text-xl text-white" />
@@ -196,7 +206,7 @@ const SideBar = () => {
                 </button>
               </Link>
             ) : (
-              <Link onClick={() => setCurrentTab(item.tabKey)} href={item.path}>
+              <Link href={item.path}>
                 <button
                   className={`w-full flex items-center pl-3 py-2.5 transition-all duration-200 cursor-pointer ${
                     isActive(item.path)

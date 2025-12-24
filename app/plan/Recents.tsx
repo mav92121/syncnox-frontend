@@ -29,7 +29,6 @@ const Recents = () => {
     draftJobDates,
   } = useJobsStore();
   const { getTeamsMap } = useTeamStore();
-  const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapCenter, setMapCenter] = useState<{
     lat: number;
@@ -148,7 +147,7 @@ const Recents = () => {
                 />
               </Flex>
               <Flex gap={8}>
-                <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
+                <Link href="/plan">
                   <Button>Add Jobs</Button>
                 </Link>
                 <Button
