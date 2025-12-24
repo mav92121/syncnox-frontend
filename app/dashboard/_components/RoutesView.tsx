@@ -201,7 +201,7 @@ export default function RoutesView() {
           <Radio.Button value="completed">Completed</Radio.Button>
         </Radio.Group>
         <Flex gap={8}>
-          <Link href="plan">
+          <Link href="/plan">
             <Button type="primary">Create New Route</Button>
           </Link>
         </Flex>

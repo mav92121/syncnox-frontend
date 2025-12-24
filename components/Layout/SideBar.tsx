@@ -37,7 +37,13 @@ const SideBar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
-  const { user, clearUser } = useIndexStore();
+  const { user, clearUser, setCurrentTab } = useIndexStore();
+
+  const handleNavigation = (path: string, tabKey: TabKey) => {
+    if (pathname === path) {
+      setCurrentTab(tabKey);
+    }
+  };
 
   // Clean up timers on unmount
   useEffect(() => {
@@ -154,7 +160,10 @@ const SideBar = () => {
       <div className="pt-3 px-4 mb-4 h-16 flex items-center">
         <div className="transition-all duration-300 ease-in-out w-full">
           {isExpanded ? (
-            <Link href="/dashboard">
+            <Link
+              href="/dashboard"
+              onClick={() => handleNavigation("/dashboard", "dashboard")}
+            >
               <div className="flex items-center cursor-pointer">
                 <Image
                   src="/syncnox.svg"
@@ -190,7 +199,10 @@ const SideBar = () => {
         {menuItems.map((item, index) => (
           <div key={index} className="mb-1">
             {item.label === "Plan" ? (
-              <Link href={item.path}>
+              <Link
+                href={item.path}
+                onClick={() => handleNavigation(item.path, item.tabKey)}
+              >
                 <button className="w-full bg-primary text-white py-2.5 flex items-center transition-all duration-200 hover:opacity-90 cursor-pointer">
                   <div className="w-5 h-5 flex items-center justify-center ml-[13px] shrink-0">
                     <item.icon className="text-xl text-white" />
@@ -206,7 +218,10 @@ const SideBar = () => {
                 </button>
               </Link>
             ) : (
-              <Link href={item.path}>
+              <Link
+                href={item.path}
+                onClick={() => handleNavigation(item.path, item.tabKey)}
+              >
                 <button
                   className={`w-full flex items-center pl-3 py-2.5 transition-all duration-200 cursor-pointer ${
                     isActive(item.path)

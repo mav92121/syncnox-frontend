@@ -5,7 +5,6 @@ import { Typography, Button, Drawer, Modal, Flex, Radio, message } from "antd";
 import { DeleteOutlined, ExclamationCircleFilled } from "@ant-design/icons";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useTeamStore } from "@/zustand/team.store";
-import { useIndexStore } from "@/zustand/index.store";
 import { Job, JobStatus } from "@/types/job.type";
 import BaseTable from "@/components/Table/BaseTable";
 import JobForm from "@/components/Jobs/JobForm";

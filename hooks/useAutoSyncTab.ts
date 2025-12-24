@@ -17,7 +17,7 @@ const ROUTE_TO_TAB_MAP: Record<string, TabKey> = {
 export function useAutoSyncTab() {
   const pathname = usePathname();
   const { setCurrentTab } = useIndexStore();
-  const previousPathnameRef = useRef<string>(pathname);
+  const previousPathnameRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (previousPathnameRef.current !== pathname) {

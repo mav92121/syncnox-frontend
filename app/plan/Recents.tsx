@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Link from "next/link";
-import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
+import { Panel, PanelGroup } from "react-resizable-panels";
 import BaseTable from "@/components/Table/BaseTable";
 import GoogleMaps from "@/components/GoogleMaps";
 import MarkerTooltip from "@/components/MarkerTooltip";
@@ -8,7 +8,6 @@ import { Job } from "@/types/job.type";
 import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import { useJobsStore } from "@/zustand/jobs.store";
-import { useIndexStore } from "@/zustand/index.store";
 import { useTeamStore } from "@/zustand/team.store";
 import { Button, Typography, Drawer, Flex } from "antd";
 import JobForm from "@/components/Jobs/JobForm";
