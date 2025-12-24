@@ -79,8 +79,23 @@ const FileUploadStep = () => {
     <div className="space-y-6">
       {/* Info Section */}
       <Alert
-        message="Import Orders"
-        description="You can import orders from your Excel, CSV and tab-delimited file. Supported formats: .csv, .xlsx, .xls"
+        description={
+          <div>
+            <p>
+              You can import orders from your Excel, CSV and tab-delimited file.
+              Supported formats: .csv, .xlsx, .xls
+            </p>
+            <p className="mt-2">
+              <a
+                href="/sample-bulk-upload.csv"
+                download
+                className="text-blue-600 hover:text-blue-800 underline font-medium"
+              >
+                Download Sample Template
+              </a>
+            </p>
+          </div>
+        }
         type="info"
         showIcon
       />

@@ -51,9 +51,12 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
     setHasLocationColumn(hasAddress);
   };
 
-  const handleMappingChange = (identifier: string, columnName: string) => {
+  const handleMappingChange = (
+    identifier: string,
+    columnName: string | undefined
+  ) => {
     const updated = { ...localMapping };
-    if (columnName === "not_mapped") {
+    if (!columnName) {
       delete updated[identifier];
     } else {
       updated[identifier] = columnName;
@@ -109,20 +112,17 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
     ? Object.keys(uploadResponse.sample_data[0])
     : [];
 
-  const mappingOptions = [
-    { value: "not_mapped", label: "Not Mapped" },
-    ...availableColumns.map((col) => ({
-      value: col,
-      label: col,
-    })),
-  ];
+  const mappingOptions = availableColumns.map((col) => ({
+    value: col,
+    label: col,
+  }));
 
   // Table should show: Job Field -> Excel Column mapping
   const tableData = uploadResponse.columns.map((col) => ({
     key: col.index,
     identifier: col.identifier, // Job field identifier (e.g., "address_formatted")
     description: col.description, // Job field description (e.g., "Delivery Address *")
-    mapping: localMapping[col.identifier] || "not_mapped", // Excel column name
+    mapping: localMapping[col.identifier] || undefined, // Excel column name or undefined
     sample: col.sample_value, // Sample value from Excel
   }));
 
@@ -138,13 +138,14 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
       dataIndex: "mapping",
       key: "mapping",
       width: "30%",
-      render: (value: string, record: any) => (
+      render: (value: string | undefined, record: any) => (
         <Select
           value={value}
           onChange={(val) => handleMappingChange(record.identifier, val)}
           options={mappingOptions}
           style={{ width: "100%" }}
-          placeholder="Select Excel column"
+          placeholder="Not Mapped"
+          allowClear
         />
       ),
     },
@@ -162,11 +163,9 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
       {/* Location Error Alert */}
       {!hasLocationColumn && (
         <Alert
-          message="Location Required"
           description="There has to be at least one column defining location (address)"
-          type="error"
+          type="warning"
           showIcon
-          className="mb-4"
         />
       )}
 
