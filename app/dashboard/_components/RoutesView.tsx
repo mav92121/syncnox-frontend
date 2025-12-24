@@ -2,14 +2,7 @@
 import BaseTable from "@/components/Table/BaseTable";
 import { AllRoutes } from "@/types/routes.type";
 import { useRouteStore } from "@/zustand/routes.store";
-import {
-  Typography,
-  Progress,
-  Button,
-  Select,
-  Flex,
-  Radio,
-} from "antd";
+import { Typography, Progress, Button, Select, Flex, Radio } from "antd";
 import { ColDef } from "ag-grid-community";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/Jobs/StatusBanner";
@@ -171,10 +164,23 @@ export default function RoutesView() {
       width: 150,
     },
     createActionsColumn<AllRoutes>({
-      onEdit: (route) => {
-        router.push(`/route/${route.id}`);
-      },
-      onDelete: deleteRoute,
+      actions: [
+        {
+          key: "view",
+          label: "View",
+          onClick: (route: AllRoutes) => {
+            router.push(`/route/${route.id}`);
+          },
+        },
+        {
+          key: "delete",
+          label: "Delete",
+          type: "delete",
+          onClick: async (route: AllRoutes) => {
+            await deleteRoute(route.id);
+          },
+        },
+      ],
       entityName: "Route",
     }),
   ];
