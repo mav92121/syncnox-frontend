@@ -117,8 +117,21 @@ const TeamList = () => {
       width: 150,
     },
     createActionsColumn<Team>({
-      onEdit: (team) => setEditTeamData(team),
-      onDelete: deleteTeamAction,
+      actions: [
+        {
+          key: "edit",
+          label: "Edit",
+          onClick: (team: Team) => setEditTeamData(team),
+        },
+        {
+          key: "delete",
+          label: "Delete",
+          type: "delete",
+          onClick: async (team: Team) => {
+            await deleteTeamAction(team.id);
+          },
+        },
+      ],
       entityName: "Team Member",
     }),
   ];

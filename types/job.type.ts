@@ -31,7 +31,7 @@ export interface Job {
   last_name: string;
   email: string;
   business_name: string;
-  phone_number: string;
+  phone_number?: string;
   customer_preferences: string;
   additional_notes: string;
   recurrence_type: RecurrenceType;

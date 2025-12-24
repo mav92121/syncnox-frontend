@@ -82,8 +82,21 @@ const Recents = () => {
       teamsMap: getTeamsMap(),
     }),
     createActionsColumn<Job>({
-      onEdit: (job) => setEditJobData(job),
-      onDelete: deleteJobAction,
+      actions: [
+        {
+          key: "edit",
+          label: "Edit",
+          onClick: (job: Job) => setEditJobData(job),
+        },
+        {
+          key: "delete",
+          label: "Delete",
+          type: "delete",
+          onClick: async (job: Job) => {
+            await deleteJobAction(job.id);
+          },
+        },
+      ],
       entityName: "Job",
     }),
   ];

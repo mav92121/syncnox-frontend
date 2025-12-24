@@ -54,7 +54,6 @@ apiClient.interceptors.response.use(
         const { useJobsStore } = await import("@/zustand/jobs.store");
 
         useIndexStore.getState().clearUser();
-        useJobsStore.getState().clearJobs();
 
         // Sign out from NextAuth (clears session cookie and redirects)
         if (typeof window !== "undefined") {
