@@ -1,0 +1,11 @@
+Delivery Address,Customer First Name,Customer Last Name,Customer Email,Phone Number,Business Name,Time Window Start,Time Window End,Service Duration (mins),Additional Notes,Customer Preferences,Priority Level,Job Type,Scheduled Date
+"1 N Franklin, Chicago, IL",John,Doe,john.doe@example.com,3125551234,Franklin Cafe,09:00,11:00,15,Ring doorbell twice,Leave at front desk,high,delivery,2025-01-15
+"1 North Halsted, Chicago, IL 60661",Sarah,Johnson,sarah.j@wholefoodsmarket.com,3125552345,Whole Foods Market,10:00,12:00,20,Back entrance delivery,Contact manager on arrival,medium,pickup,2025-01-15
+"10 S Wacker Dr, Chicago, IL 60606",Michael,Chen,mchen@rackspace.com,3125553456,Rack Space,13:00,15:00,10,Security clearance required,Call 15 mins before arrival,high,delivery,2025-01-15
+"1000 W Fulton, Chicago, IL",Emily,Brown,emily@fultonblues.com,3125554567,Fulton Street Blues,08:00,10:00,30,Fragile items - handle with care,Morning delivery preferred,low,delivery,2025-01-16
+"10000 W O'Hare Ave, Chicago, IL",David,Martinez,dmartinez@ohare3k.com,3125555678,O'hare 3K Left,14:00,16:00,25,Airport pickup - Terminal 1,Text upon arrival,medium,pickup,2025-01-16
+"600 N McClurg, Chicago, IL",Lisa,Anderson,lisa.anderson@example.com,3125556789,600 N McClurg,11:00,13:00,15,Use service elevator,No contact delivery,medium,delivery,2025-01-17
+"600 W Chicago, Chicago, IL",James,Wilson,jwilson@groupon.com,3125557890,Groupon,09:30,11:30,20,Check in at reception,Business hours only,high,delivery,2025-01-17
+"627 W Jackson, Chicago, IL",Jennifer,Taylor,jtaylor@janetsplace.com,3125558901,Janet's Place,15:00,17:00,10,Restaurant delivery,Kitchen entrance,low,pickup,2025-01-18
+"801 S Morgan, Chicago, IL",Robert,Davis,rdavis@library.org,3125559012,Morgan Watson Library,10:00,12:00,15,Book delivery,Quiet hours - no loud vehicles,medium,delivery,2025-01-18
+"875 N Michigan Ave, Chicago, IL",Amanda,Moore,amoore@hancockcenter.com,3125550123,John Hancock Center,12:00,14:00,30,Signature required,Meet in lobby,high,delivery,2025-01-19

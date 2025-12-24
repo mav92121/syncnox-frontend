@@ -72,13 +72,14 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
     }
 
     // 3. Transform phone: object {countryCode, number} -> string phone_number
-    if (values.phone) {
+    if (values.phone && values.phone.number) {
       const { countryCode, number } = values.phone;
       // Extract just the code part (e.g., "+1" from "🇺🇸 +1")
       const codeOnly = countryCode.match(/\+\d+/)?.[0] || "";
       transformedValues.phone_number = `${codeOnly}-${number}`;
-      delete transformedValues.phone;
     }
+    // Remove phone object from payload regardless
+    delete transformedValues.phone;
 
     console.log("Form submitted (transformed)", transformedValues);
 
@@ -247,10 +248,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
           </Form.Item>
 
           {/* Phone Number */}
-          <Form.Item
-            label="Phone Number"
-            rules={[{ required: true, message: "Phone number is required" }]}
-          >
+          <Form.Item label="Phone Number">
             <Row gutter={8}>
               <Col span={8}>
                 <Form.Item
@@ -275,14 +273,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
                 </Form.Item>
               </Col>
               <Col span={16}>
-                <Form.Item
-                  name={["phone", "number"]}
-                  noStyle
-                  rules={[
-                    { required: true, message: "Phone number is required" },
-                    phoneNumberPattern,
-                  ]}
-                >
+                <Form.Item name={["phone", "number"]} noStyle>
                   <Input
                     type="number"
                     placeholder="8023456789"
