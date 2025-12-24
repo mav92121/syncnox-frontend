@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import { Job, FetchJobsParams, JobStatus } from "@/types/job.type";
-import dayjs from "dayjs";
+import { Job, JobStatus } from "@/types/job.type";
 import {
   fetchJobs,
   createJob,
@@ -15,33 +14,23 @@ import { findClosestDateToToday } from "@/utils/date.utils";
 interface JobsState {
   // Data
   jobs: Job[];
-  draftJobs: Job[]; // Filtered draft jobs for display
-  allDraftJobs: Job[]; // All draft jobs fetched from API
-  draftJobDates: string[]; // Set of dates with draft jobs
-  selectedDate: string | null; // Currently selected date filter
+  draftJobs: Job[];
+  allDraftJobs: Job[];
+  draftJobDates: string[];
+  selectedDate: string | null;
 
-  // Loading & Error states
   isLoading: boolean;
   error: string | null;
-  hasFetched: boolean; // Track if data has been fetched
 
   // Actions
-  initializeJobs: () => Promise<void>; // Initialize with draft jobs only
-  fetchJobs: (params?: FetchJobsParams) => Promise<void>; // Fetch jobs with optional params
-  fetchJobsByStatus: (status: JobStatus) => Promise<void>; // Fetch jobs by status
-  createJobAction: (job: Job) => Promise<Job>; // Create job with API call + state update
-  updateJobAction: (job: Job) => Promise<Job>; // Update job with API call + state update
-  deleteJobAction: (jobId: number) => Promise<void>; // Delete job with API call + state update
-  deleteJobsAction: (jobIds: number[], status: JobStatus) => Promise<void>; // Bulk delete jobs
-  refreshDraftJobs: () => Promise<void>;
-  clearJobs: () => void;
+  initializeJobs: () => Promise<void>;
+  fetchJobsByStatus: (status: JobStatus) => Promise<void>;
   setSelectedDate: (date: string | null) => void;
-  filterDraftJobs: () => void;
-
-  // Selectors
-  getJobById: (id: number) => Job | undefined;
-  getJobsByStatus: (status: JobStatus) => Job[];
-  getDraftJobs: () => Job[];
+  createJobAction: (job: Job) => Promise<Job>;
+  updateJobAction: (job: Job) => Promise<Job>;
+  deleteJobAction: (jobId: number) => Promise<void>;
+  deleteJobsAction: (jobIds: number[], status: JobStatus) => Promise<void>;
+  refreshDraftJobs: () => Promise<void>;
   resetAllJobs: () => void;
 }
 
@@ -56,14 +45,13 @@ export const useJobsStore = create<JobsState>()(
       selectedDate: null,
       isLoading: false,
       error: null,
-      hasFetched: false,
 
-      // Initialize jobs with draft jobs only
+      // Initialize with all draft jobs
       initializeJobs: async () => {
-        const { hasFetched, isLoading } = get();
+        const { isLoading } = get();
 
-        // Skip if already fetched or currently loading
-        if (hasFetched || isLoading) {
+        // Skip if already loading
+        if (isLoading) {
           return;
         }
 
@@ -73,52 +61,34 @@ export const useJobsStore = create<JobsState>()(
         });
 
         try {
-          // Fetch only draft jobs on initialization
+          // Fetch all draft jobs
           const draftJobsData = await fetchJobs({
             status: "draft",
-            limit: 1000, // Fetch all/many drafts
+            limit: 1000,
           });
 
           set((state) => {
-            // Store draft jobs in both jobs and allDraftJobs
             state.jobs = draftJobsData;
             state.allDraftJobs = draftJobsData;
+
+            // Extract unique dates and sort
             state.draftJobDates = [
               ...new Set(draftJobsData.map((job) => job.scheduled_date)),
             ].sort();
 
-            // Set initial selected date to the date closest to today
-            if (!state.selectedDate) {
+            // Set initial selected date to closest to today
+            if (state.draftJobDates.length > 0) {
               state.selectedDate = findClosestDateToToday(state.draftJobDates);
+
+              // Filter draft jobs by selected date
+              state.draftJobs = draftJobsData.filter(
+                (job) => job.scheduled_date === state.selectedDate
+              );
+            } else {
+              state.selectedDate = null;
+              state.draftJobs = [];
             }
 
-            state.isLoading = false;
-            state.hasFetched = true;
-          });
-
-          // Trigger local filter
-          get().filterDraftJobs();
-        } catch (error) {
-          set((state) => {
-            state.error =
-              error instanceof Error ? error.message : "Failed to fetch jobs";
-            state.isLoading = false;
-          });
-        }
-      },
-
-      // Fetch jobs with optional params (for custom fetching)
-      fetchJobs: async (params?: FetchJobsParams) => {
-        set((state) => {
-          state.isLoading = true;
-          state.error = null;
-        });
-
-        try {
-          const jobsData = await fetchJobs(params);
-
-          set((state) => {
-            state.jobs = jobsData;
             state.isLoading = false;
           });
         } catch (error) {
@@ -138,12 +108,54 @@ export const useJobsStore = create<JobsState>()(
         });
 
         try {
-          const jobsData = await fetchJobs({ status });
+          if (status === "draft") {
+            // Fetch all draft jobs and filter by selected date
+            const draftJobsData = await fetchJobs({
+              status: "draft",
+              limit: 1000,
+            });
 
-          set((state) => {
-            state.jobs = jobsData;
-            state.isLoading = false;
-          });
+            set((state) => {
+              state.jobs = draftJobsData;
+              state.allDraftJobs = draftJobsData;
+
+              // Update dates
+              state.draftJobDates = [
+                ...new Set(draftJobsData.map((job) => job.scheduled_date)),
+              ].sort();
+
+              // Ensure selectedDate is valid
+              if (state.draftJobDates.length > 0) {
+                if (
+                  !state.selectedDate ||
+                  !state.draftJobDates.includes(state.selectedDate)
+                ) {
+                  state.selectedDate = findClosestDateToToday(
+                    state.draftJobDates
+                  );
+                }
+
+                // Filter by selected date
+                state.draftJobs = draftJobsData.filter(
+                  (job) => job.scheduled_date === state.selectedDate
+                );
+              } else {
+                state.selectedDate = null;
+                state.draftJobs = [];
+              }
+
+              state.isLoading = false;
+            });
+          } else {
+            // Fetch other status jobs but preserve draft jobs
+            const jobsData = await fetchJobs({ status });
+
+            set((state) => {
+              state.jobs = jobsData;
+              // Don't touch allDraftJobs or draftJobs - keep them preserved
+              state.isLoading = false;
+            });
+          }
         } catch (error) {
           set((state) => {
             state.error =
@@ -155,18 +167,15 @@ export const useJobsStore = create<JobsState>()(
         }
       },
 
+      // Set selected date and filter draft jobs
       setSelectedDate: (date: string | null) => {
         set((state) => {
           state.selectedDate = date;
-        });
-        get().filterDraftJobs();
-      },
 
-      filterDraftJobs: () => {
-        set((state) => {
-          if (state.selectedDate) {
+          // Filter draft jobs from allDraftJobs by new selected date
+          if (date) {
             state.draftJobs = state.allDraftJobs.filter(
-              (job) => job.scheduled_date === state.selectedDate
+              (job) => job.scheduled_date === date
             );
           } else {
             state.draftJobs = state.allDraftJobs;
@@ -174,7 +183,7 @@ export const useJobsStore = create<JobsState>()(
         });
       },
 
-      // Create job: API call + state update
+      // Create job and refresh
       createJobAction: async (job: Job) => {
         set((state) => {
           state.isLoading = true;
@@ -184,23 +193,16 @@ export const useJobsStore = create<JobsState>()(
         try {
           const newJob = await createJob(job);
 
-          // Update state with the new job
-          set((state) => {
-            state.jobs = [newJob, ...state.jobs];
-
-            // Add to allDraftJobs if it is a draft
-            if (newJob.status === "draft") {
-              state.allDraftJobs = [newJob, ...state.allDraftJobs];
-              state.draftJobDates = [
-                ...new Set(state.allDraftJobs.map((job) => job.scheduled_date)),
-              ].sort();
-            }
-
-            state.isLoading = false;
-          });
-
-          // Trigger local filter
-          get().filterDraftJobs();
+          // Refresh draft jobs if created job is draft
+          if (newJob.status === "draft") {
+            await get().fetchJobsByStatus("draft");
+          } else {
+            // Just add to current jobs list
+            set((state) => {
+              state.jobs = [newJob, ...state.jobs];
+              state.isLoading = false;
+            });
+          }
 
           return newJob;
         } catch (error) {
@@ -209,11 +211,11 @@ export const useJobsStore = create<JobsState>()(
             state.error =
               error instanceof Error ? error.message : "Failed to create job";
           });
-          throw error; // Re-throw so component can handle the error
+          throw error;
         }
       },
 
-      // Update job: API call + state update
+      // Update job and refresh
       updateJobAction: async (job: Job) => {
         set((state) => {
           state.isLoading = true;
@@ -223,40 +225,18 @@ export const useJobsStore = create<JobsState>()(
         try {
           const updatedJob = await updateJob(job);
 
-          // Update state with the updated job
-          set((state) => {
-            state.jobs = state.jobs.map((j) =>
-              j.id === updatedJob.id ? updatedJob : j
-            );
-
-            // Update allDraftJobs logic
-            if (updatedJob.status === "draft") {
-              // Check if it was already in drafts
-              const index = state.allDraftJobs.findIndex(
-                (j) => j.id === updatedJob.id
+          // Refresh draft jobs if it's a draft
+          if (updatedJob.status === "draft") {
+            await get().fetchJobsByStatus("draft");
+          } else {
+            // Update in current jobs list
+            set((state) => {
+              state.jobs = state.jobs.map((j) =>
+                j.id === updatedJob.id ? updatedJob : j
               );
-              if (index !== -1) {
-                state.allDraftJobs[index] = updatedJob;
-              } else {
-                state.allDraftJobs = [updatedJob, ...state.allDraftJobs];
-              }
-            } else {
-              // Remove from drafts if status changed from draft to something else
-              state.allDraftJobs = state.allDraftJobs.filter(
-                (j) => j.id !== updatedJob.id
-              );
-            }
-
-            // Recalculate dates
-            state.draftJobDates = [
-              ...new Set(state.allDraftJobs.map((job) => job.scheduled_date)),
-            ].sort();
-
-            state.isLoading = false;
-          });
-
-          // Trigger local filter
-          get().filterDraftJobs();
+              state.isLoading = false;
+            });
+          }
 
           return updatedJob;
         } catch (error) {
@@ -265,11 +245,11 @@ export const useJobsStore = create<JobsState>()(
             state.error =
               error instanceof Error ? error.message : "Failed to update job";
           });
-          throw error; // Re-throw so component can handle the error
+          throw error;
         }
       },
 
-      // Delete job: API call + state update
+      // Delete job and refresh
       deleteJobAction: async (jobId: number) => {
         set((state) => {
           state.isLoading = true;
@@ -279,35 +259,29 @@ export const useJobsStore = create<JobsState>()(
         try {
           await deleteJobApi(jobId);
 
-          // Update state by removing the deleted job
-          set((state) => {
-            state.jobs = state.jobs.filter((job) => job.id !== jobId);
+          // Find the deleted job's status
+          const deletedJob = get().jobs.find((j) => j.id === jobId);
 
-            // Remove from allDraftJobs
-            state.allDraftJobs = state.allDraftJobs.filter(
-              (job) => job.id !== jobId
-            );
-
-            // Recalculate dates
-            state.draftJobDates = [
-              ...new Set(state.allDraftJobs.map((job) => job.scheduled_date)),
-            ].sort();
-
-            state.isLoading = false;
-          });
-
-          // Trigger local filter
-          get().filterDraftJobs();
+          if (deletedJob?.status === "draft") {
+            await get().fetchJobsByStatus("draft");
+          } else {
+            // Remove from current jobs list
+            set((state) => {
+              state.jobs = state.jobs.filter((job) => job.id !== jobId);
+              state.isLoading = false;
+            });
+          }
         } catch (error) {
           set((state) => {
             state.isLoading = false;
             state.error =
               error instanceof Error ? error.message : "Failed to delete job";
           });
-          throw error; // Re-throw so component can handle the error
+          throw error;
         }
       },
 
+      // Bulk delete jobs
       deleteJobsAction: async (jobIds: number[], status: JobStatus) => {
         set((state) => {
           state.isLoading = true;
@@ -316,11 +290,7 @@ export const useJobsStore = create<JobsState>()(
 
         try {
           await deleteJobsBulk(jobIds);
-          if (status === "draft") {
-            await get().refreshDraftJobs();
-          } else {
-            await get().fetchJobsByStatus(status);
-          }
+          await get().fetchJobsByStatus(status);
         } catch (error) {
           set((state) => {
             state.isLoading = false;
@@ -331,75 +301,22 @@ export const useJobsStore = create<JobsState>()(
         }
       },
 
+      // Refresh draft jobs (used after bulk upload)
       refreshDraftJobs: async () => {
-        set((state) => {
-          state.isLoading = true;
-          state.error = null;
-        });
-
-        try {
-          const draftJobsData = await fetchJobs({
-            status: "draft",
-            limit: 1000,
-          });
-
-          set((state) => {
-            state.jobs = draftJobsData;
-            state.allDraftJobs = draftJobsData;
-            state.draftJobDates = [
-              ...new Set(draftJobsData.map((job) => job.scheduled_date)),
-            ].sort();
-
-            // Always set selectedDate to the date closest to today
-            state.selectedDate = findClosestDateToToday(state.draftJobDates);
-
-            state.isLoading = false;
-          });
-
-          get().filterDraftJobs();
-        } catch (error) {
-          set((state) => {
-            state.error =
-              error instanceof Error
-                ? error.message
-                : "Failed to refresh draft jobs";
-            state.isLoading = false;
-          });
-        }
+        await get().fetchJobsByStatus("draft");
       },
 
+      // Reset to draft view
       resetAllJobs: () => {
         set((state) => {
+          // Reset jobs to draft jobs and filter by selected date
           state.jobs = state.allDraftJobs;
+          state.draftJobs = state.selectedDate
+            ? state.allDraftJobs.filter(
+                (job) => job.scheduled_date === state.selectedDate
+              )
+            : state.allDraftJobs;
         });
-      },
-
-      // Clear all jobs
-      clearJobs: () =>
-        set((state) => {
-          state.jobs = [];
-          state.draftJobs = [];
-          state.allDraftJobs = [];
-          state.draftJobDates = [];
-          state.selectedDate = null;
-          state.error = null;
-          state.hasFetched = false; // Reset fetch flag
-        }),
-
-      // Selectors
-      getJobById: (id) => {
-        const { jobs } = get();
-        return jobs.find((job) => job.id === id);
-      },
-
-      getJobsByStatus: (status) => {
-        const { jobs } = get();
-        return jobs.filter((job) => job.status === status);
-      },
-
-      getDraftJobs: () => {
-        const { jobs } = get();
-        return jobs.filter((job) => job.status === "draft");
       },
     })),
     {
