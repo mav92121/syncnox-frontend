@@ -16,16 +16,19 @@ const ROUTE_TO_TAB_MAP: Record<string, TabKey> = {
 
 export function useAutoSyncTab() {
   const pathname = usePathname();
-  const { setCurrentTab } = useIndexStore();
+  const { setCurrentTab, sidebarNavigation, setSidebarNavigation } =
+    useIndexStore();
   const previousPathnameRef = useRef<string | null>(pathname);
 
   useEffect(() => {
-    if (previousPathnameRef.current !== pathname) {
+    // Only sync tab when navigation came from the sidebar
+    if (previousPathnameRef.current !== pathname && sidebarNavigation) {
       const defaultTab = ROUTE_TO_TAB_MAP[pathname];
       if (defaultTab) {
         setCurrentTab(defaultTab);
       }
-      previousPathnameRef.current = pathname;
+      setSidebarNavigation(false); // Reset the flag after syncing
     }
-  }, [pathname, setCurrentTab]);
+    previousPathnameRef.current = pathname;
+  }, [pathname, setCurrentTab, sidebarNavigation, setSidebarNavigation]);
 }
