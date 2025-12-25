@@ -46,8 +46,13 @@ export const useIndexStore = create<UserState>()(
       setSidebarNavigation: (value) => set({ sidebarNavigation: value }),
     }),
     {
-      name: "user-storage", // name of the item in the storage (must be unique)
-      storage: createJSONStorage(() => localStorage), // (optional) by default, 'localStorage' is used
+      name: "user-storage",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        currentTab: state.currentTab,
+      }),
     }
   )
 );
