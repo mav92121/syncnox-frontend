@@ -14,6 +14,7 @@ import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import CreateRouteModal from "@/app/plan/_components/CreateRouteModal";
 import DraftJobsDatePicker from "@/components/Jobs/DraftJobsDatePicker";
+import { useIndexStore } from "@/zustand/index.store";
 
 const { Title } = Typography;
 
@@ -31,6 +32,7 @@ export default function JobsList() {
     setSelectedDate,
     draftJobDates,
   } = useJobsStore();
+  const { setCurrentTab } = useIndexStore();
   const { getTeamsMap } = useTeamStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapViewJob, setMapViewJob] = useState<Job | null>(null);
@@ -190,7 +192,7 @@ export default function JobsList() {
           >
             Create New Route
           </Button>
-          <Link href="/plan">
+          <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
             <Button>Add Jobs</Button>
           </Link>
         </Flex>

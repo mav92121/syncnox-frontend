@@ -22,17 +22,22 @@ const SideBar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
-  const { user, clearUser, setCurrentTab } = useIndexStore();
+  const { user, clearUser, setCurrentTab, setSidebarNavigation } =
+    useIndexStore();
 
   const isActive = useCallback((path: string) => pathname === path, [pathname]);
 
   const handleNavigation = useCallback(
     (path: string, tabKey: TabKey) => {
       if (pathname === path) {
+        // Already on this path, just update the tab
         setCurrentTab(tabKey);
+      } else {
+        // Navigating to a new path from sidebar
+        setSidebarNavigation(true);
       }
     },
-    [pathname, setCurrentTab]
+    [pathname, setCurrentTab, setSidebarNavigation]
   );
 
   const handleMouseEnter = useCallback(() => {
