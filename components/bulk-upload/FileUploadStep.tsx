@@ -55,6 +55,11 @@ const FileUploadStep = () => {
   };
 
   const beforeUpload = (file: File) => {
+    if (!defaultScheduledDate) {
+      message.error("Please select a default scheduled date before uploading!");
+      return Upload.LIST_IGNORE;
+    }
+
     const isValidType =
       file.type === "text/csv" ||
       file.type === "application/vnd.ms-excel" ||
@@ -128,7 +133,7 @@ const FileUploadStep = () => {
       {/* Default Scheduled Date */}
       <div className="space-y-2 mt-4">
         <label className="block text-sm font-medium text-gray-700">
-          Default Scheduled Date (Optional)
+          Default Scheduled Date <span className="text-red-500">*</span>
         </label>
         <DatePicker
           value={defaultScheduledDate ? dayjs(defaultScheduledDate) : null}

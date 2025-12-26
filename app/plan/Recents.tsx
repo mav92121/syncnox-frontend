@@ -9,6 +9,7 @@ import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { useTeamStore } from "@/zustand/team.store";
+import { useIndexStore } from "@/zustand/index.store";
 import { Button, Typography, Drawer, Flex } from "antd";
 import JobForm from "@/components/Jobs/JobForm";
 import CreateRouteModal from "./_components/CreateRouteModal";
@@ -28,6 +29,7 @@ const Recents = () => {
     draftJobDates,
   } = useJobsStore();
   const { getTeamsMap } = useTeamStore();
+  const { setCurrentTab } = useIndexStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapCenter, setMapCenter] = useState<{
     lat: number;
@@ -146,7 +148,7 @@ const Recents = () => {
                 />
               </Flex>
               <Flex gap={8}>
-                <Link href="/plan">
+                <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
                   <Button>Add Jobs</Button>
                 </Link>
                 <Button
