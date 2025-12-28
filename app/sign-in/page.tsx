@@ -3,6 +3,7 @@ import { Card, Form, Input, Button, Typography, message } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { useIndexStore } from "@/zustand/index.store";
 
 const { Title } = Typography;
 
@@ -14,6 +15,7 @@ interface SignInFormValues {
 export default function SignInPage() {
   const [form] = Form.useForm();
   const router = useRouter();
+  const { setCurrentTab } = useIndexStore();
 
   const onFinish = async (values: SignInFormValues) => {
     try {
@@ -31,6 +33,7 @@ export default function SignInPage() {
       if (result?.ok) {
         message.success("Login successful!");
         router.replace("/dashboard");
+        setCurrentTab("dashboard");
       }
     } catch (error) {
       console.error("❌ [SIGN-IN] Login error:", error);
