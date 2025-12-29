@@ -3,21 +3,14 @@ import { useState, useEffect, useMemo } from "react";
 import GoogleMaps from "@/components/GoogleMaps";
 import { Flex, Typography, Button, message, Spin, Input } from "antd";
 import { useDepotStore } from "@/zustand/depots.store";
-import AddressAutocomplete from "@/components/AddressAutocomplete";
+import AddressAutocomplete, {
+  AddressData,
+} from "@/components/AddressAutocomplete";
 
 const { Title } = Typography;
 
-interface AddressData {
-  address_formatted: string;
-  location: {
-    lat: number;
-    lng: number;
-  };
-}
-
 const Depot = () => {
-  const { depots, isSaving, isLoading, updateDepot, initializeDepots } =
-    useDepotStore();
+  const { depots, isSaving, isLoading, updateDepot } = useDepotStore();
   const depot = depots[0];
 
   const [name, setName] = useState("");

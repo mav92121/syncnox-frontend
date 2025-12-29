@@ -71,12 +71,17 @@ export const MENU_ITEMS: MenuItem[] = [
     tabKey: "team",
     subItems: [
       { icon: TeamOutlined, label: "Team", path: "/team", tabKey: "team" },
-      { icon: CarOutlined, label: "Vehicle", path: "/vehicle", tabKey: "team" },
+      {
+        icon: CarOutlined,
+        label: "Vehicle",
+        path: "/vehicle",
+        tabKey: "vehicle",
+      },
       {
         icon: EnvironmentOutlined,
         label: "Depot",
         path: "/depot",
-        tabKey: "team",
+        tabKey: "depot",
       },
     ],
   },
