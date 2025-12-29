@@ -1,7 +1,7 @@
 "use client";
 
 import { Modal, Steps } from "antd";
-import { useBulkUploadStore } from "@/zustand/bulkUploadStore";
+import { useBulkUploadStore } from "@/zustand/bulkUpload.store";
 import FileUploadStep from "./bulk-upload/FileUploadStep";
 import ColumnMappingStep from "./bulk-upload/ColumnMappingStep";
 import DataPreviewStep from "./bulk-upload/DataPreviewStep";
@@ -36,7 +36,7 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
       onCancel={handleClose}
       footer={null}
       width="70vw"
-      destroyOnClose
+      destroyOnHidden
     >
       <div>
         <Steps
