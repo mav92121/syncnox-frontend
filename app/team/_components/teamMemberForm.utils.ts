@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import { Team } from "@/types/team.type";
 import { COUNTRY_CODES } from "@/constants/country";
+import { Depot } from "@/types/depots.type";
 
 export const statusStyleMap = {
   active: "bg-green-100 text-green-700 border border-green-200",
@@ -9,6 +10,12 @@ export const statusStyleMap = {
   offline: "bg-gray-100 text-gray-700 border border-gray-200",
 };
 
+interface LocationOptions {
+  startLocationSameAsDepot: boolean;
+  endLocationSameAsDepot: boolean;
+  depot?: Depot;
+}
+
 /**
  * Transform form values to API format for team member submission
  */
@@ -16,7 +23,8 @@ export const transformFormToApi = (
   values: any,
   skills: string[],
   scheduleBreak: boolean,
-  initialData?: Team | null
+  initialData?: Team | null,
+  locationOptions?: LocationOptions
 ): any => {
   const transformedValues: any = {
     ...values,
@@ -54,6 +62,24 @@ export const transformFormToApi = (
     const codeOnly = countryCode.match(/\+\d+/)?.[0] || "";
     transformedValues.phone_number = `${codeOnly}-${number}`;
     delete transformedValues.phone;
+  }
+
+  // Handle start/end location based on "same as depot" checkboxes
+  if (locationOptions) {
+    const { startLocationSameAsDepot, endLocationSameAsDepot, depot } =
+      locationOptions;
+
+    if (startLocationSameAsDepot && depot) {
+      // Use depot location when "same as depot" is checked
+      transformedValues.start_address = depot.address?.formatted_address;
+      transformedValues.start_location = depot.location;
+    }
+
+    if (endLocationSameAsDepot && depot) {
+      // Use depot location when "same as depot" is checked
+      transformedValues.end_address = depot.address?.formatted_address;
+      transformedValues.end_location = depot.location;
+    }
   }
 
   return transformedValues;

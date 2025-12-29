@@ -10,9 +10,9 @@ import {
 } from "./teamMemberForm.types";
 import { transformFormToApi, transformApiToForm } from "./teamMemberForm.utils";
 import { useTeamStore } from "@/zustand/team.store";
+import { useDepotStore } from "@/zustand/depots.store";
 import BasicInformation from "./BasicInformation";
-import Skills from "./Skills";
-import Cost from "./Cost";
+import SkillsAndCost from "./SkillsAndCost";
 
 const TeamMemberForm = ({
   initialData = null,
@@ -20,12 +20,19 @@ const TeamMemberForm = ({
 }: TeamMemberFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const { createTeamAction, updateTeamAction, isLoading } = useTeamStore();
+  const { depots } = useDepotStore();
   const [form] = Form.useForm();
   const [activeSection, setActiveSection] = useState<MenuKey>("basic");
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
   const [scheduleBreak, setScheduleBreak] = useState(false);
   const [roleType, setRoleType] = useState<string>("driver");
+  const [startLocationSameAsDepot, setStartLocationSameAsDepot] =
+    useState(true);
+  const [endLocationSameAsDepot, setEndLocationSameAsDepot] = useState(true);
+
+  // Get the first depot
+  const defaultDepot = depots[0];
 
   // Watch for role_type changes
   const onValuesChange = (changedValues: any) => {
@@ -39,13 +46,16 @@ const TeamMemberForm = ({
   };
 
   const onFinish = async (values: any) => {
-    console.log("Form submitted (raw)", values);
-
     const transformedValues = transformFormToApi(
       values,
       skills,
       scheduleBreak,
-      initialData
+      initialData,
+      {
+        startLocationSameAsDepot,
+        endLocationSameAsDepot,
+        depot: defaultDepot,
+      }
     );
 
     console.log("Form submitted (transformed)", transformedValues);
@@ -89,9 +99,21 @@ const TeamMemberForm = ({
         setScheduleBreak(true);
       }
 
+      // Check if start/end location is same as depot
+      const depotFormattedAddress = defaultDepot?.address?.formatted_address;
+      const isStartSameAsDepot =
+        !initialData.start_address ||
+        initialData.start_address === depotFormattedAddress;
+      const isEndSameAsDepot =
+        !initialData.end_address ||
+        initialData.end_address === depotFormattedAddress;
+
+      setStartLocationSameAsDepot(isStartSameAsDepot);
+      setEndLocationSameAsDepot(isEndSameAsDepot);
+
       form.setFieldsValue(formValues);
     }
-  }, [initialData, form]);
+  }, [initialData, form, defaultDepot]);
 
   const handleAddSkill = () => {
     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
@@ -152,7 +174,7 @@ const TeamMemberForm = ({
             flex: 1,
             overflowY: "auto",
             overflowX: "hidden",
-            // paddingRight: "8px",
+            paddingRight: "8px",
           }}
           className="custom-scrollbar"
         >
@@ -177,29 +199,28 @@ const TeamMemberForm = ({
                     scheduleBreak={scheduleBreak}
                     onScheduleBreakChange={setScheduleBreak}
                     isDriver={isDriver}
+                    startLocationSameAsDepot={startLocationSameAsDepot}
+                    onStartLocationSameAsDepotChange={
+                      setStartLocationSameAsDepot
+                    }
+                    endLocationSameAsDepot={endLocationSameAsDepot}
+                    onEndLocationSameAsDepotChange={setEndLocationSameAsDepot}
                   />
                 </div>
 
                 <div
                   style={{
-                    display: activeSection === "skills" ? "block" : "none",
+                    display:
+                      activeSection === "skillsAndCost" ? "block" : "none",
                   }}
                 >
-                  <Skills
+                  <SkillsAndCost
                     skills={skills}
                     skillInput={skillInput}
                     onSkillInputChange={setSkillInput}
                     onAddSkill={handleAddSkill}
                     onRemoveSkill={handleRemoveSkill}
                   />
-                </div>
-
-                <div
-                  style={{
-                    display: activeSection === "cost" ? "block" : "none",
-                  }}
-                >
-                  <Cost />
                 </div>
               </>
             ) : (
@@ -209,6 +230,10 @@ const TeamMemberForm = ({
                 scheduleBreak={scheduleBreak}
                 onScheduleBreakChange={setScheduleBreak}
                 isDriver={isDriver}
+                startLocationSameAsDepot={startLocationSameAsDepot}
+                onStartLocationSameAsDepotChange={setStartLocationSameAsDepot}
+                endLocationSameAsDepot={endLocationSameAsDepot}
+                onEndLocationSameAsDepotChange={setEndLocationSameAsDepot}
               />
             )}
           </Form>
