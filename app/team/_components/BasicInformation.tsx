@@ -38,12 +38,11 @@ const BasicInformation = ({
 }: BasicInformationProps) => {
   const { depots } = useDepotStore();
 
-  console.log("form -> ", form.getFieldValue("work_start_time"));
-
   // Get the first depot's address
-  const defaultDepot = depots[0];
+  const defaultDepot = depots?.[0];
   const depotAddress =
-    defaultDepot?.address?.formatted_address || "No depot configured";
+    defaultDepot?.address?.formatted_address ||
+    "No depot configured. Please add a depot first";
 
   return (
     <>
@@ -127,116 +126,118 @@ const BasicInformation = ({
       </Form.Item>
 
       {/* Start and End Location */}
-      <Row gutter={16}>
-        <Col span={12}>
-          <Form.Item
-            label={
-              <span>
-                Start location{" "}
-                <Checkbox
-                  checked={startLocationSameAsDepot}
-                  onChange={(e) =>
-                    onStartLocationSameAsDepotChange(e.target.checked)
-                  }
-                  style={{ marginLeft: 8 }}
-                >
-                  Same as depot
-                </Checkbox>
-              </span>
-            }
-          >
-            {startLocationSameAsDepot ? (
-              <Input
-                value={depotAddress}
-                disabled
-                style={{ backgroundColor: "#f5f5f5" }}
-              />
-            ) : (
-              <Form.Item
-                name="start_address"
-                noStyle
-                rules={[
-                  {
-                    required: !startLocationSameAsDepot,
-                    message: "Start location is required",
-                  },
-                ]}
-              >
-                <AddressAutocomplete
-                  value={form.getFieldValue("start_address")}
-                  placeholder="Type to search address"
-                  onChange={() => {
-                    form.setFieldsValue({
-                      start_address: undefined,
-                      start_location: undefined,
-                    });
-                  }}
-                  onSelect={(addressData: AddressData) => {
-                    form.setFieldsValue({
-                      start_address: addressData.address_formatted,
-                      start_location: addressData.location,
-                    });
-                  }}
+      {isDriver && (
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label={
+                <span>
+                  Start location{" "}
+                  <Checkbox
+                    checked={startLocationSameAsDepot}
+                    onChange={(e) =>
+                      onStartLocationSameAsDepotChange(e.target.checked)
+                    }
+                    style={{ marginLeft: 8 }}
+                  >
+                    Same as depot
+                  </Checkbox>
+                </span>
+              }
+            >
+              {startLocationSameAsDepot ? (
+                <Input
+                  value={depotAddress}
+                  disabled
+                  style={{ backgroundColor: "#f5f5f5" }}
                 />
-              </Form.Item>
-            )}
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item
-            label={
-              <span>
-                End location{" "}
-                <Checkbox
-                  checked={endLocationSameAsDepot}
-                  onChange={(e) =>
-                    onEndLocationSameAsDepotChange(e.target.checked)
-                  }
-                  style={{ marginLeft: 8 }}
+              ) : (
+                <Form.Item
+                  name="start_address"
+                  noStyle
+                  rules={[
+                    {
+                      required: !startLocationSameAsDepot,
+                      message: "Start location is required",
+                    },
+                  ]}
                 >
-                  Same as depot
-                </Checkbox>
-              </span>
-            }
-          >
-            {endLocationSameAsDepot ? (
-              <Input
-                value={depotAddress}
-                disabled
-                style={{ backgroundColor: "#f5f5f5" }}
-              />
-            ) : (
-              <Form.Item
-                name="end_address"
-                noStyle
-                rules={[
-                  {
-                    required: !endLocationSameAsDepot,
-                    message: "End location is required",
-                  },
-                ]}
-              >
-                <AddressAutocomplete
-                  value={form.getFieldValue("end_address")}
-                  placeholder="Type to search address"
-                  onChange={() => {
-                    form.setFieldsValue({
-                      end_address: undefined,
-                      end_location: undefined,
-                    });
-                  }}
-                  onSelect={(addressData: AddressData) => {
-                    form.setFieldsValue({
-                      end_address: addressData.address_formatted,
-                      end_location: addressData.location,
-                    });
-                  }}
+                  <AddressAutocomplete
+                    value={form.getFieldValue("start_address")}
+                    placeholder="Type to search address"
+                    onChange={() => {
+                      form.setFieldsValue({
+                        start_address: undefined,
+                        start_location: undefined,
+                      });
+                    }}
+                    onSelect={(addressData: AddressData) => {
+                      form.setFieldsValue({
+                        start_address: addressData.address_formatted,
+                        start_location: addressData.location,
+                      });
+                    }}
+                  />
+                </Form.Item>
+              )}
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label={
+                <span>
+                  End location{" "}
+                  <Checkbox
+                    checked={endLocationSameAsDepot}
+                    onChange={(e) =>
+                      onEndLocationSameAsDepotChange(e.target.checked)
+                    }
+                    style={{ marginLeft: 8 }}
+                  >
+                    Same as depot
+                  </Checkbox>
+                </span>
+              }
+            >
+              {endLocationSameAsDepot ? (
+                <Input
+                  value={depotAddress}
+                  disabled
+                  style={{ backgroundColor: "#f5f5f5" }}
                 />
-              </Form.Item>
-            )}
-          </Form.Item>
-        </Col>
-      </Row>
+              ) : (
+                <Form.Item
+                  name="end_address"
+                  noStyle
+                  rules={[
+                    {
+                      required: !endLocationSameAsDepot,
+                      message: "End location is required",
+                    },
+                  ]}
+                >
+                  <AddressAutocomplete
+                    value={form.getFieldValue("end_address")}
+                    placeholder="Type to search address"
+                    onChange={() => {
+                      form.setFieldsValue({
+                        end_address: undefined,
+                        end_location: undefined,
+                      });
+                    }}
+                    onSelect={(addressData: AddressData) => {
+                      form.setFieldsValue({
+                        end_address: addressData.address_formatted,
+                        end_location: addressData.location,
+                      });
+                    }}
+                  />
+                </Form.Item>
+              )}
+            </Form.Item>
+          </Col>
+        </Row>
+      )}
 
       {/* Hidden location fields for start */}
       <Form.Item name={["start_location", "lat"]} hidden>
