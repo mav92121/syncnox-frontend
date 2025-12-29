@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Avatar, Modal, Typography } from "antd";
-import { UserOutlined } from "@ant-design/icons";
+import { UserOutlined, UpOutlined, DownOutlined } from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/zustand/index.store";
 import { signOut } from "next-auth/react";
 import { HOVER_CLOSE_DELAY, MENU_ITEMS } from "./sidebar.constants";
@@ -20,20 +20,28 @@ interface BottomMenuItem {
 
 const SideBar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const subMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
   const { user, clearUser, setCurrentTab, setSidebarNavigation } =
     useIndexStore();
 
   const isActive = useCallback((path: string) => pathname === path, [pathname]);
 
+  // Check if any sub-item is active
+  const hasActiveSubItem = useCallback(
+    (subItems?: { path: string }[]) => {
+      return subItems?.some((sub) => pathname === sub.path) ?? false;
+    },
+    [pathname]
+  );
+
   const handleNavigation = useCallback(
     (path: string, tabKey: TabKey) => {
       if (pathname === path) {
-        // Already on this path, just update the tab
         setCurrentTab(tabKey);
       } else {
-        // Navigating to a new path from sidebar
         setSidebarNavigation(true);
       }
     },
@@ -51,7 +59,22 @@ const SideBar = () => {
   const handleMouseLeave = useCallback(() => {
     closeTimerRef.current = setTimeout(() => {
       setIsExpanded(false);
+      setHoveredMenu(null);
     }, HOVER_CLOSE_DELAY);
+  }, []);
+
+  const handleMenuItemHover = useCallback((path: string | null) => {
+    if (subMenuTimerRef.current) {
+      clearTimeout(subMenuTimerRef.current);
+      subMenuTimerRef.current = null;
+    }
+    setHoveredMenu(path);
+  }, []);
+
+  const handleMenuItemLeave = useCallback(() => {
+    subMenuTimerRef.current = setTimeout(() => {
+      setHoveredMenu(null);
+    }, 150);
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -74,9 +97,8 @@ const SideBar = () => {
 
   useEffect(() => {
     return () => {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-      }
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      if (subMenuTimerRef.current) clearTimeout(subMenuTimerRef.current);
     };
   }, []);
 
@@ -97,11 +119,16 @@ const SideBar = () => {
     },
   ];
 
-  const getMenuItemClasses = (path: string) => {
+  const getMenuItemClasses = (path: string, hasActiveSub = false) => {
     const active = isActive(path);
-    return `w-full flex items-center py-2.5 transition-all duration-200 cursor-pointer ${
-      active ? "bg-primary text-white" : "hover:bg-gray-50 text-gray-700"
-    }`;
+    if (active) {
+      return "w-full flex items-center py-2.5 transition-all duration-200 cursor-pointer bg-primary text-white";
+    }
+    if (hasActiveSub) {
+      // Parent has an active sub-item - show subtle indication
+      return "w-full flex items-center py-2.5 transition-all duration-200 cursor-pointer bg-gray-100 text-gray-700";
+    }
+    return "w-full flex items-center py-2.5 transition-all duration-200 cursor-pointer hover:bg-gray-50 text-gray-700";
   };
 
   const getLabelClasses = (active: boolean) =>
@@ -159,35 +186,120 @@ const SideBar = () => {
         }}
       >
         {MENU_ITEMS.map((item) => {
-          const active = isActive(item.path);
+          const hasSubItems = item.subItems && item.subItems.length > 0;
+          const activeSub = hasActiveSubItem(item.subItems);
+          const active = isActive(item.path) || activeSub;
           const Icon = item.icon;
+          const isSubmenuOpen = hoveredMenu === item.path;
 
           return (
-            <div key={item.path} className="mb-1">
-              <Link
-                href={item.path}
-                onClick={() => handleNavigation(item.path, item.tabKey)}
-              >
-                <button className={getMenuItemClasses(item.path)}>
+            <div
+              key={item.path}
+              className="mb-1"
+              onMouseEnter={() => hasSubItems && handleMenuItemHover(item.path)}
+              onMouseLeave={() => hasSubItems && handleMenuItemLeave()}
+            >
+              {hasSubItems ? (
+                // Menu item with sub-items (accordion on hover)
+                <>
+                  <button className={getMenuItemClasses(item.path, activeSub)}>
+                    <div
+                      className={`w-5 h-5 flex items-center justify-center shrink-0 ${
+                        active ? "ml-[13px]" : "ml-3"
+                      }`}
+                    >
+                      <Icon
+                        className={`text-base ${
+                          active ? "text-white text-xl" : ""
+                        }`}
+                      />
+                    </div>
+                    <span
+                      style={{ transitionProperty: "opacity, max-width" }}
+                      className={getLabelClasses(active)}
+                    >
+                      {item.label}
+                    </span>
+                    {isExpanded && (
+                      <span
+                        className={`ml-auto mr-3 ${
+                          active ? "text-white" : "text-gray-400"
+                        }`}
+                      >
+                        {isSubmenuOpen ? (
+                          <UpOutlined style={{ fontSize: 10 }} />
+                        ) : (
+                          <DownOutlined style={{ fontSize: 10 }} />
+                        )}
+                      </span>
+                    )}
+                  </button>
+
+                  {/* Sub-items (accordion style on hover) */}
                   <div
-                    className={`w-5 h-5 flex items-center justify-center shrink-0 ${
-                      active ? "ml-[13px]" : "ml-3"
+                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                      isSubmenuOpen && isExpanded
+                        ? "max-h-48 opacity-100"
+                        : "max-h-0 opacity-0"
                     }`}
                   >
-                    <Icon
-                      className={`text-base ${
-                        active ? "text-white text-xl" : ""
-                      }`}
-                    />
+                    {item.subItems!.map((subItem) => {
+                      const SubIcon = subItem.icon;
+                      const subActive = isActive(subItem.path);
+                      return (
+                        <Link
+                          key={subItem.path}
+                          href={subItem.path}
+                          onClick={() =>
+                            handleNavigation(subItem.path, subItem.tabKey)
+                          }
+                        >
+                          <div
+                            className={`flex items-center py-2 pl-11 pr-3 text-sm cursor-pointer transition-colors ${
+                              subActive
+                                ? "bg-primary text-white"
+                                : "hover:bg-gray-50 text-gray-600"
+                            }`}
+                          >
+                            <SubIcon
+                              className={`mr-2 text-sm ${
+                                subActive ? "text-white" : ""
+                              }`}
+                            />
+                            {subItem.label}
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
-                  <span
-                    style={{ transitionProperty: "opacity, max-width" }}
-                    className={getLabelClasses(active)}
-                  >
-                    {item.label}
-                  </span>
-                </button>
-              </Link>
+                </>
+              ) : (
+                // Regular menu item with navigation
+                <Link
+                  href={item.path}
+                  onClick={() => handleNavigation(item.path, item.tabKey)}
+                >
+                  <button className={getMenuItemClasses(item.path)}>
+                    <div
+                      className={`w-5 h-5 flex items-center justify-center shrink-0 ${
+                        active ? "ml-[13px]" : "ml-3"
+                      }`}
+                    >
+                      <Icon
+                        className={`text-base ${
+                          active ? "text-white text-xl" : ""
+                        }`}
+                      />
+                    </div>
+                    <span
+                      style={{ transitionProperty: "opacity, max-width" }}
+                      className={getLabelClasses(active)}
+                    >
+                      {item.label}
+                    </span>
+                  </button>
+                </Link>
+              )}
             </div>
           );
         })}
