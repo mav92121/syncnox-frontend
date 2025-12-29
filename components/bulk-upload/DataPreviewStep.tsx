@@ -11,7 +11,7 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 
-import { useBulkUploadStore } from "@/zustand/bulkUploadStore";
+import { useBulkUploadStore } from "@/zustand/bulkUpload.store";
 import type { JobCreate } from "@/types/bulk-upload.type";
 import { useJobsStore } from "@/zustand/jobs.store";
 import { importBulkJobs } from "@/apis/bulk-upload.api";
