@@ -148,6 +148,19 @@ export default function DashboardView() {
     }
   };
 
+  const getStatusStrokeColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "#52c41a";
+      case "in_progress":
+        return "#1890ff";
+      case "scheduled":
+        return "#d9d9d9";
+      default:
+        return "#d9d9d9";
+    }
+  };
+
   const routeColumns = [
     {
       title: "Route",
@@ -165,7 +178,7 @@ export default function DashboardView() {
           <Progress
             percent={Math.round((record.completed / record.stops) * 100)}
             size="small"
-            strokeColor="#333"
+            strokeColor={getStatusStrokeColor(record.status)}
             style={{ width: 60, marginBottom: 0 }}
           />
           <Text type="secondary" style={{ fontSize: 11 }}>
