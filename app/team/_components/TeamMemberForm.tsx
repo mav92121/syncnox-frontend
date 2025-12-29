@@ -10,9 +10,9 @@ import {
 } from "./teamMemberForm.types";
 import { transformFormToApi, transformApiToForm } from "./teamMemberForm.utils";
 import { useTeamStore } from "@/zustand/team.store";
+import { useDepotStore } from "@/zustand/depots.store";
 import BasicInformation from "./BasicInformation";
-import Skills from "./Skills";
-import Cost from "./Cost";
+import SkillsAndCost from "./SkillsAndCost";
 
 const TeamMemberForm = ({
   initialData = null,
@@ -20,12 +20,19 @@ const TeamMemberForm = ({
 }: TeamMemberFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const { createTeamAction, updateTeamAction, isLoading } = useTeamStore();
+  const { depots } = useDepotStore();
   const [form] = Form.useForm();
   const [activeSection, setActiveSection] = useState<MenuKey>("basic");
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
   const [scheduleBreak, setScheduleBreak] = useState(false);
   const [roleType, setRoleType] = useState<string>("driver");
+  const [startLocationSameAsDepot, setStartLocationSameAsDepot] =
+    useState(true);
+  const [endLocationSameAsDepot, setEndLocationSameAsDepot] = useState(true);
+
+  // Get the first depot
+  const defaultDepot = depots[0];
 
   // Watch for role_type changes
   const onValuesChange = (changedValues: any) => {
@@ -45,7 +52,12 @@ const TeamMemberForm = ({
       values,
       skills,
       scheduleBreak,
-      initialData
+      initialData,
+      {
+        startLocationSameAsDepot,
+        endLocationSameAsDepot,
+        depot: defaultDepot,
+      }
     );
 
     console.log("Form submitted (transformed)", transformedValues);
@@ -88,6 +100,8 @@ const TeamMemberForm = ({
       if (initialData.break_time_start) {
         setScheduleBreak(true);
       }
+      setStartLocationSameAsDepot(!initialData.start_address);
+      setEndLocationSameAsDepot(!initialData.end_address);
 
       form.setFieldsValue(formValues);
     }
@@ -177,29 +191,28 @@ const TeamMemberForm = ({
                     scheduleBreak={scheduleBreak}
                     onScheduleBreakChange={setScheduleBreak}
                     isDriver={isDriver}
+                    startLocationSameAsDepot={startLocationSameAsDepot}
+                    onStartLocationSameAsDepotChange={
+                      setStartLocationSameAsDepot
+                    }
+                    endLocationSameAsDepot={endLocationSameAsDepot}
+                    onEndLocationSameAsDepotChange={setEndLocationSameAsDepot}
                   />
                 </div>
 
                 <div
                   style={{
-                    display: activeSection === "skills" ? "block" : "none",
+                    display:
+                      activeSection === "skillsAndCost" ? "block" : "none",
                   }}
                 >
-                  <Skills
+                  <SkillsAndCost
                     skills={skills}
                     skillInput={skillInput}
                     onSkillInputChange={setSkillInput}
                     onAddSkill={handleAddSkill}
                     onRemoveSkill={handleRemoveSkill}
                   />
-                </div>
-
-                <div
-                  style={{
-                    display: activeSection === "cost" ? "block" : "none",
-                  }}
-                >
-                  <Cost />
                 </div>
               </>
             ) : (
@@ -209,6 +222,10 @@ const TeamMemberForm = ({
                 scheduleBreak={scheduleBreak}
                 onScheduleBreakChange={setScheduleBreak}
                 isDriver={isDriver}
+                startLocationSameAsDepot={startLocationSameAsDepot}
+                onStartLocationSameAsDepotChange={setStartLocationSameAsDepot}
+                endLocationSameAsDepot={endLocationSameAsDepot}
+                onEndLocationSameAsDepotChange={setEndLocationSameAsDepot}
               />
             )}
           </Form>
