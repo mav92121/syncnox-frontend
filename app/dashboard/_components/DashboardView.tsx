@@ -91,7 +91,6 @@ export default function DashboardView() {
     {
       icon: <FileAddOutlined style={{ fontSize: 20 }} />,
       label: "Add Job",
-      color: "#003220",
       onClick: () => {
         router.push("/plan");
         setCurrentTab("add-jobs");
@@ -100,7 +99,6 @@ export default function DashboardView() {
     {
       icon: <RocketOutlined style={{ fontSize: 20 }} />,
       label: "Plan Route",
-      color: "#1890ff",
       onClick: () => {
         router.push("/plan");
         setCurrentTab("unassigned-jobs");
@@ -109,7 +107,6 @@ export default function DashboardView() {
     {
       icon: <TeamOutlined style={{ fontSize: 20 }} />,
       label: "Add Driver",
-      color: "#722ed1",
       onClick: () => {
         router.push("/team");
         setCurrentTab("team");
@@ -118,7 +115,6 @@ export default function DashboardView() {
     {
       icon: <EnvironmentOutlined style={{ fontSize: 20 }} />,
       label: "All Routes",
-      color: "#fa8c16",
       onClick: () => {
         setCurrentTab("routes");
       },
@@ -126,7 +122,6 @@ export default function DashboardView() {
     {
       icon: <FileTextOutlined style={{ fontSize: 20 }} />,
       label: "All Jobs",
-      color: "#52c41a",
       onClick: () => {
         setCurrentTab("jobs");
       },
@@ -134,7 +129,6 @@ export default function DashboardView() {
     {
       icon: <CalendarOutlined style={{ fontSize: 20 }} />,
       label: "Schedule",
-      color: "#eb2f96",
       onClick: () => {
         setCurrentTab("schedule");
       },
@@ -151,6 +145,19 @@ export default function DashboardView() {
         return "default";
       default:
         return "default";
+    }
+  };
+
+  const getStatusStrokeColor = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "#52c41a";
+      case "in_progress":
+        return "#1890ff";
+      case "scheduled":
+        return "#d9d9d9";
+      default:
+        return "#d9d9d9";
     }
   };
 
@@ -171,7 +178,7 @@ export default function DashboardView() {
           <Progress
             percent={Math.round((record.completed / record.stops) * 100)}
             size="small"
-            strokeColor="#003220"
+            strokeColor={getStatusStrokeColor(record.status)}
             style={{ width: 60, marginBottom: 0 }}
           />
           <Text type="secondary" style={{ fontSize: 11 }}>
@@ -204,8 +211,8 @@ export default function DashboardView() {
             <Statistic
               title="Total Jobs"
               value={0}
-              prefix={<FileTextOutlined style={{ color: "#003220" }} />}
-              valueStyle={{ color: "#003220" }}
+              prefix={<FileTextOutlined style={{ color: "#333" }} />}
+              valueStyle={{ color: "#333" }}
             />
           </Card>
         </Col>
@@ -214,8 +221,8 @@ export default function DashboardView() {
             <Statistic
               title="Active Routes"
               value={0}
-              prefix={<CarOutlined style={{ color: "#1890ff" }} />}
-              valueStyle={{ color: "#1890ff" }}
+              prefix={<CarOutlined style={{ color: "#333" }} />}
+              valueStyle={{ color: "#333" }}
             />
           </Card>
         </Col>
@@ -224,8 +231,8 @@ export default function DashboardView() {
             <Statistic
               title="Completed"
               value={0}
-              prefix={<CheckCircleOutlined style={{ color: "#52c41a" }} />}
-              valueStyle={{ color: "#52c41a" }}
+              prefix={<CheckCircleOutlined style={{ color: "#333" }} />}
+              valueStyle={{ color: "#333" }}
             />
           </Card>
         </Col>
@@ -234,8 +241,8 @@ export default function DashboardView() {
             <Statistic
               title="Scheduled"
               value={0}
-              prefix={<ClockCircleOutlined style={{ color: "#722ed1" }} />}
-              valueStyle={{ color: "#722ed1" }}
+              prefix={<ClockCircleOutlined style={{ color: "#333" }} />}
+              valueStyle={{ color: "#333" }}
             />
           </Card>
         </Col>
@@ -244,8 +251,8 @@ export default function DashboardView() {
             <Statistic
               title="Drivers"
               value={0}
-              prefix={<TeamOutlined style={{ color: "#fa8c16" }} />}
-              valueStyle={{ color: "#fa8c16" }}
+              prefix={<TeamOutlined style={{ color: "#333" }} />}
+              valueStyle={{ color: "#333" }}
             />
           </Card>
         </Col>
@@ -254,8 +261,8 @@ export default function DashboardView() {
             <Statistic
               title="Depots"
               value={0}
-              prefix={<EnvironmentOutlined style={{ color: "#eb2f96" }} />}
-              valueStyle={{ color: "#eb2f96" }}
+              prefix={<EnvironmentOutlined style={{ color: "#333" }} />}
+              valueStyle={{ color: "#333" }}
             />
           </Card>
         </Col>
@@ -268,7 +275,7 @@ export default function DashboardView() {
             size="small"
             title={
               <Flex align="center" gap={8}>
-                <ThunderboltOutlined style={{ color: "#003220" }} />
+                <ThunderboltOutlined style={{ color: "#333" }} />
                 Quick Actions
               </Flex>
             }
@@ -287,27 +294,26 @@ export default function DashboardView() {
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    borderRadius: 8,
-                    border: `1px solid ${action.color}30`,
-                    backgroundColor: `${action.color}08`,
+                    border: "1px solid #e0e0e0",
+                    backgroundColor: "#fafafa",
                     transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = `${action.color}15`;
+                    e.currentTarget.style.backgroundColor = "#f0f0f0";
                     e.currentTarget.style.transform = "translateY(-2px)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = `${action.color}08`;
+                    e.currentTarget.style.backgroundColor = "#fafafa";
                     e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
-                  <span style={{ color: action.color, marginBottom: 6 }}>
+                  <span style={{ color: "#333", marginBottom: 6 }}>
                     {action.icon}
                   </span>
                   <Text
                     style={{
                       fontSize: 11,
-                      color: action.color,
+                      color: "#333",
                       fontWeight: 500,
                     }}
                   >
@@ -323,7 +329,7 @@ export default function DashboardView() {
             size="small"
             title={
               <Flex align="center" gap={8}>
-                <DashboardOutlined style={{ color: "#003220" }} />
+                <DashboardOutlined style={{ color: "#333" }} />
                 Optimization Impact
               </Flex>
             }
@@ -331,13 +337,13 @@ export default function DashboardView() {
           >
             <Flex justify="space-around">
               <div className="text-center">
-                <DashboardOutlined style={{ color: "#52c41a", fontSize: 24 }} />
+                <DashboardOutlined style={{ color: "#333", fontSize: 24 }} />
                 <Text
                   style={{
                     display: "block",
                     fontSize: 20,
                     fontWeight: "bold",
-                    color: "#52c41a",
+                    color: "#333",
                   }}
                 >
                   0 km
@@ -347,13 +353,13 @@ export default function DashboardView() {
                 </Text>
               </div>
               <div className="text-center">
-                <FieldTimeOutlined style={{ color: "#1890ff", fontSize: 24 }} />
+                <FieldTimeOutlined style={{ color: "#333", fontSize: 24 }} />
                 <Text
                   style={{
                     display: "block",
                     fontSize: 20,
                     fontWeight: "bold",
-                    color: "#1890ff",
+                    color: "#333",
                   }}
                 >
                   0 hrs
@@ -363,13 +369,13 @@ export default function DashboardView() {
                 </Text>
               </div>
               <div className="text-center">
-                <CarOutlined style={{ color: "#fa8c16", fontSize: 24 }} />
+                <CarOutlined style={{ color: "#333", fontSize: 24 }} />
                 <Text
                   style={{
                     display: "block",
                     fontSize: 20,
                     fontWeight: "bold",
-                    color: "#fa8c16",
+                    color: "#333",
                   }}
                 >
                   0
@@ -390,7 +396,7 @@ export default function DashboardView() {
             size="small"
             title={
               <Flex align="center" gap={8}>
-                <CarOutlined style={{ color: "#003220" }} />
+                <CarOutlined style={{ color: "#333" }} />
                 Recent Routes
               </Flex>
             }
@@ -410,7 +416,7 @@ export default function DashboardView() {
             size="small"
             title={
               <Flex align="center" gap={8}>
-                <UserOutlined style={{ color: "#003220" }} />
+                <UserOutlined style={{ color: "#333" }} />
                 Top Drivers
               </Flex>
             }
@@ -426,11 +432,7 @@ export default function DashboardView() {
                       icon={<UserOutlined />}
                       style={{
                         backgroundColor:
-                          index === 0
-                            ? "#003220"
-                            : index === 1
-                            ? "#52c41a"
-                            : "#1890ff",
+                          index === 0 ? "#333" : index === 1 ? "#666" : "#999",
                       }}
                     />
                     <div>
@@ -446,7 +448,7 @@ export default function DashboardView() {
                     type="circle"
                     percent={driver.onTime}
                     size={28}
-                    strokeColor="#003220"
+                    strokeColor="#333"
                     format={(p) => <span style={{ fontSize: 8 }}>{p}%</span>}
                   />
                 </Flex>
@@ -459,7 +461,7 @@ export default function DashboardView() {
             size="small"
             title={
               <Flex align="center" gap={8}>
-                <CalendarOutlined style={{ color: "#003220" }} />
+                <CalendarOutlined style={{ color: "#333" }} />
                 Upcoming
               </Flex>
             }
