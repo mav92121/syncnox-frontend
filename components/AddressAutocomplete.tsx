@@ -36,6 +36,8 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const { isLoaded, error } = useGooglePlaces();
   const [options, setOptions] = useState<PredictionOption[]>([]);
   const [searchValue, setSearchValue] = useState(value || "");
+  const [confirmedValue, setConfirmedValue] = useState(value || "");
+  const [isTypingNew, setIsTypingNew] = useState(false);
   const autocompleteService =
     useRef<google.maps.places.AutocompleteService | null>(null);
   const placesService = useRef<google.maps.places.PlacesService | null>(null);
@@ -55,8 +57,10 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   // Sync searchValue with external value prop
   useEffect(() => {
-    if (value !== undefined && value !== searchValue) {
+    if (value !== undefined) {
       setSearchValue(value);
+      setConfirmedValue(value);
+      setIsTypingNew(false);
     }
   }, [value]);
 
@@ -71,6 +75,31 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   // Handle search input with debouncing
   const handleSearch = (searchText: string) => {
+    // If user has a confirmed value and starts typing, clear and start fresh
+    if (confirmedValue && !isTypingNew && searchText !== confirmedValue) {
+      setIsTypingNew(true);
+      setSearchValue(searchText.slice(-1)); // Keep only the last typed character
+      onChange?.(searchText.slice(-1));
+
+      // Clear previous debounce timer
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+
+      // Search with the new character
+      if (searchText.slice(-1) && autocompleteService.current) {
+        debounceTimer.current = setTimeout(() => {
+          autocompleteService.current!.getPlacePredictions(
+            { input: searchText.slice(-1) },
+            handlePredictions
+          );
+        }, 500);
+      } else {
+        setOptions([]);
+      }
+      return;
+    }
+
     setSearchValue(searchText);
     onChange?.(searchText);
 
@@ -86,30 +115,27 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
     // Set new debounce timer (500ms delay)
     debounceTimer.current = setTimeout(() => {
-      // Get predictions from Google Places
       autocompleteService.current!.getPlacePredictions(
-        {
-          input: searchText,
-        },
-        (predictions, status) => {
-          if (
-            status === google.maps.places.PlacesServiceStatus.OK &&
-            predictions
-          ) {
-            const newOptions: PredictionOption[] = predictions.map(
-              (prediction) => ({
-                value: prediction.description,
-                label: prediction.description,
-                placeId: prediction.place_id,
-              })
-            );
-            setOptions(newOptions);
-          } else {
-            setOptions([]);
-          }
-        }
+        { input: searchText },
+        handlePredictions
       );
     }, 500);
+  };
+
+  const handlePredictions = (
+    predictions: google.maps.places.AutocompletePrediction[] | null,
+    status: google.maps.places.PlacesServiceStatus
+  ) => {
+    if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+      const newOptions: PredictionOption[] = predictions.map((prediction) => ({
+        value: prediction.description,
+        label: prediction.description,
+        placeId: prediction.place_id,
+      }));
+      setOptions(newOptions);
+    } else {
+      setOptions([]);
+    }
   };
 
   // Handle address selection
@@ -143,13 +169,24 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
             // Update internal state to reflect the selected address
             setSearchValue(formattedAddress);
+            setConfirmedValue(formattedAddress);
+            setIsTypingNew(false);
             onChange?.(formattedAddress);
-
             onSelect?.(addressData);
           }
         }
       }
     );
+  };
+
+  // Handle blur - revert to confirmed value if no selection was made
+  const handleBlur = () => {
+    if (isTypingNew && searchValue !== confirmedValue) {
+      // User typed but didn't select - revert to confirmed value
+      setSearchValue(confirmedValue);
+      setIsTypingNew(false);
+      setOptions([]);
+    }
   };
 
   if (error) {
@@ -158,10 +195,12 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   return (
     <AutoComplete
+      style={{ width: "100%" }}
       value={searchValue}
       options={options}
       onSearch={handleSearch}
       onSelect={handleSelectAddress}
+      onBlur={handleBlur}
       placeholder={isLoaded ? placeholder : "Loading Google Maps..."}
       disabled={!!error}
       notFoundContent={isLoaded ? "No addresses found" : "Loading..."}

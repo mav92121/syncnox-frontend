@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { TabKey } from "@/zustand/index.store";
 import {
   RocketOutlined,
@@ -9,20 +8,23 @@ import {
   SettingOutlined,
   TeamOutlined,
   UserOutlined,
+  CarOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 
-interface MenuItem {
+interface SubMenuItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   path: string;
   tabKey: TabKey;
 }
 
-interface BottomMenuItem {
+interface MenuItem {
   icon: React.ComponentType<{ className?: string }>;
   label: string;
-  action?: () => void;
-  isDanger?: boolean;
+  path: string;
+  tabKey: TabKey;
+  subItems?: SubMenuItem[];
 }
 
 export const MENU_ITEMS: MenuItem[] = [
@@ -57,13 +59,32 @@ export const MENU_ITEMS: MenuItem[] = [
     tabKey: "routes",
   },
   {
+    icon: UserOutlined,
+    label: "Customers",
+    path: "/customers",
+    tabKey: "api",
+  },
+  {
     icon: SettingOutlined,
     label: "Settings",
     path: "/settings",
-    tabKey: "reports",
+    tabKey: "team",
+    subItems: [
+      { icon: TeamOutlined, label: "Team", path: "/team", tabKey: "team" },
+      {
+        icon: CarOutlined,
+        label: "Vehicle",
+        path: "/vehicle",
+        tabKey: "vehicle",
+      },
+      {
+        icon: EnvironmentOutlined,
+        label: "Depot",
+        path: "/depot",
+        tabKey: "depot",
+      },
+    ],
   },
-  { icon: TeamOutlined, label: "Team", path: "/team", tabKey: "team" },
-  { icon: UserOutlined, label: "Customers", path: "/customers", tabKey: "api" },
 ];
 
 export const HOVER_CLOSE_DELAY = 200;

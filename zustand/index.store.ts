@@ -18,7 +18,8 @@ export type TabKey =
   | "vehicle" // /insights & /analytics tabs
   | "optimization"
   | "reports"
-  | "api"; // /schedule tabs
+  | "api" // /schedule tabs
+  | "depot";
 
 interface UserState {
   user: User | null;
