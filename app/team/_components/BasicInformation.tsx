@@ -275,6 +275,7 @@ const BasicInformation = ({
               {/* Distance Limit */}
               <Form.Item label="Distance limit (km)" name="max_distance">
                 <Input
+                  type="number"
                   className="w-full"
                   placeholder="50"
                   min={0}

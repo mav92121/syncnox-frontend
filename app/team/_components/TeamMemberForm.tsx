@@ -46,8 +46,6 @@ const TeamMemberForm = ({
   };
 
   const onFinish = async (values: any) => {
-    console.log("Form submitted (raw)", values);
-
     const transformedValues = transformFormToApi(
       values,
       skills,
@@ -100,12 +98,22 @@ const TeamMemberForm = ({
       if (initialData.break_time_start) {
         setScheduleBreak(true);
       }
-      setStartLocationSameAsDepot(!initialData.start_address);
-      setEndLocationSameAsDepot(!initialData.end_address);
+
+      // Check if start/end location is same as depot
+      const depotFormattedAddress = defaultDepot?.address?.formatted_address;
+      const isStartSameAsDepot =
+        !initialData.start_address ||
+        initialData.start_address === depotFormattedAddress;
+      const isEndSameAsDepot =
+        !initialData.end_address ||
+        initialData.end_address === depotFormattedAddress;
+
+      setStartLocationSameAsDepot(isStartSameAsDepot);
+      setEndLocationSameAsDepot(isEndSameAsDepot);
 
       form.setFieldsValue(formValues);
     }
-  }, [initialData, form]);
+  }, [initialData, form, defaultDepot]);
 
   const handleAddSkill = () => {
     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
@@ -166,7 +174,7 @@ const TeamMemberForm = ({
             flex: 1,
             overflowY: "auto",
             overflowX: "hidden",
-            // paddingRight: "8px",
+            paddingRight: "8px",
           }}
           className="custom-scrollbar"
         >
