@@ -37,7 +37,9 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
     useVehicleStore();
 
   const defaultValues = {
-    name: `Vehicle ${vehicles.length + 1}`,
+    name: `Vehicle ${
+      vehicles.length > 0 ? Math.max(...vehicles.map((v) => v.id)) + 1 : 1
+    }`,
     type: "car" as VehicleType,
   };
 
