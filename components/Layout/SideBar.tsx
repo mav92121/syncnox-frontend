@@ -54,7 +54,16 @@ const SideBar = () => {
       closeTimerRef.current = null;
     }
     setIsExpanded(true);
-  }, []);
+
+    // Auto-open submenu if a sub-item is currently active
+    const activeParentMenu = MENU_ITEMS.find(
+      (item) =>
+        item.subItems && item.subItems.some((sub) => pathname === sub.path)
+    );
+    if (activeParentMenu) {
+      setHoveredMenu(activeParentMenu.path);
+    }
+  }, [pathname]);
 
   const handleMouseLeave = useCallback(() => {
     closeTimerRef.current = setTimeout(() => {
