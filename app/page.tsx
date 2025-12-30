@@ -1,10 +1,16 @@
 "use client";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useIndexStore } from "@/zustand/index.store";
 
 export default function Home() {
   const { setCurrentTab } = useIndexStore();
   const router = useRouter();
-  setCurrentTab("dashboard");
-  router.replace("/dashboard");
+
+  useEffect(() => {
+    setCurrentTab("dashboard");
+    router.replace("/dashboard");
+  }, [setCurrentTab, router]);
+
+  return null;
 }
