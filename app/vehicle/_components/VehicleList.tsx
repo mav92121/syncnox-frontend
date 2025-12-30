@@ -1,11 +1,14 @@
 "use client";
+import { useState } from "react";
 import BaseTable from "@/components/Table/BaseTable";
 import { Vehicle } from "@/types/vehicle.type";
 import { useVehicleStore } from "@/zustand/vehicle.store";
 import { useTeamStore } from "@/zustand/team.store";
 import { ColDef } from "ag-grid-community";
-import { Typography, Flex, Button, message } from "antd";
+import { Typography, Flex, Button, Drawer } from "antd";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
+import AddVehicleModal from "./AddVehicleModal";
+import VehicleForm from "./VehicleForm";
 
 const { Title } = Typography;
 
@@ -21,6 +24,9 @@ const VehicleList = () => {
   const { isLoading, vehicles, deleteVehicleAction } = useVehicleStore();
   const { getTeamsMap } = useTeamStore();
   const teamsMap = getTeamsMap();
+
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [editVehicleData, setEditVehicleData] = useState<Vehicle | null>(null);
 
   const columns: ColDef<Vehicle>[] = [
     {
@@ -94,10 +100,7 @@ const VehicleList = () => {
         {
           key: "edit",
           label: "Edit",
-          onClick: (vehicle: Vehicle) => {
-            // TODO: Implement edit functionality
-            message.info(`Edit vehicle ${vehicle.name}`);
-          },
+          onClick: (vehicle: Vehicle) => setEditVehicleData(vehicle),
         },
         {
           key: "delete",
@@ -121,10 +124,7 @@ const VehicleList = () => {
         <Button
           type="primary"
           size="small"
-          onClick={() => {
-            // TODO: Implement add vehicle functionality
-            message.info("Add vehicle functionality coming soon");
-          }}
+          onClick={() => setAddModalOpen(true)}
         >
           Add Vehicle
         </Button>
@@ -139,6 +139,24 @@ const VehicleList = () => {
           containerStyle={{ height: "100%" }}
         />
       </div>
+
+      {/* Add Vehicle Modal */}
+      <AddVehicleModal open={addModalOpen} setOpen={setAddModalOpen} />
+
+      {/* Edit Vehicle Drawer */}
+      <Drawer
+        onClose={() => setEditVehicleData(null)}
+        title="Edit Vehicle"
+        open={editVehicleData !== null}
+        size={600}
+        placement="right"
+        destroyOnHidden
+      >
+        <VehicleForm
+          initialData={editVehicleData}
+          onSubmit={() => setEditVehicleData(null)}
+        />
+      </Drawer>
     </div>
   );
 };
