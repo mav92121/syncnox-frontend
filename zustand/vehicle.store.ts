@@ -36,7 +36,12 @@ export const useVehicleStore = create(
           const vehicles = await fetchVehicles();
           set({ vehicles, hasFetched: true });
         } catch (error) {
-          set({ error: error as string });
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to fetch vehicles",
+          });
         } finally {
           set({ isLoading: false });
         }
