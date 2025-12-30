@@ -91,9 +91,9 @@ const Depot = () => {
       : [];
 
   return (
-    <div className="flex flex-col h-full gap-3">
-      <Flex justify="space-between" align="center">
-        <Title className="m-0" level={5}>
+    <div className="flex flex-col h-full">
+      <Flex justify="space-between">
+        <Title className="m-0 mb-2 pt-2" level={5}>
           Depot
         </Title>
         <Button
@@ -103,11 +103,11 @@ const Depot = () => {
           loading={isSaving}
           disabled={!hasChanges}
         >
-          Save Depot
+          Update Depot
         </Button>
       </Flex>
 
-      <div className="flex gap-2 w-full">
+      <div className="flex gap-2 w-full mb-2">
         <div className="w-1/3">
           <Input
             value={name}
@@ -134,7 +134,7 @@ const Depot = () => {
         <GoogleMaps
           showMapTypeControl={true}
           showZoomControl={true}
-          zoom={8}
+          zoom={10}
           center={
             location ||
             depot?.location || {

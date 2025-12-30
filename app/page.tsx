@@ -1,5 +1,16 @@
-import { redirect } from "next/navigation";
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useIndexStore } from "@/zustand/index.store";
 
 export default function Home() {
-  redirect("/dashboard");
+  const { setCurrentTab } = useIndexStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    setCurrentTab("dashboard");
+    router.replace("/dashboard");
+  }, [setCurrentTab, router]);
+
+  return null;
 }

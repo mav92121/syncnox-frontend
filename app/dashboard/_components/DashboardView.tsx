@@ -84,8 +84,7 @@ const mockUpcoming = [
 
 export default function DashboardView() {
   const router = useRouter();
-  const { currentTab, setCurrentTab } = useIndexStore();
-  console.log("cur -> ", currentTab);
+  const { setCurrentTab } = useIndexStore();
 
   const quickActions = [
     {
@@ -212,7 +211,7 @@ export default function DashboardView() {
               title="Total Jobs"
               value={0}
               prefix={<FileTextOutlined style={{ color: "#333" }} />}
-              valueStyle={{ color: "#333" }}
+              styles={{ content: { color: "#333" } }}
             />
           </Card>
         </Col>
@@ -222,7 +221,7 @@ export default function DashboardView() {
               title="Active Routes"
               value={0}
               prefix={<CarOutlined style={{ color: "#333" }} />}
-              valueStyle={{ color: "#333" }}
+              styles={{ content: { color: "#333" } }}
             />
           </Card>
         </Col>
@@ -232,7 +231,7 @@ export default function DashboardView() {
               title="Completed"
               value={0}
               prefix={<CheckCircleOutlined style={{ color: "#333" }} />}
-              valueStyle={{ color: "#333" }}
+              styles={{ content: { color: "#333" } }}
             />
           </Card>
         </Col>
@@ -242,7 +241,7 @@ export default function DashboardView() {
               title="Scheduled"
               value={0}
               prefix={<ClockCircleOutlined style={{ color: "#333" }} />}
-              valueStyle={{ color: "#333" }}
+              styles={{ content: { color: "#333" } }}
             />
           </Card>
         </Col>
@@ -252,7 +251,7 @@ export default function DashboardView() {
               title="Drivers"
               value={0}
               prefix={<TeamOutlined style={{ color: "#333" }} />}
-              valueStyle={{ color: "#333" }}
+              styles={{ content: { color: "#333" } }}
             />
           </Card>
         </Col>
@@ -262,7 +261,7 @@ export default function DashboardView() {
               title="Depots"
               value={0}
               prefix={<EnvironmentOutlined style={{ color: "#333" }} />}
-              valueStyle={{ color: "#333" }}
+              styles={{ content: { color: "#333" } }}
             />
           </Card>
         </Col>
@@ -423,7 +422,7 @@ export default function DashboardView() {
             styles={{ body: { padding: 12 } }}
             style={{ height: "100%" }}
           >
-            <Space direction="vertical" style={{ width: "100%" }} size={12}>
+            <Space orientation="vertical" style={{ width: "100%" }} size={12}>
               {mockDrivers.map((driver, index) => (
                 <Flex key={index} justify="space-between" align="center">
                   <Flex align="center" gap={8}>
@@ -468,7 +467,7 @@ export default function DashboardView() {
             styles={{ body: { padding: 12 } }}
             style={{ height: "100%" }}
           >
-            <Space direction="vertical" style={{ width: "100%" }} size={12}>
+            <Space orientation="vertical" style={{ width: "100%" }} size={12}>
               {mockUpcoming.map((item, index) => (
                 <Flex
                   key={index}

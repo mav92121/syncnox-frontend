@@ -89,17 +89,12 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
 
   const onLoad = useCallback(
     function callback(map: google.maps.Map) {
-      const bounds = new window.google.maps.LatLngBounds(center);
-      // Optionally fit bounds to markers if provided
-      if (markers.length > 0) {
-        markers.forEach((marker) => bounds.extend(marker.position));
-        map.fitBounds(bounds);
-      } else {
-        map.setCenter(center);
-        map.setZoom(zoom);
-      }
+      // Always set the center and zoom explicitly
+      // This ensures the zoom prop is respected regardless of markers
+      map.setCenter(center);
+      map.setZoom(zoom);
     },
-    [center, markers, zoom]
+    [center, zoom]
   );
 
   const handleMapTypeChange = (type: MapType) => {
