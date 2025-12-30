@@ -14,7 +14,6 @@ import {
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { Vehicle, VehicleType } from "@/types/vehicle.type";
 import { useVehicleStore } from "@/zustand/vehicle.store";
-import { useTeamStore } from "@/zustand/team.store";
 
 interface VehicleFormProps {
   initialData?: Vehicle | null;
@@ -34,14 +33,13 @@ const VEHICLE_TYPES: { value: VehicleType; label: string }[] = [
 const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm();
-  const { createVehicleAction, updateVehicleAction, isLoading } =
+  const { createVehicleAction, updateVehicleAction, isLoading, vehicles } =
     useVehicleStore();
-  const { teams } = useTeamStore();
 
-  const teamMemberOptions = teams.map((team) => ({
-    value: team.id,
-    label: team.name,
-  }));
+  const defaultValues = {
+    name: `Vehicle ${vehicles.length + 1}`,
+    type: "car" as VehicleType,
+  };
 
   // prefill form
   useEffect(() => {
@@ -54,7 +52,6 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
         type: initialData.type,
         capacity_weight: initialData.capacity_weight,
         capacity_volume: initialData.capacity_volume,
-        team_member_id: initialData.team_member_id,
       });
     } else {
       form.resetFields();
@@ -101,6 +98,7 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
           layout="vertical"
           onFinish={onFinish}
           requiredMark={false}
+          initialValues={initialData ? undefined : defaultValues}
         >
           {/* Row 1: Name, License Plate */}
           <Row gutter={16}>
@@ -166,25 +164,6 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
                   placeholder="Enter volume capacity"
                   style={{ width: "100%" }}
                   min={0}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Row 5: Assignment (Team Member) */}
-          <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item label="Assign Team Member" name="team_member_id">
-                <Select
-                  placeholder="Select team member"
-                  options={teamMemberOptions}
-                  allowClear
-                  showSearch
-                  filterOption={(input, option) =>
-                    (option?.label ?? "")
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
                 />
               </Form.Item>
             </Col>

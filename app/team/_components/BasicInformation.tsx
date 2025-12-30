@@ -6,11 +6,9 @@ import {
   createTimeWindowStartValidator,
   createTimeWindowEndValidator,
 } from "@/utils/form.validation";
-import {
-  ROLE_TYPE_OPTIONS,
-  NAVIGATION_FORMAT_OPTIONS,
-} from "./teamForm.constants";
+import { ROLE_TYPE_OPTIONS } from "./teamForm.constants";
 import { useDepotStore } from "@/zustand/depots.store";
+import { useVehicleStore } from "@/zustand/vehicle.store";
 import AddressAutocomplete, {
   AddressData,
 } from "@/components/AddressAutocomplete";
@@ -37,6 +35,12 @@ const BasicInformation = ({
   onEndLocationSameAsDepotChange,
 }: BasicInformationProps) => {
   const { depots } = useDepotStore();
+  const { vehicles } = useVehicleStore();
+
+  const vehicleOptions = vehicles.map((vehicle) => ({
+    value: vehicle.id,
+    label: vehicle.name,
+  }));
 
   // Get the first depot's address
   const defaultDepot = depots?.[0];
@@ -262,12 +266,20 @@ const BasicInformation = ({
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="Navigation Link Format"
-                name="navigation_link_format"
+                rules={[{ required: true, message: "Vehicle is required" }]}
+                label="Vehicle"
+                name="vehicle_id"
               >
                 <Select
-                  placeholder="Select"
-                  options={NAVIGATION_FORMAT_OPTIONS}
+                  placeholder="Select vehicle"
+                  options={vehicleOptions}
+                  allowClear
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? "")
+                      .toLowerCase()
+                      .includes(input.toLowerCase())
+                  }
                 />
               </Form.Item>
             </Col>
