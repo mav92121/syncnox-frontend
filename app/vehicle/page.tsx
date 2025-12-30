@@ -1,7 +1,7 @@
-import React from "react";
+import VehicleList from "./_components/VehicleList";
 
-const page = () => {
-  return <div>page</div>;
+const VehiclePage = () => {
+  return <VehicleList />;
 };
 
-export default page;
+export default VehiclePage;
