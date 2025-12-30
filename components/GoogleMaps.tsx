@@ -46,8 +46,9 @@ interface MarkerData {
   jobType?: JobType;
   jobData?: Job;
   sequenceNumber?: number;
-  color?: string; // Custom color override
+  color?: string;
   isDepot?: boolean;
+  draggable?: boolean;
 }
 
 interface PolylineData {
@@ -63,6 +64,10 @@ interface GoogleMapsProps {
   InfoWindowModal?: React.FC<{ marker: MarkerData }>;
   selectedMarkerId?: string | number | null;
   onMarkerSelect?: (markerId: string | number | null) => void;
+  onMarkerDragEnd?: (
+    markerId: string | number,
+    newPosition: google.maps.LatLngLiteral
+  ) => void;
   showMapTypeControl?: boolean;
   showZoomControl?: boolean;
   showDirectionArrows?: boolean;
@@ -76,6 +81,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   InfoWindowModal,
   selectedMarkerId,
   onMarkerSelect,
+  onMarkerDragEnd,
   showMapTypeControl = true,
   showZoomControl = true,
   showDirectionArrows = false,
@@ -197,9 +203,18 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
             position={marker.position}
             title={marker.title}
             icon={icon}
+            draggable={marker.draggable}
             onClick={() => {
               setSelectedMarker(marker);
               onMarkerSelect?.(marker.id);
+            }}
+            onDragEnd={(e) => {
+              if (e.latLng && onMarkerDragEnd) {
+                onMarkerDragEnd(marker.id, {
+                  lat: e.latLng.lat(),
+                  lng: e.latLng.lng(),
+                });
+              }
             }}
           />
         );
