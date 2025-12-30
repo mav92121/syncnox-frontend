@@ -5,7 +5,9 @@ import { Depot } from "@/types/depots.type";
 import {
   fetchDepots,
   updateDepot,
-  UpdateDepotPayload,
+  createDepot,
+  deleteDepot,
+  DepotPayload,
 } from "@/apis/depots.api";
 
 interface DepotStore {
@@ -18,7 +20,9 @@ interface DepotStore {
   // Actions
   fetchDepots: () => Promise<void>;
   initializeDepots: () => Promise<void>;
-  updateDepot: (id: number, payload: UpdateDepotPayload) => Promise<boolean>;
+  createDepot: (payload: DepotPayload) => Promise<boolean>;
+  updateDepot: (id: number, payload: DepotPayload) => Promise<boolean>;
+  deleteDepot: (id: number) => Promise<boolean>;
 }
 
 export const useDepotStore = create(
@@ -48,7 +52,23 @@ export const useDepotStore = create(
         await get().fetchDepots();
       },
 
-      updateDepot: async (id: number, payload: UpdateDepotPayload) => {
+      createDepot: async (payload: DepotPayload) => {
+        set({ isSaving: true, error: null });
+        try {
+          const newDepot = await createDepot(payload);
+          set((state) => {
+            state.depots.push(newDepot);
+          });
+          return true;
+        } catch (error) {
+          set({ error: (error as Error).message });
+          return false;
+        } finally {
+          set({ isSaving: false });
+        }
+      },
+
+      updateDepot: async (id: number, payload: DepotPayload) => {
         set({ isSaving: true, error: null });
         try {
           const updatedDepot = await updateDepot(id, payload);
@@ -57,6 +77,22 @@ export const useDepotStore = create(
             if (index !== -1) {
               state.depots[index] = updatedDepot;
             }
+          });
+          return true;
+        } catch (error) {
+          set({ error: (error as Error).message });
+          return false;
+        } finally {
+          set({ isSaving: false });
+        }
+      },
+
+      deleteDepot: async (id: number) => {
+        set({ isSaving: true, error: null });
+        try {
+          await deleteDepot(id);
+          set((state) => {
+            state.depots = state.depots.filter((d) => d.id !== id);
           });
           return true;
         } catch (error) {

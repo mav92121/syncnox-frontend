@@ -1,75 +1,103 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
-import GoogleMaps from "@/components/GoogleMaps";
-import { Flex, Typography, Button, message, Spin, Input } from "antd";
+import { useState, useEffect } from "react";
+import { Flex, Typography, Button, Spin, Drawer } from "antd";
 import { useDepotStore } from "@/zustand/depots.store";
-import AddressAutocomplete, {
-  AddressData,
-} from "@/components/AddressAutocomplete";
+import { Depot as DepotType } from "@/types/depots.type";
+import DepotForm from "./DepotForm";
+import CreateDepotModal from "./CreateDepotModal";
+import { DepotPayload } from "@/apis/depots.api";
+import { ColDef } from "ag-grid-community";
+import BaseTable from "@/components/Table/BaseTable";
+import { createActionsColumn } from "@/components/Table/ActionsColumn";
 
 const { Title } = Typography;
 
 const Depot = () => {
-  const { depots, isSaving, isLoading, updateDepot } = useDepotStore();
-  const depot = depots[0];
+  const { depots, isSaving, isLoading, updateDepot, createDepot, deleteDepot } =
+    useDepotStore();
 
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
-    null
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingDepot, setEditingDepot] = useState<DepotType | undefined>(
+    undefined
   );
 
-  useEffect(() => {
-    if (depot) {
-      setName(depot.name || "");
-      setAddress(depot.address?.formatted_address || "");
-      if (depot.location) {
-        setLocation({ lat: depot.location.lat, lng: depot.location.lng });
-      }
-    }
-  }, [depot]);
-
-  const hasChanges = useMemo(() => {
-    if (!depot) return false;
-    const originalName = depot.name || "";
-    const originalAddress = depot.address?.formatted_address || "";
-    const originalLat = depot.location?.lat;
-    const originalLng = depot.location?.lng;
-
-    return (
-      name !== originalName ||
-      address !== originalAddress ||
-      location?.lat !== originalLat ||
-      location?.lng !== originalLng
-    );
-  }, [depot, name, address, location]);
-
-  const handleSave = async () => {
-    if (!name.trim()) {
-      message.error("Please enter a depot name");
-      return;
-    }
-    if (!location) {
-      message.error("Please select a location");
-      return;
-    }
-
-    const success = await updateDepot(depot.id, {
-      name: name,
-      address: {
-        formatted_address: address,
-      },
-      location: location,
-    });
-
-    if (success) {
-      message.success("Depot updated successfully");
-    } else {
-      message.error("Failed to update depot");
-    }
+  const handleEdit = (depot: DepotType) => {
+    setEditingDepot(depot);
+    setIsDrawerOpen(true);
   };
 
-  if (isLoading) {
+  const handleCreate = () => {
+    setIsCreateModalOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setIsDrawerOpen(false);
+    setEditingDepot(undefined);
+  };
+
+  const handleCreateSubmit = async (values: DepotPayload) => {
+    const success = await createDepot(values);
+    if (success) {
+      setIsCreateModalOpen(false);
+    }
+    return success;
+  };
+
+  const handleEditSubmit = async (values: DepotPayload) => {
+    if (editingDepot) {
+      const success = await updateDepot(editingDepot.id, values);
+      if (success) {
+        setIsDrawerOpen(false);
+        setEditingDepot(undefined);
+      }
+      return success;
+    }
+    return false;
+  };
+
+  const columns: ColDef<DepotType>[] = [
+    {
+      headerName: "Name",
+      field: "name",
+      flex: 1,
+    },
+    {
+      headerName: "Address",
+      field: "address.formatted_address",
+      flex: 2,
+    },
+    {
+      headerName: "Latitude",
+      field: "location.lat",
+      width: 120,
+    },
+    {
+      headerName: "Longitude",
+      field: "location.lng",
+      width: 120,
+    },
+    createActionsColumn<DepotType>({
+      actions: [
+        {
+          key: "edit",
+          label: "Edit",
+          onClick: (depot: DepotType) => handleEdit(depot),
+        },
+        {
+          key: "delete",
+          label: "Delete",
+          type: "delete",
+          onClick: async (depot: DepotType) => {
+            await deleteDepot(depot.id);
+          },
+        },
+      ],
+      entityName: "Depot",
+    }),
+  ];
+
+  if (isLoading && depots.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <Spin size="large" />
@@ -77,74 +105,49 @@ const Depot = () => {
     );
   }
 
-  // Prepare marker for the map
-  const depotMarker =
-    location || depot?.location
-      ? [
-          {
-            id: "depot",
-            position: location || depot?.location,
-            title: name || depot?.name || "Depot",
-            isDepot: true,
-          },
-        ]
-      : [];
-
   return (
     <div className="flex flex-col h-full">
       <Flex justify="space-between">
-        <Title className="m-0 mb-2 pt-2" level={5}>
-          Depot
+        <Title level={5} className="m-0 mb-2 pt-2">
+          Depots
         </Title>
-        <Button
-          type="primary"
-          size="small"
-          onClick={handleSave}
-          loading={isSaving}
-          disabled={!hasChanges}
-        >
-          Update Depot
+        <Button size="small" type="primary" onClick={handleCreate}>
+          Add Depot
         </Button>
       </Flex>
 
-      <div className="flex gap-2 w-full mb-2">
-        <div className="w-1/3">
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter depot name"
-          />
-        </div>
-        <div className="w-2/3">
-          <AddressAutocomplete
-            value={address}
-            placeholder="Search depot address..."
-            onChange={() => {
-              setLocation(null);
-            }}
-            onSelect={(addressData: AddressData) => {
-              setAddress(addressData.address_formatted);
-              setLocation(addressData.location);
-            }}
-          />
-        </div>
-      </div>
-
-      <div className="flex-1 w-full overflow-hidden border">
-        <GoogleMaps
-          showMapTypeControl={true}
-          showZoomControl={true}
-          zoom={10}
-          center={
-            location ||
-            depot?.location || {
-              lat: 37.7749,
-              lng: -122.4194,
-            }
-          }
-          markers={depotMarker}
+      <div className="flex-1 min-h-0">
+        <BaseTable<DepotType>
+          columnDefs={columns}
+          rowData={depots}
+          loading={isLoading}
+          emptyMessage="No depots found"
+          pagination={false}
+          containerStyle={{ height: "100%" }}
         />
       </div>
+
+      <CreateDepotModal
+        open={isCreateModalOpen}
+        setOpen={setIsCreateModalOpen}
+        onSubmit={handleCreateSubmit}
+        isLoading={isSaving}
+      />
+
+      <Drawer
+        title="Edit Depot"
+        open={isDrawerOpen}
+        onClose={handleDrawerClose}
+        width={800}
+        destroyOnHidden
+      >
+        <DepotForm
+          initialValues={editingDepot}
+          onSubmit={handleEditSubmit}
+          isLoading={isSaving}
+          onCancel={handleDrawerClose}
+        />
+      </Drawer>
     </div>
   );
 };

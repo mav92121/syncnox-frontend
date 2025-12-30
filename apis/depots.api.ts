@@ -6,7 +6,7 @@ export const fetchDepots = async (): Promise<Depot[]> => {
   return response.data;
 };
 
-export interface UpdateDepotPayload {
+export interface DepotPayload {
   name: string;
   address: {
     formatted_address: string;
@@ -17,9 +17,18 @@ export interface UpdateDepotPayload {
   };
 }
 
+export const createDepot = async (payload: DepotPayload): Promise<Depot> => {
+  const response = await apiClient.post("/depots", payload);
+  return response.data;
+};
+
+export const deleteDepot = async (id: number): Promise<void> => {
+  await apiClient.delete(`/depots/${id}`);
+};
+
 export const updateDepot = async (
   id: number,
-  payload: UpdateDepotPayload
+  payload: DepotPayload
 ): Promise<Depot> => {
   const response = await apiClient.put(`/depots/${id}`, payload);
   return response.data;
