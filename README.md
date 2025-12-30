@@ -17,7 +17,7 @@ Frontend application for **Syncnox** — Seamless Route Planning with Synced Ope
 
 ```bash
 git clone <repository-url>
-cd syncnox-fe
+cd syncnox-frontend
 ```
 
 ### 2. Install dependencies
@@ -33,7 +33,7 @@ Create a `.env` file in the root directory
 ### 4. Start the development server
 
 ```bash
-npm start
+npm run dev
 ```
 
 ---
@@ -47,7 +47,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ## 📁 Project Structure
 
 ```
-syncnox-fe/
+syncnox-frontend/
 ├── app/          # Next.js app router pages
 ├── components/   # Reusable UI components
 ├── stores/       # State management

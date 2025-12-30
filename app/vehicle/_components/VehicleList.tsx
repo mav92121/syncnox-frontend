@@ -3,7 +3,6 @@ import { useState } from "react";
 import BaseTable from "@/components/Table/BaseTable";
 import { Vehicle } from "@/types/vehicle.type";
 import { useVehicleStore } from "@/zustand/vehicle.store";
-import { useTeamStore } from "@/zustand/team.store";
 import { ColDef } from "ag-grid-community";
 import { Typography, Flex, Button, Drawer } from "antd";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
@@ -22,8 +21,6 @@ const formatVehicleType = (type: string | null): string => {
 
 const VehicleList = () => {
   const { isLoading, vehicles, deleteVehicleAction } = useVehicleStore();
-  const { getTeamsMap } = useTeamStore();
-  const teamsMap = getTeamsMap();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editVehicleData, setEditVehicleData] = useState<Vehicle | null>(null);
@@ -49,16 +46,6 @@ const VehicleList = () => {
       field: "name",
       headerName: "Name",
       width: 200,
-    },
-    {
-      field: "team_member_id",
-      headerName: "Team Member",
-      width: 180,
-      valueGetter: (params) => {
-        const teamMemberId = params.data?.team_member_id;
-        if (teamMemberId == null) return "-";
-        return teamsMap[teamMemberId] || "-";
-      },
     },
     {
       field: "type",

@@ -3,7 +3,7 @@ export type TeamStatusType = "active" | "inactive" | "online" | "offline";
 
 export interface Team {
   id: number;
-  vehicle_id: string;
+  vehicle_id: number;
   status: TeamStatusType;
   role_type: TeamRoleType;
   external_identifier: string;

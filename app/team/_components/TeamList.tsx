@@ -2,6 +2,7 @@ import { useState } from "react";
 import BaseTable from "@/components/Table/BaseTable";
 import { Team } from "@/types/team.type";
 import { useTeamStore } from "@/zustand/team.store";
+import { useVehicleStore } from "@/zustand/vehicle.store";
 import { ColDef } from "ag-grid-community";
 import { Typography, Drawer, Flex, Button } from "antd";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
@@ -16,8 +17,14 @@ const { Title } = Typography;
 
 const TeamList = () => {
   const { isLoading, teams, deleteTeamAction } = useTeamStore();
+  const { vehicles } = useVehicleStore();
   const [editTeamData, setEditTeamData] = useState<Team | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
+
+  const vehiclesMap = vehicles.reduce((acc, vehicle) => {
+    acc[vehicle.id] = vehicle.name;
+    return acc;
+  }, {} as Record<number, string>);
 
   const columns: ColDef<Team>[] = [
     {
@@ -45,6 +52,16 @@ const TeamList = () => {
       field: "role_type",
       headerName: "Role Type",
       width: 150,
+    },
+    {
+      field: "vehicle_id",
+      headerName: "Vehicle",
+      width: 150,
+      valueGetter: (params) => {
+        const vehicleId = params.data?.vehicle_id;
+        if (vehicleId == null) return "-";
+        return vehiclesMap[Number(vehicleId)] || "-";
+      },
     },
     {
       field: "phone_number",
