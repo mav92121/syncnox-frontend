@@ -10,6 +10,7 @@ import SideBar from "@/components/Layout/SideBar";
 import NavBar from "@/components/Layout/NavBar";
 import { useRouteStore } from "@/zustand/routes.store";
 import { useDepotStore } from "@/zustand/depots.store";
+import { useVehicleStore } from "@/zustand/vehicle.store";
 import { useAutoSyncTab } from "@/hooks/useAutoSyncTab";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
@@ -21,6 +22,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { initializeTeams } = useTeamStore();
   const { initializeRoutes } = useRouteStore();
   const { initializeDepots } = useDepotStore();
+  const { initializeVehicles } = useVehicleStore();
 
   // Register AG Grid modules on client side only to prevent hydration issues
   useEffect(() => {
@@ -51,6 +53,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       initializeTeams();
       initializeRoutes();
       initializeDepots();
+      initializeVehicles();
     }
   }, [isSignInPage, initializeJobs, initializeTeams]);
 

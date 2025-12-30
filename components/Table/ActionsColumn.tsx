@@ -55,7 +55,7 @@ export interface ActionsColumnConfig<T> {
 export const createActionsColumn = <T extends { id: number }>(
   config: ActionsColumnConfig<T>
 ): ColDef<T> => {
-  const { actions, entityName = "record", width = 80 } = config;
+  const { actions, entityName = "record", width = 90 } = config;
 
   return {
     headerName: "Actions",
