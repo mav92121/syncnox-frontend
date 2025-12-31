@@ -22,6 +22,10 @@ interface BasicInformationProps {
   onStartLocationSameAsDepotChange: (checked: boolean) => void;
   endLocationSameAsDepot: boolean;
   onEndLocationSameAsDepotChange: (checked: boolean) => void;
+  startDepotId?: number;
+  setStartDepotId?: (id: number) => void;
+  endDepotId?: number;
+  setEndDepotId?: (id: number) => void;
 }
 
 const BasicInformation = ({
@@ -33,6 +37,10 @@ const BasicInformation = ({
   onStartLocationSameAsDepotChange,
   endLocationSameAsDepot,
   onEndLocationSameAsDepotChange,
+  startDepotId,
+  setStartDepotId,
+  endDepotId,
+  setEndDepotId,
 }: BasicInformationProps) => {
   const { depots } = useDepotStore();
   const { vehicles } = useVehicleStore();
@@ -42,7 +50,12 @@ const BasicInformation = ({
     label: vehicle.name,
   }));
 
-  // Get the first depot's address
+  const depotOptions = depots.map((depot) => ({
+    value: depot.id,
+    label: depot.name,
+  }));
+
+  // Get the first depot's address (fallback)
   const defaultDepot = depots?.[0];
   const depotAddress =
     defaultDepot?.address?.formatted_address ||
@@ -150,10 +163,12 @@ const BasicInformation = ({
               }
             >
               {startLocationSameAsDepot ? (
-                <Input
-                  value={depotAddress}
-                  disabled
-                  style={{ backgroundColor: "#f5f5f5" }}
+                <Select
+                  placeholder="Select depot"
+                  options={depotOptions}
+                  value={startDepotId}
+                  onChange={(value) => setStartDepotId?.(value)}
+                  disabled={!setStartDepotId}
                 />
               ) : (
                 <Form.Item
@@ -204,10 +219,12 @@ const BasicInformation = ({
               }
             >
               {endLocationSameAsDepot ? (
-                <Input
-                  value={depotAddress}
-                  disabled
-                  style={{ backgroundColor: "#f5f5f5" }}
+                <Select
+                  placeholder="Select depot"
+                  options={depotOptions}
+                  value={endDepotId}
+                  onChange={(value) => setEndDepotId?.(value)}
+                  disabled={!setEndDepotId}
                 />
               ) : (
                 <Form.Item

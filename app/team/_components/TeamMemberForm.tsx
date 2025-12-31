@@ -31,8 +31,18 @@ const TeamMemberForm = ({
     useState(true);
   const [endLocationSameAsDepot, setEndLocationSameAsDepot] = useState(true);
 
-  // Get the first depot
-  const defaultDepot = depots[0];
+  const [startDepotId, setStartDepotId] = useState<number | undefined>(
+    undefined
+  );
+  const [endDepotId, setEndDepotId] = useState<number | undefined>(undefined);
+
+  // Initialize depot IDs when depots are loaded
+  useEffect(() => {
+    if (depots.length > 0 && !startDepotId && !endDepotId && !initialData) {
+      setStartDepotId(depots[0].id);
+      setEndDepotId(depots[0].id);
+    }
+  }, [depots, initialData]);
 
   // Watch for role_type changes
   const onValuesChange = (changedValues: any) => {
@@ -46,6 +56,9 @@ const TeamMemberForm = ({
   };
 
   const onFinish = async (values: any) => {
+    const startDepot = depots.find((d) => d.id === startDepotId);
+    const endDepot = depots.find((d) => d.id === endDepotId);
+
     const transformedValues = transformFormToApi(
       values,
       skills,
@@ -54,7 +67,8 @@ const TeamMemberForm = ({
       {
         startLocationSameAsDepot,
         endLocationSameAsDepot,
-        depot: defaultDepot,
+        startDepot,
+        endDepot,
       }
     );
 
@@ -99,21 +113,53 @@ const TeamMemberForm = ({
         setScheduleBreak(true);
       }
 
-      // Check if start/end location is same as depot
-      const depotFormattedAddress = defaultDepot?.address?.formatted_address;
+      // Check if start/end location matches any depot
+      let matchingStartDepot = depots[0];
+      let matchingEndDepot = depots[0];
+
+      if (initialData.start_address) {
+        const found = depots.find(
+          (d) => d.address?.formatted_address === initialData.start_address
+        );
+        if (found) {
+          matchingStartDepot = found;
+        }
+      }
+
       const isStartSameAsDepot =
         !initialData.start_address ||
-        initialData.start_address === depotFormattedAddress;
+        (!!matchingStartDepot &&
+          initialData.start_address ===
+            matchingStartDepot.address?.formatted_address);
+
+      if (initialData.end_address) {
+        const found = depots.find(
+          (d) => d.address?.formatted_address === initialData.end_address
+        );
+        if (found) {
+          matchingEndDepot = found;
+        }
+      }
+
       const isEndSameAsDepot =
         !initialData.end_address ||
-        initialData.end_address === depotFormattedAddress;
+        (!!matchingEndDepot &&
+          initialData.end_address ===
+            matchingEndDepot.address?.formatted_address);
 
       setStartLocationSameAsDepot(isStartSameAsDepot);
       setEndLocationSameAsDepot(isEndSameAsDepot);
 
+      if (matchingStartDepot) {
+        setStartDepotId(matchingStartDepot.id);
+      }
+      if (matchingEndDepot) {
+        setEndDepotId(matchingEndDepot.id);
+      }
+
       form.setFieldsValue(formValues);
     }
-  }, [initialData, form, defaultDepot]);
+  }, [initialData, form, depots]);
 
   const handleAddSkill = () => {
     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
@@ -205,6 +251,10 @@ const TeamMemberForm = ({
                     }
                     endLocationSameAsDepot={endLocationSameAsDepot}
                     onEndLocationSameAsDepotChange={setEndLocationSameAsDepot}
+                    startDepotId={startDepotId}
+                    setStartDepotId={setStartDepotId}
+                    endDepotId={endDepotId}
+                    setEndDepotId={setEndDepotId}
                   />
                 </div>
 
@@ -234,6 +284,10 @@ const TeamMemberForm = ({
                 onStartLocationSameAsDepotChange={setStartLocationSameAsDepot}
                 endLocationSameAsDepot={endLocationSameAsDepot}
                 onEndLocationSameAsDepotChange={setEndLocationSameAsDepot}
+                startDepotId={startDepotId}
+                setStartDepotId={setStartDepotId}
+                endDepotId={endDepotId}
+                setEndDepotId={setEndDepotId}
               />
             )}
           </Form>

@@ -13,7 +13,8 @@ export const statusStyleMap = {
 interface LocationOptions {
   startLocationSameAsDepot: boolean;
   endLocationSameAsDepot: boolean;
-  depot?: Depot;
+  startDepot?: Depot;
+  endDepot?: Depot;
 }
 
 /**
@@ -66,19 +67,23 @@ export const transformFormToApi = (
 
   // Handle start/end location based on "same as depot" checkboxes
   if (locationOptions) {
-    const { startLocationSameAsDepot, endLocationSameAsDepot, depot } =
-      locationOptions;
+    const {
+      startLocationSameAsDepot,
+      endLocationSameAsDepot,
+      startDepot,
+      endDepot,
+    } = locationOptions;
 
-    if (startLocationSameAsDepot && depot) {
+    if (startLocationSameAsDepot && startDepot) {
       // Use depot location when "same as depot" is checked
-      transformedValues.start_address = depot.address?.formatted_address;
-      transformedValues.start_location = depot.location;
+      transformedValues.start_address = startDepot.address?.formatted_address;
+      transformedValues.start_location = startDepot.location;
     }
 
-    if (endLocationSameAsDepot && depot) {
+    if (endLocationSameAsDepot && endDepot) {
       // Use depot location when "same as depot" is checked
-      transformedValues.end_address = depot.address?.formatted_address;
-      transformedValues.end_location = depot.location;
+      transformedValues.end_address = endDepot.address?.formatted_address;
+      transformedValues.end_location = endDepot.location;
     }
   }
 
