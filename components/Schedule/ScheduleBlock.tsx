@@ -1,10 +1,17 @@
 "use client";
 
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import {
   ScheduleBlock as ScheduleBlockType,
   getBlockColor,
 } from "@/types/schedule.type";
 import { Tooltip } from "antd";
+
+// Enable dayjs timezone plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface ScheduleBlockProps {
   block: ScheduleBlockType;
@@ -17,12 +24,19 @@ export default function ScheduleBlock({
   block,
   dayStartHour = 0,
   dayEndHour = 24,
+  timezone: tz,
 }: ScheduleBlockProps) {
-  const startDate = new Date(block.start_time);
-  const endDate = new Date(block.end_time);
+  // Use provided timezone or auto-detect from browser
+  const effectiveTimezone =
+    tz || Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-  const endHour = endDate.getHours() + endDate.getMinutes() / 60;
+  // Parse times with proper timezone handling
+  const startDayjs = dayjs(block.start_time).tz(effectiveTimezone);
+  const endDayjs = dayjs(block.end_time).tz(effectiveTimezone);
+
+  // Calculate hours with fractional minutes in the specified timezone
+  const startHour = startDayjs.hour() + startDayjs.minute() / 60;
+  const endHour = endDayjs.hour() + endDayjs.minute() / 60;
 
   const totalHours = dayEndHour - dayStartHour;
   const leftPercent = ((startHour - dayStartHour) / totalHours) * 100;
@@ -37,15 +51,15 @@ export default function ScheduleBlock({
 
   const backgroundColor = getBlockColor(block);
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const formatTime = (date: dayjs.Dayjs) => {
+    return date.format("hh:mm A");
   };
 
   const tooltipContent = (
     <div>
       <div className="font-semibold">{block.title}</div>
       <div>
-        {formatTime(startDate)} - {formatTime(endDate)}
+        {formatTime(startDayjs)} - {formatTime(endDayjs)}
       </div>
       {block.status && (
         <div className="capitalize">

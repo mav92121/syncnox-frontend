@@ -105,7 +105,6 @@ export default function ScheduleView() {
           resources={resources}
           dayStartHour={0}
           dayEndHour={24}
-          slotMinutes={60}
           loading={loading}
         />
       </div>

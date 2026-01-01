@@ -9,7 +9,6 @@ interface ScheduleTimelineProps {
   resources: ResourceSchedule[];
   dayStartHour?: number;
   dayEndHour?: number;
-  slotMinutes?: number;
   timezone?: string;
   loading?: boolean;
 }
@@ -18,7 +17,6 @@ export default function ScheduleTimeline({
   resources,
   dayStartHour = 0,
   dayEndHour = 24,
-  slotMinutes = 30,
   timezone,
   loading = false,
 }: ScheduleTimelineProps) {
@@ -39,11 +37,7 @@ export default function ScheduleTimeline({
       <div className="custom-scrollbar overflow-x-auto overflow-y-auto max-h-[calc(100vh-125px)]">
         {/* Fixed header + scrollable body */}
         <div className="min-w-[1700px]">
-          <TimelineHeader
-            dayStartHour={dayStartHour}
-            dayEndHour={dayEndHour}
-            slotMinutes={slotMinutes}
-          />
+          <TimelineHeader dayStartHour={dayStartHour} dayEndHour={dayEndHour} />
 
           {/* Resource rows */}
           <div>
