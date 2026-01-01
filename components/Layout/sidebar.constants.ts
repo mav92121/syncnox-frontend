@@ -41,12 +41,6 @@ export const MENU_ITEMS: MenuItem[] = [
     tabKey: "team",
   },
   {
-    icon: CalendarOutlined,
-    label: "Schedule",
-    path: "/schedule",
-    tabKey: "schedule",
-  },
-  {
     icon: LineChartOutlined,
     label: "Analytics",
     path: "/analytics",
