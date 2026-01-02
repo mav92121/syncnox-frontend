@@ -76,10 +76,6 @@ const CreateRouteModal = ({
         currentOptimization.status === "success")
     ) {
       // Short delay to show completion message
-      console.log(
-        "redirecting to optimization screen -> ",
-        currentOptimization
-      );
       const timeout = setTimeout(() => {
         router.push(`/route/${currentOptimization.id}`);
         setOpen(false);

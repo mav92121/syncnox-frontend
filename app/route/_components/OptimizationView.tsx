@@ -33,11 +33,13 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
 
   useEffect(() => {
     setTempRouteName(route.route_name);
+  }, [route.route_name]);
 
+  useEffect(() => {
     return () => {
       clearOptimization();
     };
-  }, [route.route_name]);
+  }, [clearOptimization]);
 
   const handleNameClick = () => {
     setIsEditingName(true);
