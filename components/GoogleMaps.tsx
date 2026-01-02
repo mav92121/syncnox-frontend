@@ -159,7 +159,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
               </Radio.Group>
             </div>
           )}
-          trigger={["hover"]}
+          trigger={["hover", "click"]}
           placement="bottomRight"
         >
           <Button

@@ -84,6 +84,8 @@ const CreateRouteModal = ({
         // Use refreshDraftJobs to specifically update the draft jobs store
         refreshDraftJobs();
         form.resetFields();
+        // Clear the optimization state to prevent auto-redirect on next modal open
+        clearOptimization();
       }, 1000);
 
       return () => clearTimeout(timeout);
@@ -95,6 +97,8 @@ const CreateRouteModal = ({
     form,
     fetchRoutes,
     refreshDraftJobs,
+    setSelectedStatus,
+    clearOptimization,
   ]);
 
   const handleFinish = async (values: any) => {
