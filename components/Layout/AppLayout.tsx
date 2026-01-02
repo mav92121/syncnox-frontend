@@ -12,6 +12,9 @@ import { useRouteStore } from "@/zustand/routes.store";
 import { useDepotStore } from "@/zustand/depots.store";
 import { useVehicleStore } from "@/zustand/vehicle.store";
 import { useAutoSyncTab } from "@/hooks/useAutoSyncTab";
+import { useOnboardingStore } from "@/zustand/onboarding.store";
+import { OnboardingModal } from "@/components/Onboarding";
+import CompletionScreen from "@/components/Onboarding/CompletionScreen";
 
 const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
@@ -23,6 +26,12 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const { initializeRoutes } = useRouteStore();
   const { initializeDepots } = useDepotStore();
   const { initializeVehicles } = useVehicleStore();
+  const {
+    fetchOnboardingStatus,
+    onboarding,
+    showCompletion,
+    setShowCompletion,
+  } = useOnboardingStore();
 
   // Register AG Grid modules on client side only to prevent hydration issues
   useEffect(() => {
@@ -54,8 +63,9 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       initializeRoutes();
       initializeDepots();
       initializeVehicles();
+      fetchOnboardingStatus();
     }
-  }, [isSignInPage, initializeJobs, initializeTeams]);
+  }, [isSignInPage, initializeJobs, initializeTeams, fetchOnboardingStatus]);
 
   if (isSignInPage) {
     return <>{children}</>;
@@ -70,6 +80,11 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </Suspense>
         <main className="flex-1 overflow-y-auto p-2 relative">{children}</main>
       </div>
+      {showCompletion ? (
+        <CompletionScreen onClose={() => setShowCompletion(false)} />
+      ) : (
+        onboarding && !onboarding.is_completed && <OnboardingModal />
+      )}
     </div>
   );
 };
