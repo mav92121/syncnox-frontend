@@ -24,9 +24,8 @@ interface OptimizationViewProps {
 
 const OptimizationView = ({ route }: OptimizationViewProps) => {
   const { jobs } = useJobsStore();
-  const { updateOptimization } = useOptimizationStore();
+  const { updateOptimization, clearOptimization } = useOptimizationStore();
   const { updateRoute } = useRouteStore();
-  const [isExporting, setIsExporting] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempRouteName, setTempRouteName] = useState(route.route_name);
   const [isSavingName, setIsSavingName] = useState(false);
@@ -35,6 +34,12 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   useEffect(() => {
     setTempRouteName(route.route_name);
   }, [route.route_name]);
+
+  useEffect(() => {
+    return () => {
+      clearOptimization();
+    };
+  }, [clearOptimization]);
 
   const handleNameClick = () => {
     setIsEditingName(true);
@@ -169,11 +174,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                     </Text>
                   </div>
                   <div className="flex gap-2">
-                    <Button
-                      size="small"
-                      onClick={handleExportRoutes}
-                      loading={isExporting}
-                    >
+                    <Button size="small" onClick={handleExportRoutes}>
                       Export Routes
                     </Button>
                     <Tooltip title="Not implemented yet">
