@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
+import { ArrowRight } from "lucide-react";
 import GoogleMaps from "@/components/GoogleMaps";
 import { Button, message, Input } from "antd";
 import AddressAutocomplete, {
@@ -13,6 +14,8 @@ interface DepotFormProps {
   onSubmit: (values: DepotPayload) => Promise<boolean>;
   isLoading: boolean;
   onCancel: () => void;
+  submitLabel?: string;
+  isOnboarding?: boolean;
 }
 
 const DepotForm = ({
@@ -20,6 +23,8 @@ const DepotForm = ({
   onSubmit,
   isLoading,
   onCancel,
+  submitLabel,
+  isOnboarding = false,
 }: DepotFormProps) => {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -151,15 +156,17 @@ const DepotForm = ({
         />
       </div>
 
-      <div className="pt-2">
+      <div className={isOnboarding ? "pt-4 flex justify-end" : "pt-2"}>
         <Button
           type="primary"
           onClick={handleSave}
           loading={isLoading}
           disabled={!hasChanges}
-          block
+          block={!isOnboarding}
+          icon={isOnboarding ? <ArrowRight size={14} /> : undefined}
+          iconPosition="end"
         >
-          {initialValues ? "Update" : "Create"}
+          {submitLabel || (initialValues ? "Update" : "Create")}
         </Button>
       </div>
     </div>

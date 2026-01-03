@@ -12,7 +12,7 @@ export interface TeamMemberFormProps {
 
 export const MENU_ITEMS = [
   { key: "basic", label: "Basic Information" },
-  { key: "skillsAndCost", label: "Costs & Skills" },
+  { key: "skillsAndCost", label: "Costs & Skills (Optional)" },
 ];
 
 export const INITIAL_FORM_VALUES = {
