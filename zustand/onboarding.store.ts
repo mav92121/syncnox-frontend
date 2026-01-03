@@ -42,7 +42,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
         error.message ||
         "Failed to fetch onboarding status";
       set({ error: errorMessage, isLoading: false });
-      return null;
+      throw error;
     }
   },
 

@@ -36,29 +36,50 @@ const OnboardingModal = () => {
     }
   }, [onboarding]);
 
-  const handleStart = () => {
-    setCurrentStep(1);
-    advanceStepAction(1);
+  const handleStart = async () => {
+    try {
+      await advanceStepAction(1);
+      setCurrentStep(1);
+    } catch (error) {
+      // Error is already set in the store
+    }
   };
 
-  const handleBasicInfoNext = () => {
-    setCurrentStep(2);
+  const handleBasicInfoNext = async () => {
+    try {
+      await advanceStepAction(2);
+      setCurrentStep(2);
+    } catch (error) {
+      // Error is already set in the store
+    }
   };
 
-  const handleDepotNext = () => {
-    setCurrentStep(3);
-    advanceStepAction(3);
+  const handleDepotNext = async () => {
+    try {
+      await advanceStepAction(3);
+      setCurrentStep(3);
+    } catch (error) {
+      // Error is already set in the store
+    }
   };
 
-  const handleFleetNext = () => {
-    setCurrentStep(4);
-    advanceStepAction(4);
+  const handleFleetNext = async () => {
+    try {
+      await advanceStepAction(4);
+      setCurrentStep(4);
+    } catch (error) {
+      // Error is already set in the store
+    }
   };
 
   const handleTeamNext = async () => {
-    setShowCompletion(true);
-    await completeOnboardingAction();
-    setCurrentStep(5);
+    try {
+      await completeOnboardingAction();
+      setCurrentStep(5);
+      setShowCompletion(true);
+    } catch (error) {
+      // Error is already set in the store
+    }
   };
 
   const handleClose = () => {
