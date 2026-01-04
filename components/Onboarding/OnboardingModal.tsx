@@ -38,28 +38,54 @@ const OnboardingModal = () => {
 
   const handleStart = async () => {
     setCurrentStep(1);
-    await advanceStepAction(1);
+    try {
+      await advanceStepAction(1);
+    } catch (error) {
+      setCurrentStep(0); // rollback on failure
+      console.error("Failed to advance onboarding step:", error);
+    }
   };
 
   const handleBasicInfoNext = async () => {
     setCurrentStep(2);
-    await advanceStepAction(2);
+    try {
+      await advanceStepAction(2);
+    } catch (error) {
+      setCurrentStep(1);
+      console.error("Failed to advance onboarding step:", error);
+    }
   };
 
   const handleDepotNext = async () => {
     setCurrentStep(3);
-    await advanceStepAction(3);
+    try {
+      await advanceStepAction(3);
+    } catch (error) {
+      setCurrentStep(2);
+      console.error("Failed to advance onboarding step:", error);
+    }
   };
 
   const handleFleetNext = async () => {
     setCurrentStep(4);
-    await advanceStepAction(4);
+    try {
+      await advanceStepAction(4);
+    } catch (error) {
+      setCurrentStep(3);
+      console.error("Failed to advance onboarding step:", error);
+    }
   };
 
   const handleTeamNext = async () => {
     setShowCompletion(true);
     setCurrentStep(5);
-    await completeOnboardingAction();
+    try {
+      await completeOnboardingAction();
+    } catch (error) {
+      setShowCompletion(false);
+      setCurrentStep(4);
+      console.error("Failed to complete onboarding:", error);
+    }
   };
 
   const handleClose = () => {
