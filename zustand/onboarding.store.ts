@@ -67,6 +67,7 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       const data = await advanceOnboardingStep(step);
       set({ onboarding: data, isLoading: false });
     } catch (error: any) {
+      console.log("current errror -> ", error);
       const errorMessage =
         error.response?.data?.detail ||
         error.message ||

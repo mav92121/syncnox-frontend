@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Typography } from "antd";
 import DepotForm from "@/app/depot/_components/DepotForm";
 import { useDepotStore } from "@/zustand/depots.store";
@@ -13,13 +13,17 @@ interface DepotStepProps {
 
 const DepotStep = ({ onNext }: DepotStepProps) => {
   const { createDepot, isSaving, depots } = useDepotStore();
+  // Track if we've already skipped to prevent infinite calls
+  const hasSkippedRef = useRef(false);
 
-  // Skip if depot already exists
+  // Skip if depot already exists (only once)
   useEffect(() => {
-    if (depots.length > 0) {
+    if (depots.length > 0 && !hasSkippedRef.current) {
+      hasSkippedRef.current = true;
       onNext();
     }
-  }, [depots, onNext]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [depots]);
 
   const handleSubmit = async (values: DepotPayload): Promise<boolean> => {
     try {
