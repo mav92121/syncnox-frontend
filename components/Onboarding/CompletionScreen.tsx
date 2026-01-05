@@ -18,6 +18,7 @@ const CompletionScreen = ({ onClose }: CompletionScreenProps) => {
     <Modal
       open={true}
       centered
+      onCancel={onClose}
       footer={null}
       styles={{
         body: {
