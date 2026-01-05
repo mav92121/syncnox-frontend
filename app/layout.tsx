@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import theme from "@/config/theme.config";
 import "./globals.css";
 import AppLayout from "../components/Layout/AppLayout";
@@ -45,6 +46,7 @@ export default function RootLayout({
           </AntdRegistry>
         </SessionProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
