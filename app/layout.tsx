@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { ConfigProvider } from "antd";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
+import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import theme from "@/config/theme.config";
 import "./globals.css";
@@ -43,6 +44,7 @@ export default function RootLayout({
             </ConfigProvider>
           </AntdRegistry>
         </SessionProvider>
+        <Analytics />
       </body>
     </html>
   );
