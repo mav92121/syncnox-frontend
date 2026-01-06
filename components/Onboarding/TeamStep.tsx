@@ -1,7 +1,7 @@
 "use client";
 import { User } from "lucide-react";
 import TeamMemberForm from "@/app/team/_components/TeamMemberForm";
-import { useTeamStore } from "@/zustand/team.store";
+import { useTeamStore } from "@/store/team.store";
 import OnboardingListStep from "./OnboardingListStep";
 
 interface TeamStepProps {

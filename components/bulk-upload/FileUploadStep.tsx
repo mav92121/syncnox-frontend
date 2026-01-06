@@ -5,7 +5,7 @@ import { Alert, Upload, message, DatePicker } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import type { UploadFile } from "antd";
 import dayjs, { Dayjs } from "dayjs";
-import { useBulkUploadStore } from "@/zustand/bulkUpload.store";
+import { useBulkUploadStore } from "@/store/bulkUpload.store";
 import { uploadBulkFile } from "@/apis/bulk-upload.api";
 
 const { Dragger } = Upload;

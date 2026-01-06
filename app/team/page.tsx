@@ -1,6 +1,6 @@
 "use client";
 
-import { useIndexStore } from "@/zustand/index.store";
+import { useIndexStore } from "@/store/index.store";
 import TeamList from "./_components/TeamList";
 
 const page = () => {

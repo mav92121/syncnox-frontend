@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Modal, Steps } from "antd";
-import { useOnboardingStore } from "@/zustand/onboarding.store";
+import { useOnboardingStore } from "@/store/onboarding.store";
 import WelcomeScreen from "./WelcomeScreen";
 import BasicInfoStep from "./BasicInfoStep";
 import DepotStep from "./DepotStep";

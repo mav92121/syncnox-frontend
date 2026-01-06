@@ -1,7 +1,7 @@
 "use client";
 
 import { Modal, Steps } from "antd";
-import { useBulkUploadStore } from "@/zustand/bulkUpload.store";
+import { useBulkUploadStore } from "@/store/bulkUpload.store";
 import FileUploadStep from "./bulk-upload/FileUploadStep";
 import ColumnMappingStep from "./bulk-upload/ColumnMappingStep";
 import DataPreviewStep from "./bulk-upload/DataPreviewStep";

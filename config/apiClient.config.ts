@@ -50,8 +50,8 @@ apiClient.interceptors.response.use(
         console.log("🔒 Token expired - clearing stores and signing out");
 
         // Clear zustand stores
-        const { useIndexStore } = await import("@/zustand/index.store");
-        const { useJobsStore } = await import("@/zustand/jobs.store");
+        const { useIndexStore } = await import("@/store/index.store");
+        const { useJobsStore } = await import("@/store/jobs.store");
 
         useIndexStore.getState().clearUser();
 

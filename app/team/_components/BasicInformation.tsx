@@ -7,8 +7,8 @@ import {
   createTimeWindowEndValidator,
 } from "@/utils/form.validation";
 import { ROLE_TYPE_OPTIONS } from "./teamForm.constants";
-import { useDepotStore } from "@/zustand/depots.store";
-import { useVehicleStore } from "@/zustand/vehicle.store";
+import { useDepotStore } from "@/store/depots.store";
+import { useVehicleStore } from "@/store/vehicle.store";
 import AddressAutocomplete, {
   AddressData,
 } from "@/components/AddressAutocomplete";

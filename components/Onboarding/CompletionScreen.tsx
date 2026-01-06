@@ -1,8 +1,8 @@
 "use client";
 import { Button, Card, Modal, Typography } from "antd";
 import { CheckCircle, Truck, User } from "lucide-react";
-import { useVehicleStore } from "@/zustand/vehicle.store";
-import { useTeamStore } from "@/zustand/team.store";
+import { useVehicleStore } from "@/store/vehicle.store";
+import { useTeamStore } from "@/store/team.store";
 
 const { Title, Text } = Typography;
 

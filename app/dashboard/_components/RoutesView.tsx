@@ -1,7 +1,7 @@
 "use client";
 import BaseTable from "@/components/Table/BaseTable";
 import { AllRoutes } from "@/types/routes.type";
-import { useRouteStore } from "@/zustand/routes.store";
+import { useRouteStore } from "@/store/routes.store";
 import { Typography, Progress, Button, Select, Flex, Radio } from "antd";
 import { ColDef } from "ag-grid-community";
 import { useRouter } from "next/navigation";

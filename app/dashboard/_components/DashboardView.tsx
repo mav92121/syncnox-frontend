@@ -30,7 +30,7 @@ import {
   DashboardOutlined,
   FieldTimeOutlined,
 } from "@ant-design/icons";
-import { useIndexStore } from "@/zustand/index.store";
+import { useIndexStore } from "@/store/index.store";
 
 const { Title, Text } = Typography;
 

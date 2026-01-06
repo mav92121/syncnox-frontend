@@ -11,9 +11,9 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 
-import { useBulkUploadStore } from "@/zustand/bulkUpload.store";
+import { useBulkUploadStore } from "@/store/bulkUpload.store";
 import type { JobCreate } from "@/types/bulk-upload.type";
-import { useJobsStore } from "@/zustand/jobs.store";
+import { useJobsStore } from "@/store/jobs.store";
 import { importBulkJobs } from "@/apis/bulk-upload.api";
 import type { ColDef, RowClassParams } from "ag-grid-community";
 

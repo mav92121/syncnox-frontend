@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { Spin, Alert, Card, List, Button, Typography } from "antd";
 import { DownOutlined, UpOutlined } from "@ant-design/icons";
 import OptimizationView from "../_components/OptimizationView";
-import { useOptimizationStore } from "@/zustand/optimization.store";
+import { useOptimizationStore } from "@/store/optimization.store";
 
 const RoutePage = () => {
   const params = useParams();
