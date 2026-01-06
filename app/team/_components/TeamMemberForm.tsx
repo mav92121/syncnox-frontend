@@ -9,8 +9,8 @@ import {
   TeamMemberFormProps,
 } from "./teamMemberForm.types";
 import { transformFormToApi, transformApiToForm } from "./teamMemberForm.utils";
-import { useTeamStore } from "@/zustand/team.store";
-import { useDepotStore } from "@/zustand/depots.store";
+import { useTeamStore } from "@/store/team.store";
+import { useDepotStore } from "@/store/depots.store";
 import BasicInformation from "./BasicInformation";
 import SkillsAndCost from "./SkillsAndCost";
 
@@ -71,8 +71,6 @@ const TeamMemberForm = ({
         endDepot,
       }
     );
-
-    console.log("Form submitted (transformed)", transformedValues);
 
     try {
       if (initialData?.id) {

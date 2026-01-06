@@ -1,6 +1,6 @@
 "use client";
 
-import { useIndexStore } from "@/zustand/index.store";
+import { useIndexStore } from "@/store/index.store";
 import DashboardView from "./_components/DashboardView";
 import JobsList from "./_components/JobsList";
 import RoutesView from "./_components/RoutesView";

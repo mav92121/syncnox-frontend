@@ -30,9 +30,9 @@ import {
   phoneNumberPattern,
   validateJobDuration,
 } from "./jobs.validation";
-import { useJobsStore } from "@/zustand/jobs.store";
+import { useJobsStore } from "@/store/jobs.store";
 import { filterCountryOptions } from "@/utils/jobs.utils";
-import { useTeamStore } from "@/zustand/team.store";
+import { useTeamStore } from "@/store/team.store";
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -47,8 +47,6 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   const [form] = Form.useForm();
 
   const onFinish = async (values: any) => {
-    console.log("Form submitted (raw)", values);
-
     // Transform the form values to match API requirements
     const transformedValues: any = { ...values, id: initialData?.id };
 
@@ -80,8 +78,6 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
     }
     // Remove phone object from payload regardless
     delete transformedValues.phone;
-
-    console.log("Form submitted (transformed)", transformedValues);
 
     try {
       if (initialData?.id) {

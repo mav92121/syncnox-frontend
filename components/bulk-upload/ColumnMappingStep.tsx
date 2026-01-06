@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Table, Select, Button, Checkbox, Alert, message } from "antd";
-import { useBulkUploadStore } from "@/zustand/bulkUpload.store";
+import { useBulkUploadStore } from "@/store/bulkUpload.store";
 import { geocodeBulkData } from "@/apis/bulk-upload.api";
 
 interface ColumnMappingStepProps {

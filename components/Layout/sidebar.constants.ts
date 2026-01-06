@@ -1,4 +1,4 @@
-import { TabKey } from "@/zustand/index.store";
+import { TabKey } from "@/store/index.store";
 import {
   RocketOutlined,
   BarChartOutlined,

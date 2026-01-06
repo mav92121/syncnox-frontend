@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Button, Typography, Input, message } from "antd";
 import { ArrowRight } from "lucide-react";
 import { Industry, INDUSTRY_OPTIONS } from "@/types/onboarding.type";
-import { useOnboardingStore } from "@/zustand/onboarding.store";
+import { useOnboardingStore } from "@/store/onboarding.store";
 
 const { Title, Text } = Typography;
 

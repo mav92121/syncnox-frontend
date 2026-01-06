@@ -4,7 +4,7 @@ import GoogleMaps from "@/components/GoogleMaps";
 import { FileAddOutlined, UploadOutlined } from "@ant-design/icons";
 import AddJobsModal from "./AddJobsModal";
 import BulkUploadModal from "@/components/BulkUploadModal";
-import { useDepotStore } from "@/zustand/depots.store";
+import { useDepotStore } from "@/store/depots.store";
 
 const Plan = () => {
   const [isAddJobsModalOpen, setIsAddJobsModalOpen] = useState(false);

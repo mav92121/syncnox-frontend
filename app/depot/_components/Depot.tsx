@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { Flex, Typography, Button, Spin, Drawer } from "antd";
-import { useDepotStore } from "@/zustand/depots.store";
+import { useDepotStore } from "@/store/depots.store";
 import { Depot as DepotType } from "@/types/depots.type";
 import DepotForm from "./DepotForm";
 import CreateDepotModal from "./CreateDepotModal";

@@ -1,7 +1,7 @@
 "use client";
 import { Truck } from "lucide-react";
 import VehicleForm from "@/app/vehicle/_components/VehicleForm";
-import { useVehicleStore } from "@/zustand/vehicle.store";
+import { useVehicleStore } from "@/store/vehicle.store";
 import OnboardingListStep from "./OnboardingListStep";
 
 interface FleetStepProps {

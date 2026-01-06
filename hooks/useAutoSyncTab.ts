@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { useIndexStore, TabKey } from "@/zustand/index.store";
+import { useIndexStore, TabKey } from "@/store/index.store";
 
 const ROUTE_TO_TAB_MAP: Record<string, TabKey> = {
   "/dashboard": "dashboard",

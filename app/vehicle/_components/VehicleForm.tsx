@@ -13,7 +13,7 @@ import {
 } from "antd";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { Vehicle, VehicleType } from "@/types/vehicle.type";
-import { useVehicleStore } from "@/zustand/vehicle.store";
+import { useVehicleStore } from "@/store/vehicle.store";
 
 interface VehicleFormProps {
   initialData?: Vehicle | null;

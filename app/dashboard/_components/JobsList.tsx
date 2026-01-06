@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Typography, Button, Drawer, Modal, Flex, Radio, message } from "antd";
 import { DeleteOutlined, ExclamationCircleFilled } from "@ant-design/icons";
-import { useJobsStore } from "@/zustand/jobs.store";
-import { useTeamStore } from "@/zustand/team.store";
+import { useJobsStore } from "@/store/jobs.store";
+import { useTeamStore } from "@/store/team.store";
 import { Job, JobStatus } from "@/types/job.type";
 import BaseTable from "@/components/Table/BaseTable";
 import JobForm from "@/components/Jobs/JobForm";
@@ -14,7 +14,7 @@ import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import CreateRouteModal from "@/app/plan/_components/CreateRouteModal";
 import DraftJobsDatePicker from "@/components/Jobs/DraftJobsDatePicker";
-import { useIndexStore } from "@/zustand/index.store";
+import { useIndexStore } from "@/store/index.store";
 
 const { Title } = Typography;
 

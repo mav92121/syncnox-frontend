@@ -9,17 +9,17 @@ import {
   Progress,
   Alert,
 } from "antd";
-import { useDepotStore } from "@/zustand/depots.store";
-import { useTeamStore } from "@/zustand/team.store";
+import { useDepotStore } from "@/store/depots.store";
+import { useTeamStore } from "@/store/team.store";
 import {
   useOptimizationStore,
   useOptimizationCleanup,
-} from "@/zustand/optimization.store";
+} from "@/store/optimization.store";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
-import { useJobsStore } from "@/zustand/jobs.store";
-import { useRouteStore } from "@/zustand/routes.store";
+import { useJobsStore } from "@/store/jobs.store";
+import { useRouteStore } from "@/store/routes.store";
 
 interface CreateRouteModalProps {
   open: boolean;

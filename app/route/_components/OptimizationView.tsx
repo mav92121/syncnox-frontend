@@ -5,9 +5,9 @@ import { Typography, Flex, Button, Tooltip, Input, message } from "antd";
 import GoogleMaps from "@/components/GoogleMaps";
 import TimelineView from "./TimelineView";
 import { Route } from "@/types/routes.type";
-import { useJobsStore } from "@/zustand/jobs.store";
-import { useOptimizationStore } from "@/zustand/optimization.store";
-import { useRouteStore } from "@/zustand/routes.store";
+import { useJobsStore } from "@/store/jobs.store";
+import { useOptimizationStore } from "@/store/optimization.store";
+import { useRouteStore } from "@/store/routes.store";
 import RouteInfoWindow from "./RouteInfoWindow";
 import RouteExportPreview from "./RouteExportPreview";
 import {

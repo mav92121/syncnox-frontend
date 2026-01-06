@@ -2,7 +2,7 @@
 import { useEffect, useRef } from "react";
 import { Typography } from "antd";
 import DepotForm from "@/app/depot/_components/DepotForm";
-import { useDepotStore } from "@/zustand/depots.store";
+import { useDepotStore } from "@/store/depots.store";
 import { DepotPayload } from "@/apis/depots.api";
 
 const { Title, Text } = Typography;

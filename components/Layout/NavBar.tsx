@@ -1,7 +1,7 @@
 "use client";
 import { usePathname } from "next/navigation";
 import { getTabsConfigForRoute } from "@/config/navTabs.config";
-import { useIndexStore } from "@/zustand/index.store";
+import { useIndexStore } from "@/store/index.store";
 
 const NavBar = () => {
   const pathname = usePathname();

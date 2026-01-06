@@ -2,7 +2,7 @@
 import { useState } from "react";
 import BaseTable from "@/components/Table/BaseTable";
 import { Vehicle } from "@/types/vehicle.type";
-import { useVehicleStore } from "@/zustand/vehicle.store";
+import { useVehicleStore } from "@/store/vehicle.store";
 import { ColDef } from "ag-grid-community";
 import { Typography, Flex, Button, Drawer } from "antd";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Avatar, Modal, Typography } from "antd";
 import { UserOutlined, UpOutlined, DownOutlined } from "@ant-design/icons";
-import { TabKey, useIndexStore } from "@/zustand/index.store";
+import { TabKey, useIndexStore } from "@/store/index.store";
 import { signOut } from "next-auth/react";
 import { HOVER_CLOSE_DELAY, MENU_ITEMS } from "./sidebar.constants";
 

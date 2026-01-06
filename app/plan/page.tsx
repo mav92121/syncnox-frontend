@@ -1,7 +1,7 @@
 "use client";
 
 import Plan from "./Plan";
-import { useIndexStore } from "@/zustand/index.store";
+import { useIndexStore } from "@/store/index.store";
 import Recents from "./Recents";
 
 const page = () => {

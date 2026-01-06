@@ -1,8 +1,8 @@
 import { useState } from "react";
 import BaseTable from "@/components/Table/BaseTable";
 import { Team } from "@/types/team.type";
-import { useTeamStore } from "@/zustand/team.store";
-import { useVehicleStore } from "@/zustand/vehicle.store";
+import { useTeamStore } from "@/store/team.store";
+import { useVehicleStore } from "@/store/vehicle.store";
 import { ColDef } from "ag-grid-community";
 import { Typography, Drawer, Flex, Button } from "antd";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
