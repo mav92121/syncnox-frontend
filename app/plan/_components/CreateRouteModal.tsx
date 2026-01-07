@@ -41,7 +41,7 @@ const CreateRouteModal = ({
   const [form] = Form.useForm();
   const router = useRouter();
   const { depots, createDepot, isSaving: isDepotSaving } = useDepotStore();
-  const { teams, createTeamAction } = useTeamStore();
+  const { teams } = useTeamStore();
   const { fetchRoutes, setSelectedStatus } = useRouteStore();
   const { refreshDraftJobs } = useJobsStore();
   const {
@@ -305,6 +305,7 @@ const CreateRouteModal = ({
                     <Divider style={{ margin: "8px 0" }} />
                     <Space style={{ padding: "0 8px 8px" }}>
                       <Button
+                        size="small"
                         type="text"
                         icon={<PlusOutlined />}
                         onClick={(e) => {
