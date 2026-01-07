@@ -105,7 +105,7 @@ export default function DashboardView() {
     },
     {
       icon: <TeamOutlined style={{ fontSize: 20 }} />,
-      label: "Add Driver",
+      label: "All Members",
       onClick: () => {
         router.push("/team");
         setCurrentTab("team");
