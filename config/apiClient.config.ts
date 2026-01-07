@@ -51,7 +51,6 @@ apiClient.interceptors.response.use(
 
         // Clear zustand stores
         const { useIndexStore } = await import("@/store/index.store");
-        const { useJobsStore } = await import("@/store/jobs.store");
 
         useIndexStore.getState().clearUser();
 

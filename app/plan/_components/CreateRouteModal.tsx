@@ -8,7 +8,10 @@ import {
   Col,
   Progress,
   Alert,
+  Divider,
+  Space,
 } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 import { useDepotStore } from "@/store/depots.store";
 import { useTeamStore } from "@/store/team.store";
 import {
@@ -20,6 +23,9 @@ import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { useJobsStore } from "@/store/jobs.store";
 import { useRouteStore } from "@/store/routes.store";
+import DepotForm from "@/app/depot/_components/DepotForm";
+import TeamMemberForm from "@/app/team/_components/TeamMemberForm";
+import { DepotPayload } from "@/apis/depots.api";
 
 interface CreateRouteModalProps {
   open: boolean;
@@ -34,7 +40,7 @@ const CreateRouteModal = ({
 }: CreateRouteModalProps) => {
   const [form] = Form.useForm();
   const router = useRouter();
-  const { depots } = useDepotStore();
+  const { depots, createDepot, isSaving: isDepotSaving } = useDepotStore();
   const { teams } = useTeamStore();
   const { fetchRoutes, setSelectedStatus } = useRouteStore();
   const { refreshDraftJobs } = useJobsStore();
@@ -46,6 +52,10 @@ const CreateRouteModal = ({
     clearOptimization,
   } = useOptimizationStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Quick action modal states
+  const [showDepotModal, setShowDepotModal] = useState(false);
+  const [showTeamModal, setShowTeamModal] = useState(false);
 
   useOptimizationCleanup();
 
@@ -241,7 +251,29 @@ const CreateRouteModal = ({
                   label="Select Depot"
                   rules={[{ required: true, message: "Please select a depot" }]}
                 >
-                  <Select placeholder="Select depot">
+                  <Select
+                    placeholder="Select depot"
+                    dropdownRender={(menu) => (
+                      <>
+                        {menu}
+                        <Divider style={{ margin: "8px 0" }} />
+                        <Space style={{ padding: "0 8px 8px" }}>
+                          <Button
+                            size="small"
+                            type="text"
+                            icon={<PlusOutlined />}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setShowDepotModal(true);
+                            }}
+                          >
+                            Add New Depot
+                          </Button>
+                        </Space>
+                      </>
+                    )}
+                  >
                     {depots.map((depot) => (
                       <Select.Option key={depot.id} value={depot.id}>
                         {depot.name}
@@ -267,6 +299,27 @@ const CreateRouteModal = ({
                 mode="multiple"
                 placeholder="Select team members"
                 optionFilterProp="children"
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    <Divider style={{ margin: "8px 0" }} />
+                    <Space style={{ padding: "0 8px 8px" }}>
+                      <Button
+                        size="small"
+                        type="text"
+                        icon={<PlusOutlined />}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShowTeamModal(true);
+                        }}
+                        style={{ width: "100%", textAlign: "left" }}
+                      >
+                        Add New Team Member
+                      </Button>
+                    </Space>
+                  </>
+                )}
               >
                 {teams.map((team) => (
                   <Select.Option key={team.id} value={team.id}>
@@ -285,6 +338,61 @@ const CreateRouteModal = ({
           </Form>
         </>
       )}
+
+      {/* Quick Action: Add Depot Modal */}
+      <Modal
+        title="Add New Depot"
+        open={showDepotModal}
+        onCancel={() => setShowDepotModal(false)}
+        footer={null}
+        width={700}
+        centered
+        destroyOnHidden
+        styles={{ body: { overflow: "hidden", height: "450px" } }}
+      >
+        <DepotForm
+          onSubmit={async (values: DepotPayload) => {
+            const success = await createDepot(values);
+            if (success) {
+              setShowDepotModal(false);
+              // Get the newly created depot (last one in list)
+              const newDepot = useDepotStore.getState().depots.slice(-1)[0];
+              if (newDepot) {
+                form.setFieldValue("depot_id", newDepot.id);
+              }
+            }
+            return success;
+          }}
+          isLoading={isDepotSaving}
+          onCancel={() => setShowDepotModal(false)}
+        />
+      </Modal>
+
+      {/* Quick Action: Add Team Member Modal */}
+      <Modal
+        title="Add New Team Member"
+        open={showTeamModal}
+        onCancel={() => setShowTeamModal(false)}
+        footer={null}
+        width={900}
+        centered
+        destroyOnHidden
+        styles={{ body: { overflow: "hidden", height: "80vh" } }}
+      >
+        <div style={{ height: "100%" }}>
+          <TeamMemberForm
+            onSubmit={async () => {
+              setShowTeamModal(false);
+              // Get the newly created team member (first one in list, newest)
+              const newTeam = useTeamStore.getState().teams[0];
+              if (newTeam) {
+                const currentTeamIds = form.getFieldValue("team_ids") || [];
+                form.setFieldValue("team_ids", [...currentTeamIds, newTeam.id]);
+              }
+            }}
+          />
+        </div>
+      </Modal>
     </Modal>
   );
 };
