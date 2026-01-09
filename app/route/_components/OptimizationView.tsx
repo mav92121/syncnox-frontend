@@ -1,13 +1,24 @@
 "use client";
 import React, { useMemo, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Panel, PanelGroup } from "react-resizable-panels";
-import { Typography, Flex, Button, Tooltip, Input, message } from "antd";
+import { Typography, Button, Tooltip, Input, message, Divider } from "antd";
+import {
+  ArrowLeftOutlined,
+  CalendarOutlined,
+  EnvironmentOutlined,
+  TeamOutlined,
+  ExportOutlined,
+  ShareAltOutlined,
+  EditOutlined,
+} from "@ant-design/icons";
 import GoogleMaps from "@/components/GoogleMaps";
 import TimelineView from "./TimelineView";
 import { Route } from "@/types/routes.type";
 import { useJobsStore } from "@/store/jobs.store";
 import { useOptimizationStore } from "@/store/optimization.store";
 import { useRouteStore } from "@/store/routes.store";
+import { useIndexStore } from "@/store/index.store";
 import RouteInfoWindow from "./RouteInfoWindow";
 import RouteExportPreview from "./RouteExportPreview";
 import {
@@ -15,6 +26,7 @@ import {
   generateMapMarkers,
 } from "./optimizationView.utils";
 import ResizeHandle from "@/components/ResizeHandle";
+import Icon from "@ant-design/icons";
 
 const { Title, Text } = Typography;
 
@@ -23,6 +35,8 @@ interface OptimizationViewProps {
 }
 
 const OptimizationView = ({ route }: OptimizationViewProps) => {
+  const router = useRouter();
+  const { setCurrentTab } = useIndexStore();
   const { jobs } = useJobsStore();
   const { updateOptimization, clearOptimization } = useOptimizationStore();
   const { updateRoute } = useRouteStore();
@@ -117,12 +131,94 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   };
 
   const handleExportRoutes = () => {
-    // Open preview modal instead of direct export
     setShowPreview(true);
   };
 
+  // Calculate route statistics
+  const totalStops =
+    route.result?.routes?.reduce((acc, r) => acc + (r.stops?.length || 0), 0) ||
+    0;
+  const totalVehicles = route.result?.routes?.length || 0;
+
+  const handleBackToDashboard = () => {
+    setCurrentTab("routes");
+    router.push("/dashboard");
+  };
+
   return (
-    <div className="flex flex-col h-full absolute inset-0 p-2">
+    <div className="flex flex-col h-full absolute inset-0">
+      {/* Header - matching NavBar height */}
+      <nav className="bg-white border-b border-gray-200 px-3 shrink-0">
+        <div className="flex items-center justify-between h-14 relative">
+          {/* Left: Back Button + Route Name */}
+          <div className="flex items-center gap-3">
+            <Icon
+              component={ArrowLeftOutlined}
+              style={{ color: "#003220" }}
+              onClick={handleBackToDashboard}
+            />
+
+            {/* Fixed width container for name to prevent layout shift */}
+            <div style={{ width: "200px" }}>
+              {isEditingName ? (
+                <Input
+                  size="small"
+                  value={tempRouteName}
+                  onChange={(e) => setTempRouteName(e.target.value)}
+                  onBlur={handleNameSave}
+                  onKeyDown={handleNameKeyDown}
+                  autoFocus
+                  disabled={isSavingName}
+                  maxLength={50}
+                  style={{ width: "100%" }}
+                />
+              ) : (
+                <div
+                  className="flex items-center gap-2 cursor-pointer group"
+                  onClick={handleNameClick}
+                  title="Click to edit route name"
+                >
+                  <Title
+                    level={5}
+                    className="mt-2 group-hover:text-primary transition-colors truncate"
+                  >
+                    {route.route_name}
+                  </Title>
+                  <EditOutlined className="text-gray-400 shrink-0" />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Center: Stats */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
+            <Text type="secondary">
+              <CalendarOutlined /> {route.scheduled_date}
+            </Text>
+            <Text type="secondary">
+              <EnvironmentOutlined /> {totalStops} stops
+            </Text>
+            <Text type="secondary">
+              <TeamOutlined /> {totalVehicles}{" "}
+              {totalVehicles === 1 ? "vehicle" : "vehicles"}
+            </Text>
+          </div>
+
+          {/* Right: Action Buttons */}
+          <div className="flex gap-2">
+            <Button icon={<ExportOutlined />} onClick={handleExportRoutes}>
+              Export
+            </Button>
+            <Tooltip title="Coming soon">
+              <Button type="primary" icon={<ShareAltOutlined />}>
+                Share to App
+              </Button>
+            </Tooltip>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
       <div className="flex-1 min-h-0 relative">
         <PanelGroup direction="vertical">
           {/* Map Panel */}
@@ -144,47 +240,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
           <ResizeHandle />
 
           <Panel defaultSize={40} minSize={20}>
-            <div className="flex flex-col h-full bg-gray-50 border-t border-gray-200">
-              <div className="py-2 bg-white border-b border-gray-200">
-                <Flex justify="space-between" align="center">
-                  <div className="flex gap-4 items-baseline">
-                    {isEditingName ? (
-                      <Input
-                        size="small"
-                        value={tempRouteName}
-                        onChange={(e) => setTempRouteName(e.target.value)}
-                        onBlur={handleNameSave}
-                        onKeyDown={handleNameKeyDown}
-                        autoFocus
-                        disabled={isSavingName}
-                        maxLength={50}
-                      />
-                    ) : (
-                      <Title
-                        level={5}
-                        className="m-0 cursor-pointer hover:text-blue-600 hover:underline decoration-dashed underline-offset-4 transition-all"
-                        onClick={handleNameClick}
-                        title="Click to edit route name"
-                      >
-                        {route.route_name}
-                      </Title>
-                    )}
-                    <Text type="secondary" className="whitespace-nowrap">
-                      {route.scheduled_date}
-                    </Text>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="small" onClick={handleExportRoutes}>
-                      Export Routes
-                    </Button>
-                    <Tooltip title="Not implemented yet">
-                      <Button type="primary" size="small">
-                        Share to App
-                      </Button>
-                    </Tooltip>
-                  </div>
-                </Flex>
-              </div>
+            <div className="flex flex-col h-full bg-gray-50 mt-2">
               <div className="flex-1 overflow-hidden">
                 <TimelineView
                   routes={route.result?.routes || []}
