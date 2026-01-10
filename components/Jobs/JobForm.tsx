@@ -156,7 +156,6 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          requiredMark={false}
           initialValues={{
             scheduled_date: dayjs(),
             priority_level: "medium",

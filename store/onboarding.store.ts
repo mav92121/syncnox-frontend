@@ -14,7 +14,7 @@ interface OnboardingStore {
   showCompletion: boolean;
 
   // Actions
-  fetchOnboardingStatus: () => Promise<Onboarding | null>;
+  fetchOnboardingStatus: () => Promise<Onboarding>;
   saveBasicInfoAction: (payload: BasicInfoPayload) => Promise<void>;
   advanceStepAction: (step: number) => Promise<void>;
   completeOnboardingAction: () => Promise<void>;
