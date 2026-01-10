@@ -227,7 +227,6 @@ const TeamMemberForm = ({
             layout="vertical"
             onFinish={onFinish}
             onValuesChange={onValuesChange}
-            requiredMark={false}
             initialValues={INITIAL_FORM_VALUES}
           >
             {isDriver ? (

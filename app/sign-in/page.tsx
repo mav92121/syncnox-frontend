@@ -56,13 +56,7 @@ export default function SignInPage() {
 
       {/* Sign In Card */}
       <Card className="w-full max-w-lg shadow-md">
-        <Form
-          requiredMark={false}
-          form={form}
-          name="signin"
-          onFinish={onFinish}
-          layout="vertical"
-        >
+        <Form form={form} name="signin" onFinish={onFinish} layout="vertical">
           <Form.Item
             name="email"
             label="Email"

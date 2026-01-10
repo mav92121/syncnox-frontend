@@ -99,7 +99,6 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          requiredMark={false}
           initialValues={initialData ? undefined : defaultValues}
         >
           {/* Row 1: Name, License Plate */}

@@ -106,6 +106,7 @@ const BasicInformation = ({
       {/* Phone Number */}
       <Form.Item
         label="Phone Number"
+        required
         rules={[{ required: true, message: "Phone number is required" }]}
       >
         <Row gutter={8}>

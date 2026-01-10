@@ -1,14 +1,13 @@
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import type { Metadata } from "next";
-import { ConfigProvider } from "antd";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { Analytics } from "@vercel/analytics/next";
 import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import theme from "@/config/theme.config";
 import "./globals.css";
 import AppLayout from "../components/Layout/AppLayout";
+import AntdConfigProvider from "@/components/providers/AntdConfigProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -40,9 +39,9 @@ export default function RootLayout({
         />
         <SessionProvider>
           <AntdRegistry>
-            <ConfigProvider theme={theme}>
+            <AntdConfigProvider>
               <AppLayout>{children}</AppLayout>
-            </ConfigProvider>
+            </AntdConfigProvider>
           </AntdRegistry>
         </SessionProvider>
         <Analytics />
