@@ -304,7 +304,7 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
       style={{ height: "calc(70vh - 100px)" }}
     >
       {/* Stats Summary */}
-      <div className="flex flex-wrap items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg border">
+      <div className="flex flex-wrap items-center gap-4 mb-4 p-3 bg-gray-50 border">
         <div className="flex items-center gap-2">
           <InfoCircleOutlined className="text-gray-500" />
           <span className="text-sm text-gray-600">
@@ -374,8 +374,11 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
       )}
 
       {/* Data Grid */}
-      <div className="flex-1 overflow-hidden rounded-lg border">
-        <div className="ag-theme-alpine h-full w-full">
+      <div className="flex-1 overflow-hidden">
+        <div
+          className="h-full w-full"
+          style={{ "--ag-wrapper-border-radius": "0" } as React.CSSProperties}
+        >
           <AgGridReact
             ref={gridRef}
             rowData={rowData}
