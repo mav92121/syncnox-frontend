@@ -69,18 +69,47 @@ export default function ScheduleBlock({
       {block.metadata?.stops_count !== undefined && (
         <div>Stops: {block.metadata.stops_count}</div>
       )}
+      {/* Break-specific info */}
+      {block.type === "break" && block.metadata?.break_location_address && (
+        <div>📍 {block.metadata.break_location_address}</div>
+      )}
+      {block.type === "break" && block.metadata?.break_duration_minutes && (
+        <div>Duration: {block.metadata.break_duration_minutes} min</div>
+      )}
+      {/* Idle-specific info */}
+      {block.type === "idle" && block.metadata?.idle_duration_minutes && (
+        <div>Waiting: {block.metadata.idle_duration_minutes} min</div>
+      )}
+      {block.type === "idle" && block.metadata?.address && (
+        <div>📍 {block.metadata.address}</div>
+      )}
     </div>
   );
+
+  // Determine if this is an idle block (use striped pattern)
+  const isIdle = block.type === "idle";
+  const blockStyle: React.CSSProperties = {
+    left: `${clampedLeft}%`,
+    width: `${clampedWidth}%`,
+    backgroundColor,
+    ...(isIdle && {
+      backgroundImage: `repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 5px,
+        rgba(0,0,0,0.1) 5px,
+        rgba(0,0,0,0.1) 10px
+      )`,
+    }),
+  };
 
   return (
     <Tooltip title={tooltipContent} placement="top">
       <div
-        className="absolute top-1 bottom-1 rounded px-1.5 overflow-hidden whitespace-nowrap text-ellipsis text-white text-xs font-medium cursor-pointer shadow-sm flex items-center min-w-[20px]"
-        style={{
-          left: `${clampedLeft}%`,
-          width: `${clampedWidth}%`,
-          backgroundColor,
-        }}
+        className={`absolute top-1 bottom-1 rounded px-1.5 overflow-hidden whitespace-nowrap text-ellipsis text-xs font-medium cursor-pointer shadow-sm flex items-center min-w-[20px] ${
+          isIdle ? "text-gray-600" : "text-white"
+        }`}
+        style={blockStyle}
       >
         <span className="overflow-hidden text-ellipsis">{block.title}</span>
       </div>
