@@ -240,7 +240,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
           <ResizeHandle />
 
           <Panel defaultSize={40} minSize={20}>
-            <div className="flex flex-col h-full bg-gray-50 mt-2">
+            <div className="flex flex-col h-full bg-gray-50 mt-2 overflow-hidden isolate">
               <div className="flex-1 overflow-hidden">
                 <TimelineView
                   routes={route.result?.routes || []}
