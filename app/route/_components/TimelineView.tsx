@@ -184,15 +184,128 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                       );
                     })}
 
-                    {/* Stops */}
+                    {/* Idle Time Blocks */}
+                    {route.idle_blocks?.map((idle: any, idleIndex: number) => {
+                      const idleStartPos = getPosition(
+                        idle.start_time,
+                        startTime,
+                        pixelsPerMinute
+                      );
+                      const idleEndPos = getPosition(
+                        idle.end_time,
+                        startTime,
+                        pixelsPerMinute
+                      );
+                      const idleWidth = idleEndPos - idleStartPos;
+
+                      if (idleWidth <= 0) return null;
+
+                      return (
+                        <Tooltip
+                          key={`idle-${idleIndex}`}
+                          title={
+                            <div>
+                              <div className="font-semibold">Idle Time</div>
+                              <div>Waiting: {idle.duration_minutes} min</div>
+                              {idle.location?.address_formatted && (
+                                <div className="text-xs">
+                                  📍 {idle.location.address_formatted}
+                                </div>
+                              )}
+                            </div>
+                          }
+                        >
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 h-6 rounded-sm border border-gray-300 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
+                            style={{
+                              left: idleStartPos,
+                              width: idleWidth,
+                              backgroundColor: "#f5f5f5",
+                              backgroundImage: `repeating-linear-gradient(
+                                  45deg,
+                                  transparent,
+                                  transparent 3px,
+                                  rgba(0,0,0,0.08) 3px,
+                                  rgba(0,0,0,0.08) 6px
+                                )`,
+                            }}
+                          />
+                        </Tooltip>
+                      );
+                    })}
+
+                    {/* Stops - Now with service duration width */}
                     {route.stops.map((stop: any, stopIndex: number) => {
+                      const arrivalTime = dayjs(stop.arrival_time);
+                      const serviceDuration =
+                        stop.service_duration_minutes || 0;
+                      const departureTime = arrivalTime.add(
+                        serviceDuration,
+                        "minute"
+                      );
+
                       const left = getPosition(
                         stop.arrival_time,
                         startTime,
                         pixelsPerMinute
                       );
-                      const isDepot = stop.stop_type === "depot";
 
+                      // Calculate block width based on service duration
+                      const blockWidth = serviceDuration * pixelsPerMinute;
+
+                      const isDepot = stop.stop_type === "depot";
+                      const isJob = stop.stop_type === "job";
+
+                      // For jobs with service duration, show as a bar
+                      if (isJob && serviceDuration > 0) {
+                        return (
+                          <Tooltip
+                            key={stopIndex}
+                            title={
+                              <div>
+                                <div className="font-semibold">
+                                  {stop.address_formatted ||
+                                    `Job #${stop.job_id}`}
+                                </div>
+                                <div className="text-xs">
+                                  ETA:{" "}
+                                  {arrivalTime.isValid()
+                                    ? arrivalTime.format("HH:mm")
+                                    : "--:--"}
+                                </div>
+                                <div className="text-xs">
+                                  Departure:{" "}
+                                  {departureTime.isValid()
+                                    ? departureTime.format("HH:mm")
+                                    : "--:--"}
+                                </div>
+                                <div className="text-xs">
+                                  Service: {serviceDuration} min
+                                </div>
+                              </div>
+                            }
+                          >
+                            <div
+                              className="absolute top-1/2 -translate-y-1/2 h-8 rounded flex items-center justify-center shadow-md transition-all hover:scale-105 cursor-pointer z-5 border-2"
+                              style={{
+                                left: left,
+                                width: Math.max(blockWidth, 28), // Minimum width for visibility
+                                backgroundColor: routeColor,
+                                borderColor: routeColor,
+                              }}
+                              onClick={() =>
+                                onStopClick?.(stop, routeIndex, stopIndex)
+                              }
+                            >
+                              <span className="text-xs font-bold text-white">
+                                {stopIndex}
+                              </span>
+                            </div>
+                          </Tooltip>
+                        );
+                      }
+
+                      // For depot and jobs without service duration, show as marker
                       return (
                         <Tooltip
                           key={stopIndex}
@@ -205,8 +318,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                                     `Job #${stop.job_id}`}
                               </div>
                               <div className="text-xs text-gray-400">
-                                {dayjs(stop.arrival_time).isValid()
-                                  ? dayjs(stop.arrival_time).format("HH:mm")
+                                {arrivalTime.isValid()
+                                  ? arrivalTime.format("HH:mm")
                                   : "--:--"}
                               </div>
                             </div>
