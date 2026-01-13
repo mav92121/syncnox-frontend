@@ -286,7 +286,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                             }
                           >
                             <div
-                              className="absolute top-1/2 -translate-y-1/2 h-8 rounded flex items-center justify-center shadow-md transition-all hover:scale-105 cursor-pointer z-5 border-2"
+                              className="absolute top-1/2 -translate-y-1/2 h-8 flex items-center justify-center shadow-md transition-all hover:scale-105 cursor-pointer z-10 border-2"
                               style={{
                                 left: left,
                                 width: Math.max(blockWidth, 28), // Minimum width for visibility
