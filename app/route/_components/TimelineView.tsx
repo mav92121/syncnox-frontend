@@ -33,7 +33,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
 
   const { startTime, endTime } = useMemo(
     () => calculateTimeRange(routes),
-    [routes]
+    [routes],
   );
 
   // Dynamic pixels per minute based on interval - smaller intervals get more spread
@@ -44,7 +44,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
   const timeMarkers = useMemo(
     () =>
       generateTimeMarkers(startTime, endTime, intervalMinutes, pixelsPerMinute),
-    [startTime, endTime, intervalMinutes, pixelsPerMinute]
+    [startTime, endTime, intervalMinutes, pixelsPerMinute],
   );
 
   return (
@@ -149,19 +149,19 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                       const startPos = getPosition(
                         stop.arrival_time,
                         startTime,
-                        pixelsPerMinute
+                        pixelsPerMinute,
                       );
                       const endPos = getPosition(
                         nextStop.arrival_time,
                         startTime,
-                        pixelsPerMinute
+                        pixelsPerMinute,
                       );
                       const width = endPos - startPos;
 
                       const distanceKm =
                         (stop.distance_to_next_stop_meters ?? 0) / 1000;
                       const timeMin = Math.round(
-                        (stop.time_to_next_stop_seconds ?? 0) / 60
+                        (stop.time_to_next_stop_seconds ?? 0) / 60,
                       );
 
                       return (
@@ -184,17 +184,71 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                       );
                     })}
 
+                    {/* Break Time Block */}
+                    {route.break_info &&
+                      (() => {
+                        const breakStartPos = getPosition(
+                          route.break_info.start_time,
+                          startTime,
+                          pixelsPerMinute,
+                        );
+                        const breakEndPos = getPosition(
+                          route.break_info.end_time,
+                          startTime,
+                          pixelsPerMinute,
+                        );
+                        const breakWidth = breakEndPos - breakStartPos;
+
+                        if (breakWidth <= 0) return null;
+
+                        return (
+                          <Tooltip
+                            title={
+                              <div>
+                                <div className="font-semibold">☕ Break</div>
+                                <div>
+                                  Duration: {route.break_info.duration_minutes}{" "}
+                                  min
+                                </div>
+                                {route.break_info.location
+                                  ?.address_formatted && (
+                                  <div className="text-xs">
+                                    📍{" "}
+                                    {
+                                      route.break_info.location
+                                        .address_formatted
+                                    }
+                                  </div>
+                                )}
+                              </div>
+                            }
+                          >
+                            <div
+                              className="absolute top-1/2 -translate-y-1/2 h-6 rounded-sm border border-gray-400 cursor-pointer opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center"
+                              style={{
+                                left: breakStartPos,
+                                width: breakWidth,
+                                backgroundColor: "#8c8c8c",
+                                minWidth: 24,
+                              }}
+                            >
+                              <span className="text-white text-xs">☕</span>
+                            </div>
+                          </Tooltip>
+                        );
+                      })()}
+
                     {/* Idle Time Blocks */}
                     {route.idle_blocks?.map((idle: any, idleIndex: number) => {
                       const idleStartPos = getPosition(
                         idle.start_time,
                         startTime,
-                        pixelsPerMinute
+                        pixelsPerMinute,
                       );
                       const idleEndPos = getPosition(
                         idle.end_time,
                         startTime,
-                        pixelsPerMinute
+                        pixelsPerMinute,
                       );
                       const idleWidth = idleEndPos - idleStartPos;
 
@@ -205,7 +259,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                           key={`idle-${idleIndex}`}
                           title={
                             <div>
-                              <div className="font-semibold">Idle Time</div>
+                              <div className="font-semibold">⏳ Idle Time</div>
                               <div>Waiting: {idle.duration_minutes} min</div>
                               {idle.location?.address_formatted && (
                                 <div className="text-xs">
@@ -241,13 +295,13 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                         stop.service_duration_minutes || 0;
                       const departureTime = arrivalTime.add(
                         serviceDuration,
-                        "minute"
+                        "minute",
                       );
 
                       const left = getPosition(
                         stop.arrival_time,
                         startTime,
-                        pixelsPerMinute
+                        pixelsPerMinute,
                       );
 
                       // Calculate block width based on service duration
