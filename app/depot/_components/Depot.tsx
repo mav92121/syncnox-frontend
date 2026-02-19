@@ -19,7 +19,7 @@ const Depot = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingDepot, setEditingDepot] = useState<DepotType | undefined>(
-    undefined
+    undefined,
   );
 
   const handleEdit = (depot: DepotType) => {
@@ -132,6 +132,7 @@ const Depot = () => {
         setOpen={setIsCreateModalOpen}
         onSubmit={handleCreateSubmit}
         isLoading={isSaving}
+        existingDepots={depots}
       />
 
       <Drawer
@@ -146,6 +147,7 @@ const Depot = () => {
           onSubmit={handleEditSubmit}
           isLoading={isSaving}
           onCancel={handleDrawerClose}
+          existingDepots={depots}
         />
       </Drawer>
     </div>
