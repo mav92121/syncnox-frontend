@@ -16,6 +16,7 @@ interface DepotFormProps {
   onCancel: () => void;
   submitLabel?: string;
   isOnboarding?: boolean;
+  existingDepots?: Depot[];
 }
 
 const DepotForm = ({
@@ -25,11 +26,12 @@ const DepotForm = ({
   onCancel,
   submitLabel,
   isOnboarding = false,
+  existingDepots = [],
 }: DepotFormProps) => {
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
-    null
+    null,
   );
 
   useEffect(() => {
@@ -88,7 +90,7 @@ const DepotForm = ({
       message.success(
         initialValues
           ? "Depot updated successfully"
-          : "Depot created successfully"
+          : "Depot created successfully",
       );
       onCancel(); // Close form on success
     } else {
@@ -96,12 +98,25 @@ const DepotForm = ({
     }
   };
 
-  // Prepare marker for the map
-  const depotMarker =
+  // ─── Map markers ────────────────────────────────────────────────────────────
+  // All existing depots as non-draggable read-only markers
+  const existingMarkers = existingDepots
+    .filter((d) => d.location && d.id !== initialValues?.id) // exclude the one being edited
+    .map((d) => ({
+      id: `existing-depot-${d.id}`,
+      position: { lat: d.location!.lat, lng: d.location!.lng },
+      title: d.name,
+      description: d.address?.formatted_address || d.name,
+      isDepot: true,
+      draggable: false,
+    }));
+
+  // Current depot being created / edited (draggable)
+  const currentMarker =
     location || initialValues?.location
       ? [
           {
-            id: "depot",
+            id: "depot-current",
             position: location || initialValues?.location || { lat: 0, lng: 0 },
             title: name || initialValues?.name || "Depot",
             isDepot: true,
@@ -111,6 +126,29 @@ const DepotForm = ({
           },
         ]
       : [];
+
+  const allMarkers = [...existingMarkers, ...currentMarker];
+
+  // ─── Map center ─────────────────────────────────────────────────────────────
+  // When editing: focus on the current depot.
+  // When creating: focus on the newly selected location, then fall back to the
+  // last existing depot, then fall back to the default SF coords.
+  const defaultCenter = { lat: 37.7749, lng: -122.4194 };
+
+  const lastExistingDepotCenter =
+    existingDepots.length > 0 &&
+    existingDepots[existingDepots.length - 1].location
+      ? {
+          lat: existingDepots[existingDepots.length - 1].location!.lat,
+          lng: existingDepots[existingDepots.length - 1].location!.lng,
+        }
+      : null;
+
+  const mapCenter =
+    location ||
+    initialValues?.location ||
+    lastExistingDepotCenter ||
+    defaultCenter;
 
   return (
     <div className="flex flex-col h-full">
@@ -142,14 +180,8 @@ const DepotForm = ({
           showMapTypeControl={true}
           showZoomControl={true}
           zoom={10}
-          center={
-            location ||
-            initialValues?.location || {
-              lat: 37.7749,
-              lng: -122.4194,
-            }
-          }
-          markers={depotMarker}
+          center={mapCenter}
+          markers={allMarkers}
           onMarkerDragEnd={(_, newPosition) => {
             setLocation(newPosition);
           }}

@@ -1,12 +1,14 @@
 import { Modal } from "antd";
 import DepotForm from "./DepotForm";
 import { DepotPayload } from "@/apis/depots.api";
+import { Depot } from "@/types/depots.type";
 
 interface CreateDepotModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   onSubmit: (values: DepotPayload) => Promise<boolean>;
   isLoading: boolean;
+  existingDepots?: Depot[];
 }
 
 const CreateDepotModal = ({
@@ -14,6 +16,7 @@ const CreateDepotModal = ({
   setOpen,
   onSubmit,
   isLoading,
+  existingDepots = [],
 }: CreateDepotModalProps) => {
   return (
     <Modal
@@ -30,6 +33,7 @@ const CreateDepotModal = ({
         onSubmit={onSubmit}
         isLoading={isLoading}
         onCancel={() => setOpen(false)}
+        existingDepots={existingDepots}
       />
     </Modal>
   );

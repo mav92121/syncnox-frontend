@@ -13,8 +13,8 @@ const RoutePage = () => {
     typeof params?.id === "string"
       ? params.id
       : Array.isArray(params?.id)
-      ? params.id[0]
-      : undefined;
+        ? params.id[0]
+        : undefined;
   const parsedId = rawId ? Number(rawId) : NaN;
   const id = Number.isFinite(parsedId) && parsedId > 0 ? parsedId : null;
 
@@ -155,7 +155,7 @@ const RoutePage = () => {
                               type="secondary"
                               className="text-xs"
                             >
-                              {job.reason}
+                              <div className="text-red-400">{job.reason}</div>
                             </Typography.Text>
                           }
                         />

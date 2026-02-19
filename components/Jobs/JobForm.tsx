@@ -53,19 +53,19 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
     // 1. Transform scheduled_date: dayjs object -> local date string (YYYY-MM-DD)
     if (values.scheduled_date) {
       transformedValues.scheduled_date = dayjs(values.scheduled_date).format(
-        "YYYY-MM-DD"
+        "YYYY-MM-DD",
       );
     }
 
     // 2. Transform time windows: dayjs object -> local time string (HH:mm:ss)
     if (values.time_window_start) {
       transformedValues.time_window_start = dayjs(
-        values.time_window_start
+        values.time_window_start,
       ).format("HH:mm");
     }
     if (values.time_window_end) {
       transformedValues.time_window_end = dayjs(values.time_window_end).format(
-        "HH:mm"
+        "HH:mm",
       );
     }
 
@@ -112,7 +112,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
       if (formValues.time_window_start) {
         formValues.time_window_start = dayjs(
           formValues.time_window_start,
-          "HH:mm"
+          "HH:mm",
         );
       }
       if (formValues.time_window_end) {
@@ -234,13 +234,53 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
             />
           </Form.Item>
 
-          {/* Hidden location fields */}
-          <Form.Item name={["location", "lat"]} hidden>
-            <Input />
-          </Form.Item>
-          <Form.Item name={["location", "lng"]} hidden>
-            <Input />
-          </Form.Item>
+          {/* Lat / Lng */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Latitude"
+                name={["location", "lat"]}
+                rules={[
+                  {
+                    validator: (_, value) =>
+                      value === undefined ||
+                      value === null ||
+                      value === "" ||
+                      (!isNaN(Number(value)) &&
+                        Number(value) >= -90 &&
+                        Number(value) <= 90)
+                        ? Promise.resolve()
+                        : Promise.reject("Enter a valid latitude (-90 to 90)"),
+                  },
+                ]}
+              >
+                <Input type="number" placeholder="e.g. 37.7749" step="any" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="Longitude"
+                name={["location", "lng"]}
+                rules={[
+                  {
+                    validator: (_, value) =>
+                      value === undefined ||
+                      value === null ||
+                      value === "" ||
+                      (!isNaN(Number(value)) &&
+                        Number(value) >= -180 &&
+                        Number(value) <= 180)
+                        ? Promise.resolve()
+                        : Promise.reject(
+                            "Enter a valid longitude (-180 to 180)",
+                          ),
+                  },
+                ]}
+              >
+                <Input type="number" placeholder="e.g. -122.4194" step="any" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           {/* Phone Number */}
           <Form.Item label="Phone Number">
