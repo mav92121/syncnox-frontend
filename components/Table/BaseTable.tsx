@@ -125,7 +125,7 @@ export default function BaseTable<TData = any>({
       sortable: true,
       ...defaultColDef, // Allow override
     }),
-    [defaultColDef]
+    [defaultColDef],
   );
 
   // Loading state

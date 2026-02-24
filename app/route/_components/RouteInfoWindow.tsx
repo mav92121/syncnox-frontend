@@ -1,7 +1,14 @@
-import { Typography, Tag } from "antd";
-import { ClockCircleOutlined, EnvironmentOutlined } from "@ant-design/icons";
+import { useState } from "react";
+import { Typography, Tag, Button, message } from "antd";
+import {
+  ClockCircleOutlined,
+  EnvironmentOutlined,
+  CheckCircleOutlined,
+} from "@ant-design/icons";
 import { Job, JobStatus } from "@/types/job.type";
 import { STATUS_COLORS } from "@/utils/jobs.utils";
+import { markJobCompleted } from "@/apis/jobs.api";
+import { useJobsStore } from "@/store/jobs.store";
 
 const { Text } = Typography;
 
@@ -19,8 +26,27 @@ interface RouteInfoWindowProps {
 
 const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
   const { jobData, title, description } = marker;
+  const { patchJobLocally } = useJobsStore();
+  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
   const status = jobData?.status;
+  const isCompleted = status === "completed";
+
+  const handleMarkCompleted = async () => {
+    if (!jobData?.id) return;
+
+    try {
+      setIsMarkingComplete(true);
+      const updatedJob = await markJobCompleted(jobData.id);
+      // Reflect the update in the store locally to avoid double PUT
+      patchJobLocally(updatedJob);
+      message.success("Job marked as completed");
+    } catch (error) {
+      message.error("Failed to mark job as completed");
+    } finally {
+      setIsMarkingComplete(false);
+    }
+  };
 
   return (
     <div className="min-w-[240px] max-w-[320px] bg-white text-gray-800">
@@ -61,6 +87,24 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
           </Tag>
         )}
       </div>
+      {jobData && !isCompleted && (
+        <div className="mt-3 pt-3 border-t border-gray-100">
+          <Button
+            type="primary"
+            size="small"
+            icon={<CheckCircleOutlined />}
+            loading={isMarkingComplete}
+            onClick={handleMarkCompleted}
+            style={{
+              width: "100%",
+              backgroundColor: "#16a34a",
+              borderColor: "#16a34a",
+            }}
+          >
+            Mark as Completed
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
