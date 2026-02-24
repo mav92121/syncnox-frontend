@@ -39,7 +39,14 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const { setCurrentTab } = useIndexStore();
   const { jobs } = useJobsStore();
   const { updateOptimization, clearOptimization } = useOptimizationStore();
+  const { fetchJobsByDate } = useJobsStore();
   const { updateRoute } = useRouteStore();
+
+  useEffect(() => {
+    if (route.scheduled_date) {
+      fetchJobsByDate(route.scheduled_date);
+    }
+  }, [route.scheduled_date, fetchJobsByDate]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempRouteName, setTempRouteName] = useState(route.route_name);
   const [isSavingName, setIsSavingName] = useState(false);
@@ -114,7 +121,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const handleStopClick = (
     stop: any,
     routeIndex: number,
-    stopIndex: number
+    stopIndex: number,
   ) => {
     if (
       typeof stop.latitude === "number" &&

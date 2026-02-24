@@ -149,8 +149,8 @@ const CreateRouteModal = ({
       open={open}
       onCancel={handleCancel}
       width={600}
-      closable={!isPolling && !isSubmitting}
-      maskClosable={!isPolling && !isSubmitting}
+      closable={true}
+      maskClosable={false}
     >
       {isSubmitting || isPolling ? (
         <div className="py-8">
@@ -164,16 +164,16 @@ const CreateRouteModal = ({
               currentOptimization?.status === "success"
                 ? 100
                 : currentOptimization?.status === "processing"
-                ? 60
-                : 30
+                  ? 60
+                  : 30
             }
             status={
               currentOptimization?.status === "failed"
                 ? "exception"
                 : currentOptimization?.status === "completed" ||
-                  currentOptimization?.status === "success"
-                ? "success"
-                : "active"
+                    currentOptimization?.status === "success"
+                  ? "success"
+                  : "active"
             }
           />
 

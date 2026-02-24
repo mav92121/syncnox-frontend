@@ -41,3 +41,10 @@ export const deleteJob = async (jobId: number): Promise<void> => {
 export const deleteJobsBulk = async (jobIds: number[]): Promise<void> => {
   await apiClient.post("/jobs/bulk/delete", jobIds);
 };
+
+export const markJobCompleted = async (jobId: number): Promise<Job> => {
+  const response = await apiClient.put<Job>(`/jobs/${jobId}`, {
+    status: "completed",
+  });
+  return response.data;
+};
