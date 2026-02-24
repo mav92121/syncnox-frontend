@@ -26,7 +26,7 @@ interface RouteInfoWindowProps {
 
 const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
   const { jobData, title, description } = marker;
-  const { updateJobAction } = useJobsStore();
+  const { patchJobLocally } = useJobsStore();
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
   const status = jobData?.status;
@@ -38,8 +38,8 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
     try {
       setIsMarkingComplete(true);
       const updatedJob = await markJobCompleted(jobData.id);
-      // Reflect the update in the store
-      await updateJobAction(updatedJob);
+      // Reflect the update in the store locally to avoid double PUT
+      patchJobLocally(updatedJob);
       message.success("Job marked as completed");
     } catch (error) {
       message.error("Failed to mark job as completed");

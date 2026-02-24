@@ -32,6 +32,7 @@ interface JobsState {
   deleteJobsAction: (jobIds: number[], status: JobStatus) => Promise<void>;
   refreshDraftJobs: () => Promise<void>;
   fetchJobsByDate: (date: string) => Promise<void>;
+  patchJobLocally: (job: Job) => void;
   resetAllJobs: () => void;
 }
 
@@ -335,10 +336,20 @@ export const useJobsStore = create<JobsState>()(
         }
       },
 
-      // Reset to draft view
+      patchJobLocally: (job: Job) => {
+        set((state) => {
+          state.jobs = state.jobs.map((j) => (j.id === job.id ? job : j));
+          state.draftJobs = state.draftJobs.map((j) =>
+            j.id === job.id ? job : j,
+          );
+          state.allDraftJobs = state.allDraftJobs.map((j) =>
+            j.id === job.id ? job : j,
+          );
+        });
+      },
+
       resetAllJobs: () => {
         set((state) => {
-          // Reset jobs to draft jobs and filter by selected date
           state.jobs = state.allDraftJobs;
           state.draftJobs = state.selectedDate
             ? state.allDraftJobs.filter(
