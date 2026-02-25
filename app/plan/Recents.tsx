@@ -124,7 +124,7 @@ const Recents = () => {
                   duration={marker.duration}
                   timeWindowStart={marker.timeWindowStart}
                   timeWindowEnd={marker.timeWindowEnd}
-                  onEdit={() => setEditJobData(marker.jobData ?? null)}
+                  onEdit={() => setEditJobData((marker.jobData as Job) ?? null)}
                 />
               )}
             />

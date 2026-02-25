@@ -276,7 +276,7 @@ export default function JobsList() {
                 timeWindowStart={marker.timeWindowStart}
                 timeWindowEnd={marker.timeWindowEnd}
                 onEdit={() => {
-                  setEditJobData(marker.jobData ?? null);
+                  setEditJobData((marker.jobData as Job) ?? null);
                   setMapViewJob(null); // Close map modal when editing
                 }}
               />

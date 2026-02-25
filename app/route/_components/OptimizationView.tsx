@@ -24,7 +24,7 @@ import RouteExportPreview from "./RouteExportPreview";
 import {
   generateRoutePolylines,
   generateMapMarkers,
-} from "./optimizationView.utils";
+  } from "./optimizationView.utils";
 import ResizeHandle from "@/components/ResizeHandle";
 import Icon from "@ant-design/icons";
 
@@ -37,16 +37,17 @@ interface OptimizationViewProps {
 const OptimizationView = ({ route }: OptimizationViewProps) => {
   const router = useRouter();
   const { setCurrentTab } = useIndexStore();
-  const { jobs } = useJobsStore();
   const { updateOptimization, clearOptimization } = useOptimizationStore();
-  const { fetchJobsByDate } = useJobsStore();
+  const { jobs, fetchJobsByDate, fetchJobsByIds } = useJobsStore();
   const { updateRoute } = useRouteStore();
 
   useEffect(() => {
-    if (route.scheduled_date) {
+    if (route.job_ids && route.job_ids.length > 0) {
+      fetchJobsByIds(route.job_ids);
+    } else if (route.scheduled_date) {
       fetchJobsByDate(route.scheduled_date);
     }
-  }, [route.scheduled_date, fetchJobsByDate]);
+  }, [route.job_ids, route.scheduled_date, fetchJobsByIds, fetchJobsByDate]);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempRouteName, setTempRouteName] = useState(route.route_name);
   const [isSavingName, setIsSavingName] = useState(false);
