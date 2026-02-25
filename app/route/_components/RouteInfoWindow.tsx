@@ -31,7 +31,6 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
   const { patchJobLocally } = useJobsStore();
   const { fetchRoutes, selectedStatus } = useRouteStore();
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
-  console.log("jobData  -> ", jobData);
   const status = jobData?.status;
   const isCompleted = status === "completed";
 

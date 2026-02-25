@@ -37,9 +37,8 @@ interface OptimizationViewProps {
 const OptimizationView = ({ route }: OptimizationViewProps) => {
   const router = useRouter();
   const { setCurrentTab } = useIndexStore();
-  const { jobs } = useJobsStore();
   const { updateOptimization, clearOptimization } = useOptimizationStore();
-  const { fetchJobsByDate, fetchJobsByIds } = useJobsStore();
+  const { jobs, fetchJobsByDate, fetchJobsByIds } = useJobsStore();
   const { updateRoute } = useRouteStore();
 
   useEffect(() => {

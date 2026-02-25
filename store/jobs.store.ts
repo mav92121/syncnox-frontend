@@ -338,12 +338,7 @@ export const useJobsStore = create<JobsState>()(
       },
 
       fetchJobsByIds: async (jobIds: number[]) => {
-        if (!jobIds || jobIds.length === 0) {
-          set((state) => {
-            state.jobs = [];
-          });
-          return;
-        }
+        if (jobIds.length === 0) return;
 
         set((state) => {
           state.isLoading = true;
