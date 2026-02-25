@@ -30,10 +30,19 @@ export const generateMapMarkers = (route: Route, jobs: Job[]) => {
       .filter(
         (stop: any) =>
           typeof stop.latitude === "number" &&
-          typeof stop.longitude === "number"
+          typeof stop.longitude === "number",
       )
       .map((stop: any, stopIndex: number) => {
-        const job = stop.job_id ? jobsMap.get(stop.job_id) : undefined;
+        let job = stop.job_id ? jobsMap.get(stop.job_id) : undefined;
+
+        if (!job && stop.stop_type !== "depot" && stop.stop_type !== "break") {
+          job = {
+            id: stop.job_id,
+            address_formatted: stop.address_formatted,
+            status: "assigned",
+            location: { lat: stop.latitude, lng: stop.longitude },
+          } as Job;
+        }
 
         return {
           id: `${index}-${stopIndex}`,

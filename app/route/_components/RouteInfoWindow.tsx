@@ -9,6 +9,7 @@ import { Job, JobStatus } from "@/types/job.type";
 import { STATUS_COLORS } from "@/utils/jobs.utils";
 import { markJobCompleted } from "@/apis/jobs.api";
 import { useJobsStore } from "@/store/jobs.store";
+import { useRouteStore } from "@/store/routes.store";
 
 const { Text } = Typography;
 
@@ -27,6 +28,7 @@ interface RouteInfoWindowProps {
 const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
   const { jobData, title, description } = marker;
   const { patchJobLocally } = useJobsStore();
+  const { fetchRoutes } = useRouteStore();
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
 
   const status = jobData?.status;
@@ -40,6 +42,7 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
       const updatedJob = await markJobCompleted(jobData.id);
       // Reflect the update in the store locally to avoid double PUT
       patchJobLocally(updatedJob);
+      await fetchRoutes();
       message.success("Job marked as completed");
     } catch (error) {
       message.error("Failed to mark job as completed");
