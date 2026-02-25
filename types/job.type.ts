@@ -47,4 +47,5 @@ export interface FetchJobsParams {
   limit?: number;
   status?: JobStatus;
   date?: string;
+  job_ids?: string;
 }

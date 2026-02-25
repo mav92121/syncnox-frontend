@@ -21,9 +21,14 @@ export const generateRoutePolylines = (route: Route) => {
   });
 };
 
+export type MarkerJobData = Pick<
+  Job,
+  "id" | "address_formatted" | "status" | "location"
+>;
+
 export const generateMapMarkers = (route: Route, jobs: Job[]) => {
   if (!route?.result?.routes) return [];
-  const jobsMap = new Map(jobs.map((j) => [j.id, j]));
+  const jobsMap = new Map(jobs.map((j) => [Number(j.id), j]));
   return route.result.routes.flatMap((routeItem, index) => {
     const color = getRouteColor(index);
     return routeItem.stops
@@ -33,15 +38,22 @@ export const generateMapMarkers = (route: Route, jobs: Job[]) => {
           typeof stop.longitude === "number",
       )
       .map((stop: any, stopIndex: number) => {
-        let job = stop.job_id ? jobsMap.get(stop.job_id) : undefined;
+        let job: Job | MarkerJobData | undefined = stop.job_id
+          ? jobsMap.get(Number(stop.job_id))
+          : undefined;
 
-        if (!job && stop.stop_type !== "depot" && stop.stop_type !== "break") {
+        if (
+          !job &&
+          stop.job_id != null &&
+          stop.stop_type !== "depot" &&
+          stop.stop_type !== "break"
+        ) {
           job = {
             id: stop.job_id,
             address_formatted: stop.address_formatted,
             status: "assigned",
             location: { lat: stop.latitude, lng: stop.longitude },
-          } as Job;
+          };
         }
 
         return {

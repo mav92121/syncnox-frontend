@@ -44,7 +44,7 @@ interface MarkerData {
   timeWindowStart?: string;
   timeWindowEnd?: string;
   jobType?: JobType;
-  jobData?: Job;
+  jobData?: Pick<Job, "id" | "address_formatted" | "status" | "location"> | Job;
   sequenceNumber?: number;
   color?: string;
   isDepot?: boolean;
@@ -66,7 +66,7 @@ interface GoogleMapsProps {
   onMarkerSelect?: (markerId: string | number | null) => void;
   onMarkerDragEnd?: (
     markerId: string | number,
-    newPosition: google.maps.LatLngLiteral
+    newPosition: google.maps.LatLngLiteral,
   ) => void;
   showMapTypeControl?: boolean;
   showZoomControl?: boolean;
@@ -100,7 +100,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
       map.setCenter(center);
       map.setZoom(zoom);
     },
-    [center, zoom]
+    [center, zoom],
   );
 
   const handleMapTypeChange = (type: MapType) => {
@@ -194,7 +194,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
           status,
           isSelected,
           marker.color,
-          marker.isDepot
+          marker.isDepot,
         );
 
         return (

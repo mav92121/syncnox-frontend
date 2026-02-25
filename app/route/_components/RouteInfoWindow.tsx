@@ -10,6 +10,7 @@ import { STATUS_COLORS } from "@/utils/jobs.utils";
 import { markJobCompleted } from "@/apis/jobs.api";
 import { useJobsStore } from "@/store/jobs.store";
 import { useRouteStore } from "@/store/routes.store";
+import { MarkerJobData } from "./optimizationView.utils";
 
 const { Text } = Typography;
 
@@ -18,7 +19,7 @@ interface MarkerData {
   position: google.maps.LatLngLiteral;
   title?: string;
   description?: string;
-  jobData?: Job;
+  jobData?: Job | MarkerJobData;
 }
 
 interface RouteInfoWindowProps {
@@ -28,9 +29,9 @@ interface RouteInfoWindowProps {
 const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
   const { jobData, title, description } = marker;
   const { patchJobLocally } = useJobsStore();
-  const { fetchRoutes } = useRouteStore();
+  const { fetchRoutes, selectedStatus } = useRouteStore();
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
-
+  console.log("jobData  -> ", jobData);
   const status = jobData?.status;
   const isCompleted = status === "completed";
 
@@ -42,7 +43,7 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
       const updatedJob = await markJobCompleted(jobData.id);
       // Reflect the update in the store locally to avoid double PUT
       patchJobLocally(updatedJob);
-      await fetchRoutes();
+      await fetchRoutes(selectedStatus);
       message.success("Job marked as completed");
     } catch (error) {
       message.error("Failed to mark job as completed");
@@ -72,11 +73,15 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
                 {description}
               </Text>
             )}
-            {jobData?.time_window_start && jobData?.time_window_end && (
-              <Text className="text-xs text-gray-500 leading-tight">
-                {jobData.time_window_start} - {jobData.time_window_end}
-              </Text>
-            )}
+            {jobData &&
+              "time_window_start" in jobData &&
+              jobData.time_window_start &&
+              "time_window_end" in jobData &&
+              jobData.time_window_end && (
+                <Text className="text-xs text-gray-500 leading-tight">
+                  {jobData.time_window_start} - {jobData.time_window_end}
+                </Text>
+              )}
           </div>
         </div>
 

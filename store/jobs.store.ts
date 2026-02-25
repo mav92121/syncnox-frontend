@@ -32,6 +32,7 @@ interface JobsState {
   deleteJobsAction: (jobIds: number[], status: JobStatus) => Promise<void>;
   refreshDraftJobs: () => Promise<void>;
   fetchJobsByDate: (date: string) => Promise<void>;
+  fetchJobsByIds: (jobIds: number[]) => Promise<void>;
   patchJobLocally: (job: Job) => void;
   resetAllJobs: () => void;
 }
@@ -336,15 +337,64 @@ export const useJobsStore = create<JobsState>()(
         }
       },
 
+      fetchJobsByIds: async (jobIds: number[]) => {
+        if (!jobIds || jobIds.length === 0) {
+          set((state) => {
+            state.jobs = [];
+          });
+          return;
+        }
+
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          const jobsData = await fetchJobs({
+            job_ids: jobIds.join(","),
+            limit: 1000,
+          });
+
+          set((state) => {
+            state.jobs = jobsData;
+            state.isLoading = false;
+          });
+        } catch (error) {
+          set((state) => {
+            state.error =
+              error instanceof Error
+                ? error.message
+                : "Failed to fetch jobs by IDs";
+            state.isLoading = false;
+          });
+        }
+      },
+
       patchJobLocally: (job: Job) => {
         set((state) => {
-          state.jobs = state.jobs.map((j) => (j.id === job.id ? job : j));
-          state.draftJobs = state.draftJobs.map((j) =>
-            j.id === job.id ? job : j,
+          const jobExists = state.jobs.some((j) => j.id === job.id);
+          if (jobExists) {
+            state.jobs = state.jobs.map((j) => (j.id === job.id ? job : j));
+          } else {
+            state.jobs.push(job);
+          }
+
+          const draftExists = state.draftJobs.some((j) => j.id === job.id);
+          if (draftExists) {
+            state.draftJobs = state.draftJobs.map((j) =>
+              j.id === job.id ? job : j,
+            );
+          }
+
+          const allDraftExists = state.allDraftJobs.some(
+            (j) => j.id === job.id,
           );
-          state.allDraftJobs = state.allDraftJobs.map((j) =>
-            j.id === job.id ? job : j,
-          );
+          if (allDraftExists) {
+            state.allDraftJobs = state.allDraftJobs.map((j) =>
+              j.id === job.id ? job : j,
+            );
+          }
         });
       },
 
