@@ -254,14 +254,23 @@ export default function JobsList() {
         />
       </Drawer>
 
-      {showCreateRouteModal && (
-        <CreateRouteModal
-          open={showCreateRouteModal}
-          setOpen={setShowCreateRouteModal}
-          selectedJobIds={selectedJobIds}
-          fromAllTab={selectedJobTab === "all_draft"}
-        />
-      )}
+      {showCreateRouteModal &&
+        (() => {
+          const selectedJobs = displayedJobs.filter((job) =>
+            selectedJobIds.includes(job.id),
+          );
+          const uniqueDates = new Set(
+            selectedJobs.map((job) => job.scheduled_date),
+          );
+          return (
+            <CreateRouteModal
+              open={showCreateRouteModal}
+              setOpen={setShowCreateRouteModal}
+              selectedJobIds={selectedJobIds}
+              hasMixedDates={uniqueDates.size > 1}
+            />
+          );
+        })()}
 
       {/* Map View Modal */}
       <Modal

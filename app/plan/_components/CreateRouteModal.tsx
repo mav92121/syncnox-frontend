@@ -33,14 +33,14 @@ interface CreateRouteModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   selectedJobIds: number[];
-  fromAllTab?: boolean;
+  hasMixedDates?: boolean;
 }
 
 const CreateRouteModal = ({
   open,
   setOpen,
   selectedJobIds,
-  fromAllTab = false,
+  hasMixedDates = false,
 }: CreateRouteModalProps) => {
   const [form] = Form.useForm();
   const router = useRouter();
@@ -124,7 +124,7 @@ const CreateRouteModal = ({
 
     try {
       // If coming from the All tab, update all selected jobs' dates first
-      if (fromAllTab) {
+      if (hasMixedDates) {
         await bulkUpdateJobDate(selectedJobIds, scheduledDate);
       }
 
@@ -226,12 +226,12 @@ const CreateRouteModal = ({
             onFinish={handleFinish}
             initialValues={{
               optimization_logic: "minimum_time",
-              ...(fromAllTab ? { scheduled_date: dayjs() } : {}),
+              ...(hasMixedDates ? { scheduled_date: dayjs() } : {}),
             }}
           >
             {/* 1st Row: Route Name & Scheduled Date */}
             <Row gutter={16}>
-              <Col span={fromAllTab ? 14 : 24}>
+              <Col span={hasMixedDates ? 14 : 24}>
                 <Form.Item
                   name="route_name"
                   label="Route Name"
@@ -242,7 +242,7 @@ const CreateRouteModal = ({
                   <Input placeholder="Enter route name" />
                 </Form.Item>
               </Col>
-              {fromAllTab && (
+              {hasMixedDates && (
                 <Col span={10}>
                   <Form.Item
                     name="scheduled_date"
