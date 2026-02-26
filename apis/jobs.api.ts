@@ -51,3 +51,14 @@ export const markJobCompleted = async (jobId: number): Promise<Job> => {
   });
   return response.data;
 };
+
+export const bulkUpdateJobDate = async (
+  jobIds: number[],
+  scheduledDate: string,
+): Promise<{ updated: number; requested: number }> => {
+  const response = await apiClient.post("/jobs/bulk/update-date", {
+    job_ids: jobIds,
+    scheduled_date: scheduledDate,
+  });
+  return response.data;
+};

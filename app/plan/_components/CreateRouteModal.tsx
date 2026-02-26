@@ -10,6 +10,7 @@ import {
   Alert,
   Divider,
   Space,
+  DatePicker,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useDepotStore } from "@/store/depots.store";
@@ -23,6 +24,7 @@ import { useRouter } from "next/navigation";
 import dayjs from "dayjs";
 import { useJobsStore } from "@/store/jobs.store";
 import { useRouteStore } from "@/store/routes.store";
+import { bulkUpdateJobDate } from "@/apis/jobs.api";
 import DepotForm from "@/app/depot/_components/DepotForm";
 import TeamMemberForm from "@/app/team/_components/TeamMemberForm";
 import { DepotPayload } from "@/apis/depots.api";
@@ -31,12 +33,14 @@ interface CreateRouteModalProps {
   open: boolean;
   setOpen: (open: boolean) => void;
   selectedJobIds: number[];
+  hasMixedDates?: boolean;
 }
 
 const CreateRouteModal = ({
   open,
   setOpen,
   selectedJobIds,
+  hasMixedDates = false,
 }: CreateRouteModalProps) => {
   const [form] = Form.useForm();
   const router = useRouter();
@@ -114,13 +118,22 @@ const CreateRouteModal = ({
   const handleFinish = async (values: any) => {
     setIsSubmitting(true);
 
+    const scheduledDate = values.scheduled_date
+      ? dayjs(values.scheduled_date).format("YYYY-MM-DD")
+      : dayjs().format("YYYY-MM-DD");
+
     try {
+      // If coming from the All tab, update all selected jobs' dates first
+      if (hasMixedDates) {
+        await bulkUpdateJobDate(selectedJobIds, scheduledDate);
+      }
+
       await startOptimization({
         route_name: values.route_name,
         depot_id: values.depot_id,
         job_ids: selectedJobIds,
         team_member_ids: values.team_ids,
-        scheduled_date: dayjs().format("YYYY-MM-DD"), // Today's date
+        scheduled_date: scheduledDate,
         optimization_goal: values.optimization_logic,
       });
     } catch (err) {
@@ -211,16 +224,39 @@ const CreateRouteModal = ({
             form={form}
             layout="vertical"
             onFinish={handleFinish}
-            initialValues={{ optimization_logic: "minimum_time" }}
+            initialValues={{
+              optimization_logic: "minimum_time",
+              ...(hasMixedDates ? { scheduled_date: dayjs() } : {}),
+            }}
           >
-            {/* 1st Row: Route Name */}
-            <Form.Item
-              name="route_name"
-              label="Route Name"
-              rules={[{ required: true, message: "Please enter a route name" }]}
-            >
-              <Input placeholder="Enter route name" />
-            </Form.Item>
+            {/* 1st Row: Route Name & Scheduled Date */}
+            <Row gutter={16}>
+              <Col span={hasMixedDates ? 14 : 24}>
+                <Form.Item
+                  name="route_name"
+                  label="Route Name"
+                  rules={[
+                    { required: true, message: "Please enter a route name" },
+                  ]}
+                >
+                  <Input placeholder="Enter route name" />
+                </Form.Item>
+              </Col>
+              {hasMixedDates && (
+                <Col span={10}>
+                  <Form.Item
+                    name="scheduled_date"
+                    label="Scheduled Date"
+                    rules={[
+                      { required: true, message: "Please select a date" },
+                    ]}
+                    tooltip="All selected jobs will be updated to this date"
+                  >
+                    <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
+                  </Form.Item>
+                </Col>
+              )}
+            </Row>
 
             {/* 2nd Row: Optimization Logic & Depot */}
             <Row gutter={16}>
