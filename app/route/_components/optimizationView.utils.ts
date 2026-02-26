@@ -58,7 +58,6 @@ export const generateMapMarkers = (route: Route, jobs: Job[]) => {
 
         return {
           id: `${index}-${stopIndex}`,
-          color: color, // Pass color string to be handled by GoogleMaps
           position: { lat: stop.latitude, lng: stop.longitude },
           label: {
             text: stopIndex.toString(),
