@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Typography,
@@ -12,6 +13,7 @@ import {
   Tag,
   Avatar,
   Space,
+  Spin,
 } from "antd";
 import {
   FileTextOutlined,
@@ -20,9 +22,7 @@ import {
   ClockCircleOutlined,
   FileAddOutlined,
   RocketOutlined,
-  SendOutlined,
   TeamOutlined,
-  UploadOutlined,
   EnvironmentOutlined,
   UserOutlined,
   CalendarOutlined,
@@ -31,60 +31,26 @@ import {
   FieldTimeOutlined,
 } from "@ant-design/icons";
 import { useIndexStore } from "@/store/index.store";
+import {
+  useDashboardStore,
+  defaultDashboard,
+} from "@/store/dashboard.store";
+import { RecentRoute } from "@/types/dashboard.type";
 
 const { Title, Text } = Typography;
-
-// Mock data
-const mockRecentRoutes = [
-  {
-    key: "1",
-    name: "Downtown Deliveries",
-    driver: "John Smith",
-    stops: 12,
-    completed: 10,
-    status: "in_progress",
-  },
-  {
-    key: "2",
-    name: "Suburb Express",
-    driver: "Sarah Johnson",
-    stops: 8,
-    completed: 8,
-    status: "completed",
-  },
-  {
-    key: "3",
-    name: "Industrial Zone",
-    driver: "Mike Chen",
-    stops: 15,
-    completed: 7,
-    status: "in_progress",
-  },
-  {
-    key: "4",
-    name: "Airport Pickups",
-    driver: "Lisa Park",
-    stops: 6,
-    completed: 0,
-    status: "scheduled",
-  },
-];
-
-const mockDrivers = [
-  { name: "John Smith", completionRate: 98, onTime: 96 },
-  { name: "Sarah Johnson", completionRate: 95, onTime: 94 },
-  { name: "Mike Chen", completionRate: 92, onTime: 89 },
-];
-
-const mockUpcoming = [
-  { date: "Dec 29", jobs: 18, routes: 3 },
-  { date: "Dec 30", jobs: 24, routes: 4 },
-  { date: "Dec 31", jobs: 12, routes: 2 },
-];
 
 export default function DashboardView() {
   const router = useRouter();
   const { setCurrentTab } = useIndexStore();
+  const { dashboardData, isLoading, fetchDashboard } = useDashboardStore();
+
+  useEffect(() => {
+    fetchDashboard();
+  }, [fetchDashboard]);
+
+  const data = dashboardData ?? defaultDashboard;
+  const { kpi, optimization_impact, recent_routes, top_drivers, upcoming } =
+    data;
 
   const quickActions = [
     {
@@ -138,7 +104,7 @@ export default function DashboardView() {
     switch (status) {
       case "completed":
         return "success";
-      case "in_progress":
+      case "in_transit":
         return "processing";
       case "scheduled":
         return "default";
@@ -151,7 +117,7 @@ export default function DashboardView() {
     switch (status) {
       case "completed":
         return "#52c41a";
-      case "in_progress":
+      case "in_transit":
         return "#1890ff";
       case "scheduled":
         return "#d9d9d9";
@@ -172,10 +138,14 @@ export default function DashboardView() {
       title: "Progress",
       key: "progress",
       width: 140,
-      render: (_: unknown, record: (typeof mockRecentRoutes)[0]) => (
+      render: (_: unknown, record: RecentRoute) => (
         <Flex align="center" gap={8}>
           <Progress
-            percent={Math.round((record.completed / record.stops) * 100)}
+            percent={
+              record.stops > 0
+                ? Math.round((record.completed / record.stops) * 100)
+                : 0
+            }
             size="small"
             strokeColor={getStatusStrokeColor(record.status)}
             style={{ width: 60, marginBottom: 0 }}
@@ -198,307 +168,343 @@ export default function DashboardView() {
   ];
 
   return (
-    <div className="flex flex-col h-full">
-      <Title level={4} className="m-0 mb-4">
-        Dashboard
-      </Title>
+    <Spin spinning={isLoading} size="large">
+      <div className="flex flex-col h-full">
+        <Title level={4} className="m-0 mb-4">
+          Dashboard
+        </Title>
 
-      {/* KPI Cards Row */}
-      <Row gutter={[16, 16]} className="mb-4">
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card size="small" styles={{ body: { padding: 16 } }}>
-            <Statistic
-              title="Total Jobs"
-              value={0}
-              prefix={<FileTextOutlined style={{ color: "#333" }} />}
-              styles={{ content: { color: "#333" } }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card size="small" styles={{ body: { padding: 16 } }}>
-            <Statistic
-              title="Active Routes"
-              value={0}
-              prefix={<CarOutlined style={{ color: "#333" }} />}
-              styles={{ content: { color: "#333" } }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card size="small" styles={{ body: { padding: 16 } }}>
-            <Statistic
-              title="Completed"
-              value={0}
-              prefix={<CheckCircleOutlined style={{ color: "#333" }} />}
-              styles={{ content: { color: "#333" } }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card size="small" styles={{ body: { padding: 16 } }}>
-            <Statistic
-              title="Scheduled"
-              value={0}
-              prefix={<ClockCircleOutlined style={{ color: "#333" }} />}
-              styles={{ content: { color: "#333" } }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card size="small" styles={{ body: { padding: 16 } }}>
-            <Statistic
-              title="Drivers"
-              value={0}
-              prefix={<TeamOutlined style={{ color: "#333" }} />}
-              styles={{ content: { color: "#333" } }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} md={8} lg={4}>
-          <Card size="small" styles={{ body: { padding: 16 } }}>
-            <Statistic
-              title="Depots"
-              value={0}
-              prefix={<EnvironmentOutlined style={{ color: "#333" }} />}
-              styles={{ content: { color: "#333" } }}
-            />
-          </Card>
-        </Col>
-      </Row>
+        {/* KPI Cards Row */}
+        <Row gutter={[16, 16]} className="mb-4">
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card size="small" styles={{ body: { padding: 16 } }}>
+              <Statistic
+                title="Total Jobs"
+                value={kpi.total_jobs}
+                prefix={<FileTextOutlined style={{ color: "#333" }} />}
+                styles={{ content: { color: "#333" } }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card size="small" styles={{ body: { padding: 16 } }}>
+              <Statistic
+                title="Active Routes"
+                value={kpi.active_routes}
+                prefix={<CarOutlined style={{ color: "#333" }} />}
+                styles={{ content: { color: "#333" } }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card size="small" styles={{ body: { padding: 16 } }}>
+              <Statistic
+                title="Completed"
+                value={kpi.completed_jobs}
+                prefix={<CheckCircleOutlined style={{ color: "#333" }} />}
+                styles={{ content: { color: "#333" } }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card size="small" styles={{ body: { padding: 16 } }}>
+              <Statistic
+                title="Scheduled"
+                value={kpi.scheduled_jobs}
+                prefix={<ClockCircleOutlined style={{ color: "#333" }} />}
+                styles={{ content: { color: "#333" } }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card size="small" styles={{ body: { padding: 16 } }}>
+              <Statistic
+                title="Drivers"
+                value={kpi.total_drivers}
+                prefix={<TeamOutlined style={{ color: "#333" }} />}
+                styles={{ content: { color: "#333" } }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card size="small" styles={{ body: { padding: 16 } }}>
+              <Statistic
+                title="Depots"
+                value={kpi.total_depots}
+                prefix={<EnvironmentOutlined style={{ color: "#333" }} />}
+                styles={{ content: { color: "#333" } }}
+              />
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Quick Actions + Optimization Impact Row */}
-      <Row gutter={[16, 16]} className="mb-4">
-        <Col span={14}>
-          <Card
-            size="small"
-            title={
-              <Flex align="center" gap={8}>
-                <ThunderboltOutlined style={{ color: "#333" }} />
-                Quick Actions
-              </Flex>
-            }
-            styles={{ body: { padding: 16 } }}
-          >
-            <Flex gap={16} wrap="wrap">
-              {quickActions.map((action, index) => (
-                <div
-                  key={index}
-                  onClick={action.onClick}
-                  style={{
-                    width: 100,
-                    height: 80,
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    border: "1px solid #e0e0e0",
-                    backgroundColor: "#fafafa",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = "#f0f0f0";
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "#fafafa";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
-                >
-                  <span style={{ color: "#333", marginBottom: 6 }}>
-                    {action.icon}
-                  </span>
-                  <Text
+        {/* Quick Actions + Optimization Impact Row */}
+        <Row gutter={[16, 16]} className="mb-4">
+          <Col span={14}>
+            <Card
+              size="small"
+              title={
+                <Flex align="center" gap={8}>
+                  <ThunderboltOutlined style={{ color: "#333" }} />
+                  Quick Actions
+                </Flex>
+              }
+              styles={{ body: { padding: 16 } }}
+            >
+              <Flex gap={16} wrap="wrap">
+                {quickActions.map((action, index) => (
+                  <div
+                    key={index}
+                    onClick={action.onClick}
                     style={{
-                      fontSize: 11,
-                      color: "#333",
-                      fontWeight: 500,
+                      width: 100,
+                      height: 80,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      border: "1px solid #e0e0e0",
+                      backgroundColor: "#fafafa",
+                      transition: "all 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f0f0f0";
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#fafafa";
+                      e.currentTarget.style.transform = "translateY(0)";
                     }}
                   >
-                    {action.label}
-                  </Text>
-                </div>
-              ))}
-            </Flex>
-          </Card>
-        </Col>
-        <Col span={10}>
-          <Card
-            size="small"
-            title={
-              <Flex align="center" gap={8}>
-                <DashboardOutlined style={{ color: "#333" }} />
-                Optimization Impact
-              </Flex>
-            }
-            styles={{ body: { padding: 16 } }}
-          >
-            <Flex justify="space-around">
-              <div className="text-center">
-                <DashboardOutlined style={{ color: "#333", fontSize: 24 }} />
-                <Text
-                  style={{
-                    display: "block",
-                    fontSize: 20,
-                    fontWeight: "bold",
-                    color: "#333",
-                  }}
-                >
-                  0 km
-                </Text>
-                <Text type="secondary" style={{ fontSize: 11 }}>
-                  Distance Saved
-                </Text>
-              </div>
-              <div className="text-center">
-                <FieldTimeOutlined style={{ color: "#333", fontSize: 24 }} />
-                <Text
-                  style={{
-                    display: "block",
-                    fontSize: 20,
-                    fontWeight: "bold",
-                    color: "#333",
-                  }}
-                >
-                  0 hrs
-                </Text>
-                <Text type="secondary" style={{ fontSize: 11 }}>
-                  Time Saved
-                </Text>
-              </div>
-              <div className="text-center">
-                <CarOutlined style={{ color: "#333", fontSize: 24 }} />
-                <Text
-                  style={{
-                    display: "block",
-                    fontSize: 20,
-                    fontWeight: "bold",
-                    color: "#333",
-                  }}
-                >
-                  0
-                </Text>
-                <Text type="secondary" style={{ fontSize: 11 }}>
-                  Vehicles Saved
-                </Text>
-              </div>
-            </Flex>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Bottom Section - Tables and Cards */}
-      <Row gutter={[16, 16]} className="flex-1 min-h-0">
-        <Col span={12}>
-          <Card
-            size="small"
-            title={
-              <Flex align="center" gap={8}>
-                <CarOutlined style={{ color: "#333" }} />
-                Recent Routes
-              </Flex>
-            }
-            styles={{ body: { padding: 0 } }}
-            style={{ height: "100%" }}
-          >
-            <Table
-              dataSource={mockRecentRoutes}
-              columns={routeColumns}
-              pagination={false}
-              size="small"
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card
-            size="small"
-            title={
-              <Flex align="center" gap={8}>
-                <UserOutlined style={{ color: "#333" }} />
-                Top Drivers
-              </Flex>
-            }
-            styles={{ body: { padding: 12 } }}
-            style={{ height: "100%" }}
-          >
-            <Space orientation="vertical" style={{ width: "100%" }} size={12}>
-              {mockDrivers.map((driver, index) => (
-                <Flex key={index} justify="space-between" align="center">
-                  <Flex align="center" gap={8}>
-                    <Avatar
-                      size="small"
-                      icon={<UserOutlined />}
-                      style={{
-                        backgroundColor:
-                          index === 0 ? "#333" : index === 1 ? "#666" : "#999",
-                      }}
-                    />
-                    <div>
-                      <Text strong style={{ fontSize: 12, display: "block" }}>
-                        {driver.name}
-                      </Text>
-                      <Text type="secondary" style={{ fontSize: 10 }}>
-                        {driver.completionRate}% completion
-                      </Text>
-                    </div>
-                  </Flex>
-                  <Progress
-                    type="circle"
-                    percent={driver.onTime}
-                    size={28}
-                    strokeColor="#333"
-                    format={(p) => <span style={{ fontSize: 8 }}>{p}%</span>}
-                  />
-                </Flex>
-              ))}
-            </Space>
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card
-            size="small"
-            title={
-              <Flex align="center" gap={8}>
-                <CalendarOutlined style={{ color: "#333" }} />
-                Upcoming
-              </Flex>
-            }
-            styles={{ body: { padding: 12 } }}
-            style={{ height: "100%" }}
-          >
-            <Space orientation="vertical" style={{ width: "100%" }} size={12}>
-              {mockUpcoming.map((item, index) => (
-                <Flex
-                  key={index}
-                  justify="space-between"
-                  align="center"
-                  style={{
-                    padding: "8px 0",
-                    borderBottom:
-                      index < mockUpcoming.length - 1
-                        ? "1px solid #f0f0f0"
-                        : "none",
-                  }}
-                >
-                  <div>
-                    <Text strong style={{ fontSize: 12 }}>
-                      {item.date}
-                    </Text>
+                    <span style={{ color: "#333", marginBottom: 6 }}>
+                      {action.icon}
+                    </span>
                     <Text
-                      type="secondary"
-                      style={{ fontSize: 10, display: "block" }}
+                      style={{
+                        fontSize: 11,
+                        color: "#333",
+                        fontWeight: 500,
+                      }}
                     >
-                      {item.jobs} jobs • {item.routes} routes
+                      {action.label}
                     </Text>
                   </div>
-                  <Tag color="default">{item.jobs}</Tag>
+                ))}
+              </Flex>
+            </Card>
+          </Col>
+          <Col span={10}>
+            <Card
+              size="small"
+              title={
+                <Flex align="center" gap={8}>
+                  <DashboardOutlined style={{ color: "#333" }} />
+                  Optimization Impact
                 </Flex>
-              ))}
-            </Space>
-          </Card>
-        </Col>
-      </Row>
-    </div>
+              }
+              styles={{ body: { padding: 16 } }}
+            >
+              <Flex justify="space-around">
+                <div className="text-center">
+                  <DashboardOutlined
+                    style={{ color: "#333", fontSize: 24 }}
+                  />
+                  <Text
+                    style={{
+                      display: "block",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      color: "#333",
+                    }}
+                  >
+                    {optimization_impact.total_distance_saved_km} km
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    Distance Saved
+                  </Text>
+                </div>
+                <div className="text-center">
+                  <FieldTimeOutlined
+                    style={{ color: "#333", fontSize: 24 }}
+                  />
+                  <Text
+                    style={{
+                      display: "block",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      color: "#333",
+                    }}
+                  >
+                    {optimization_impact.total_time_saved_hours} hrs
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    Time Saved
+                  </Text>
+                </div>
+                <div className="text-center">
+                  <CarOutlined style={{ color: "#333", fontSize: 24 }} />
+                  <Text
+                    style={{
+                      display: "block",
+                      fontSize: 20,
+                      fontWeight: "bold",
+                      color: "#333",
+                    }}
+                  >
+                    {optimization_impact.vehicles_saved}
+                  </Text>
+                  <Text type="secondary" style={{ fontSize: 11 }}>
+                    Vehicles Saved
+                  </Text>
+                </div>
+              </Flex>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Bottom Section - Tables and Cards */}
+        <Row gutter={[16, 16]} className="flex-1 min-h-0">
+          <Col span={12}>
+            <Card
+              size="small"
+              title={
+                <Flex align="center" gap={8}>
+                  <CarOutlined style={{ color: "#333" }} />
+                  Recent Routes
+                </Flex>
+              }
+              styles={{ body: { padding: 0 } }}
+              style={{ height: "100%" }}
+            >
+              <Table
+                dataSource={recent_routes}
+                columns={routeColumns}
+                pagination={false}
+                size="small"
+                locale={{ emptyText: "No routes yet" }}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card
+              size="small"
+              title={
+                <Flex align="center" gap={8}>
+                  <UserOutlined style={{ color: "#333" }} />
+                  Top Drivers
+                </Flex>
+              }
+              styles={{ body: { padding: 12 } }}
+              style={{ height: "100%" }}
+            >
+              {top_drivers.length === 0 ? (
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  No driver data yet
+                </Text>
+              ) : (
+                <Space
+                  direction="vertical"
+                  style={{ width: "100%" }}
+                  size={12}
+                >
+                  {top_drivers.map((driver, index) => (
+                    <Flex key={index} justify="space-between" align="center">
+                      <Flex align="center" gap={8}>
+                        <Avatar
+                          size="small"
+                          icon={<UserOutlined />}
+                          style={{
+                            backgroundColor:
+                              index === 0
+                                ? "#333"
+                                : index === 1
+                                  ? "#666"
+                                  : "#999",
+                          }}
+                        />
+                        <div>
+                          <Text
+                            strong
+                            style={{ fontSize: 12, display: "block" }}
+                          >
+                            {driver.name}
+                          </Text>
+                          <Text type="secondary" style={{ fontSize: 10 }}>
+                            {driver.completion_rate}% completion
+                          </Text>
+                        </div>
+                      </Flex>
+                      <Progress
+                        type="circle"
+                        percent={driver.on_time_rate}
+                        size={28}
+                        strokeColor="#333"
+                        format={(p) => (
+                          <span style={{ fontSize: 8 }}>{p}%</span>
+                        )}
+                      />
+                    </Flex>
+                  ))}
+                </Space>
+              )}
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card
+              size="small"
+              title={
+                <Flex align="center" gap={8}>
+                  <CalendarOutlined style={{ color: "#333" }} />
+                  Upcoming
+                </Flex>
+              }
+              styles={{ body: { padding: 12 } }}
+              style={{ height: "100%" }}
+            >
+              {upcoming.length === 0 ? (
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  No upcoming schedule
+                </Text>
+              ) : (
+                <Space
+                  direction="vertical"
+                  style={{ width: "100%" }}
+                  size={12}
+                >
+                  {upcoming.map((item, index) => (
+                    <Flex
+                      key={index}
+                      justify="space-between"
+                      align="center"
+                      style={{
+                        padding: "8px 0",
+                        borderBottom:
+                          index < upcoming.length - 1
+                            ? "1px solid #f0f0f0"
+                            : "none",
+                      }}
+                    >
+                      <div>
+                        <Text strong style={{ fontSize: 12 }}>
+                          {item.date}
+                        </Text>
+                        <Text
+                          type="secondary"
+                          style={{ fontSize: 10, display: "block" }}
+                        >
+                          {item.jobs} jobs &bull; {item.routes} routes
+                        </Text>
+                      </div>
+                      <Tag color="default">{item.jobs}</Tag>
+                    </Flex>
+                  ))}
+                </Space>
+              )}
+            </Card>
+          </Col>
+        </Row>
+      </div>
+    </Spin>
   );
 }
