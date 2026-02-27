@@ -42,7 +42,7 @@ const { Title, Text } = Typography;
 export default function DashboardView() {
   const router = useRouter();
   const { setCurrentTab } = useIndexStore();
-  const { dashboardData, isLoading, fetchDashboard } = useDashboardStore();
+  const { dashboardData, isLoading, error, fetchDashboard } = useDashboardStore();
 
   useEffect(() => {
     fetchDashboard();
@@ -143,7 +143,13 @@ export default function DashboardView() {
           <Progress
             percent={
               record.stops > 0
-                ? Math.round((record.completed / record.stops) * 100)
+                ? Math.min(
+                    100,
+                    Math.max(
+                      0,
+                      Math.round((record.completed / record.stops) * 100),
+                    ),
+                  )
                 : 0
             }
             size="small"
@@ -170,6 +176,11 @@ export default function DashboardView() {
   return (
     <Spin spinning={isLoading} size="large">
       <div className="flex flex-col h-full">
+        {error && (
+          <Text type="danger" className="mb-3 block">
+            {error}
+          </Text>
+        )}
         <Title level={4} className="m-0 mb-4">
           Dashboard
         </Title>
@@ -253,8 +264,10 @@ export default function DashboardView() {
             >
               <Flex gap={16} wrap="wrap">
                 {quickActions.map((action, index) => (
-                  <div
-                    key={index}
+                  <button
+                    key={action.label}
+                    type="button"
+                    aria-label={action.label}
                     onClick={action.onClick}
                     style={{
                       width: 100,
@@ -264,6 +277,7 @@ export default function DashboardView() {
                       alignItems: "center",
                       justifyContent: "center",
                       cursor: "pointer",
+                      padding: 0,
                       border: "1px solid #e0e0e0",
                       backgroundColor: "#fafafa",
                       transition: "all 0.2s ease",
@@ -289,7 +303,7 @@ export default function DashboardView() {
                     >
                       {action.label}
                     </Text>
-                  </div>
+                  </button>
                 ))}
               </Flex>
             </Card>
