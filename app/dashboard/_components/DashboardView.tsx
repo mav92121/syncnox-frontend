@@ -190,16 +190,6 @@ export default function DashboardView() {
           <Col xs={24} sm={12} md={8} lg={4}>
             <Card size="small" styles={{ body: { padding: 16 } }}>
               <Statistic
-                title="Total Jobs"
-                value={kpi.total_jobs}
-                prefix={<FileTextOutlined style={{ color: "#333" }} />}
-                styles={{ content: { color: "#333" } }}
-              />
-            </Card>
-          </Col>
-          <Col xs={24} sm={12} md={8} lg={4}>
-            <Card size="small" styles={{ body: { padding: 16 } }}>
-              <Statistic
                 title="Active Routes"
                 value={kpi.active_routes}
                 prefix={<CarOutlined style={{ color: "#333" }} />}
@@ -210,7 +200,17 @@ export default function DashboardView() {
           <Col xs={24} sm={12} md={8} lg={4}>
             <Card size="small" styles={{ body: { padding: 16 } }}>
               <Statistic
-                title="Completed"
+                title="Total Jobs"
+                value={kpi.total_jobs}
+                prefix={<FileTextOutlined style={{ color: "#333" }} />}
+                styles={{ content: { color: "#333" } }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={4}>
+            <Card size="small" styles={{ body: { padding: 16 } }}>
+              <Statistic
+                title="Completed Jobs"
                 value={kpi.completed_jobs}
                 prefix={<CheckCircleOutlined style={{ color: "#333" }} />}
                 styles={{ content: { color: "#333" } }}
@@ -220,7 +220,7 @@ export default function DashboardView() {
           <Col xs={24} sm={12} md={8} lg={4}>
             <Card size="small" styles={{ body: { padding: 16 } }}>
               <Statistic
-                title="Scheduled"
+                title="Scheduled Jobs"
                 value={kpi.scheduled_jobs}
                 prefix={<ClockCircleOutlined style={{ color: "#333" }} />}
                 styles={{ content: { color: "#333" } }}
