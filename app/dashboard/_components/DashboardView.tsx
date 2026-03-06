@@ -31,10 +31,7 @@ import {
   FieldTimeOutlined,
 } from "@ant-design/icons";
 import { useIndexStore } from "@/store/index.store";
-import {
-  useDashboardStore,
-  defaultDashboard,
-} from "@/store/dashboard.store";
+import { useDashboardStore, defaultDashboard } from "@/store/dashboard.store";
 import { RecentRoute } from "@/types/dashboard.type";
 
 const { Title, Text } = Typography;
@@ -42,7 +39,8 @@ const { Title, Text } = Typography;
 export default function DashboardView() {
   const router = useRouter();
   const { setCurrentTab } = useIndexStore();
-  const { dashboardData, isLoading, error, fetchDashboard } = useDashboardStore();
+  const { dashboardData, isLoading, error, fetchDashboard } =
+    useDashboardStore();
 
   useEffect(() => {
     fetchDashboard();
@@ -131,7 +129,15 @@ export default function DashboardView() {
       title: "Route",
       dataIndex: "name",
       key: "name",
-      render: (text: string) => <Text strong>{text}</Text>,
+      render: (text: string, record: RecentRoute) => (
+        <Text
+          strong
+          style={{ cursor: "pointer", color: "#1677ff" }}
+          onClick={() => router.push(`/route/${record.key}`)}
+        >
+          {text}
+        </Text>
+      ),
     },
     { title: "Driver", dataIndex: "driver", key: "driver" },
     {
@@ -321,9 +327,7 @@ export default function DashboardView() {
             >
               <Flex justify="space-around">
                 <div className="text-center">
-                  <DashboardOutlined
-                    style={{ color: "#333", fontSize: 24 }}
-                  />
+                  <DashboardOutlined style={{ color: "#333", fontSize: 24 }} />
                   <Text
                     style={{
                       display: "block",
@@ -339,9 +343,7 @@ export default function DashboardView() {
                   </Text>
                 </div>
                 <div className="text-center">
-                  <FieldTimeOutlined
-                    style={{ color: "#333", fontSize: 24 }}
-                  />
+                  <FieldTimeOutlined style={{ color: "#333", fontSize: 24 }} />
                   <Text
                     style={{
                       display: "block",
@@ -417,11 +419,7 @@ export default function DashboardView() {
                   No driver data yet
                 </Text>
               ) : (
-                <Space
-                  direction="vertical"
-                  style={{ width: "100%" }}
-                  size={12}
-                >
+                <Space direction="vertical" style={{ width: "100%" }} size={12}>
                   {top_drivers.map((driver, index) => (
                     <Flex key={index} justify="space-between" align="center">
                       <Flex align="center" gap={8}>
@@ -481,11 +479,7 @@ export default function DashboardView() {
                   No upcoming schedule
                 </Text>
               ) : (
-                <Space
-                  direction="vertical"
-                  style={{ width: "100%" }}
-                  size={12}
-                >
+                <Space direction="vertical" style={{ width: "100%" }} size={12}>
                   {upcoming.map((item, index) => (
                     <Flex
                       key={index}
