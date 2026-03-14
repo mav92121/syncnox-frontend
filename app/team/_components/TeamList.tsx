@@ -27,16 +27,7 @@ const TeamList = () => {
   }, {} as Record<number, string>);
 
   const columns: ColDef<Team>[] = [
-    {
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 50,
-      pinned: "left",
-      lockPosition: true,
-      filter: false,
-      resizable: false,
-      sortable: false,
-    },
+
     {
       field: "id",
       headerName: "ID",
