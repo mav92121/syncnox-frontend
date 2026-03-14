@@ -196,6 +196,7 @@ export default function RoutesView() {
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
         >
+          <Radio.Button value="all">All</Radio.Button>
           <Radio.Button value="scheduled">Scheduled</Radio.Button>
           <Radio.Button value="in_transit">In Transit</Radio.Button>
           <Radio.Button value="completed">Completed</Radio.Button>
