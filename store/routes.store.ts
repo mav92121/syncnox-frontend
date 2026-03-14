@@ -27,7 +27,7 @@ export const useRouteStore = create(
       isLoading: false,
       error: null,
       hasFetched: false,
-      selectedStatus: "scheduled",
+      selectedStatus: "all",
 
       fetchRoutes: async (status?: string) => {
         set({ isLoading: true });
@@ -44,11 +44,11 @@ export const useRouteStore = create(
       initializeRoutes: async () => {
         const { hasFetched, isLoading, selectedStatus } = get();
         if (hasFetched || isLoading) return;
-        await get().fetchRoutes(selectedStatus);
+        await get().fetchRoutes(selectedStatus === "all" ? undefined : selectedStatus);
       },
       setSelectedStatus: (status: string) => {
         set({ selectedStatus: status });
-        get().fetchRoutes(status);
+        get().fetchRoutes(status === "all" ? undefined : status);
       },
       setCurrentRoute: (route: Route | null) => set({ currentRoute: route }),
       updateRoute: (updatedRoute: Route) => {
