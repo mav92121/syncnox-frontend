@@ -128,6 +128,47 @@ export default function BaseTable<TData = any>({
     [defaultColDef],
   );
 
+  // Prevent column resizing from resetting when columnDefs updates by converting
+  // explicitly set 'width' and 'flex' into 'initialWidth' and 'initialFlex'.
+  const processedColumnDefs = useMemo(() => {
+    if (!columnDefs) return columnDefs;
+    return columnDefs.map((col) => {
+      const newCol = { ...col } as any;
+      if (newCol.width !== undefined && newCol.initialWidth === undefined) {
+        newCol.initialWidth = newCol.width;
+        delete newCol.width;
+      }
+      if (newCol.flex !== undefined && newCol.initialFlex === undefined) {
+        newCol.initialFlex = newCol.flex;
+        delete newCol.flex;
+      }
+      return newCol as ColDef<TData>;
+    });
+  }, [columnDefs]);
+
+  // Ensure "select all" only selects current page when pagination is enabled
+  const processedRowSelection = useMemo(() => {
+    if (!rowSelection) return undefined;
+
+    if (rowSelection === "multiple") {
+      return {
+        mode: "multiRow",
+        ...(pagination ? { selectAll: "currentPage" } : {}),
+      };
+    }
+
+    if (typeof rowSelection === "object" && rowSelection.mode === "multiRow") {
+      return {
+        ...rowSelection,
+        ...(pagination && !rowSelection.selectAll
+          ? { selectAll: "currentPage" }
+          : {}),
+      };
+    }
+
+    return rowSelection;
+  }, [rowSelection, pagination]);
+
   // Loading state
   if (loading) {
     return (
@@ -170,10 +211,11 @@ export default function BaseTable<TData = any>({
     <div className={containerClassName} style={containerStyle}>
       <div className={`h-full w-full ${gridClassName}`} style={gridStyle}>
         <AgGridReact
-          columnDefs={columnDefs}
+          columnDefs={processedColumnDefs}
           rowData={rowData}
           defaultColDef={defaultColumnDef}
-          rowSelection={rowSelection}
+          rowSelection={processedRowSelection}
+          // rowSelection={rowSelection}
           suppressRowClickSelection={true}
           rowHeight={32}
           theme={theme || defaultTheme}

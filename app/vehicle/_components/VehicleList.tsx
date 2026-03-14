@@ -26,16 +26,7 @@ const VehicleList = () => {
   const [editVehicleData, setEditVehicleData] = useState<Vehicle | null>(null);
 
   const columns: ColDef<Vehicle>[] = [
-    {
-      checkboxSelection: true,
-      headerCheckboxSelection: true,
-      width: 50,
-      pinned: "left",
-      lockPosition: true,
-      filter: false,
-      resizable: false,
-      sortable: false,
-    },
+
     {
       field: "id",
       headerName: "ID",
