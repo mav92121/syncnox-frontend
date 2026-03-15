@@ -61,14 +61,13 @@ const theme: ThemeConfig = {
       fontSize: 12,
     },
     Checkbox: {
-      // Fix checkbox border and focus styles
-      controlHeight: 20,
-      borderRadiusSM: 5,
-      controlOutlineWidth: 0.5,
-      controlOutline: "#003220",
+      // Match Checkbox UI exactly with AG Grid Table
+      controlInteractiveSize: 16,
+      borderRadiusSM: 0,
+      controlOutlineWidth: 0,
       colorPrimary: "#003220",
-      colorBorder: "#d9d9d9",
-      colorBorderSecondary: "#f0f0f0",
+      colorPrimaryHover: "#003220",
+      colorBorder: "#e5e7eb",
       fontSize: 12,
     },
     Table: {

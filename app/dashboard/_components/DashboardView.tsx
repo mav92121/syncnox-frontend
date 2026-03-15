@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Typography,
@@ -14,7 +14,9 @@ import {
   Avatar,
   Space,
   Spin,
+  DatePicker,
 } from "antd";
+import dayjs, { Dayjs } from "dayjs";
 import {
   FileTextOutlined,
   CarOutlined,
@@ -33,6 +35,8 @@ import {
 import { useIndexStore } from "@/store/index.store";
 import { useDashboardStore, defaultDashboard } from "@/store/dashboard.store";
 import { RecentRoute } from "@/types/dashboard.type";
+import { fetchRoutes } from "@/apis/routes.api";
+import { AllRoutes } from "@/types/routes.type";
 
 const { Title, Text } = Typography;
 
@@ -41,10 +45,31 @@ export default function DashboardView() {
   const { setCurrentTab } = useIndexStore();
   const { dashboardData, isLoading, error, fetchDashboard } =
     useDashboardStore();
+  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
+  const [selectedDateRoutes, setSelectedDateRoutes] = useState<AllRoutes[]>([]);
+  const [isLoadingRoutes, setIsLoadingRoutes] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+
+  const handleDateChange = async (date: Dayjs | null) => {
+    setSelectedDate(date);
+    if (date) {
+      setIsLoadingRoutes(true);
+      try {
+        const formattedDate = date.format("YYYY-MM-DD");
+        const routes = await fetchRoutes(undefined, formattedDate);
+        setSelectedDateRoutes(routes);
+      } catch (error) {
+        console.error("Failed to fetch routes for date:", error);
+      } finally {
+        setIsLoadingRoutes(false);
+      }
+    } else {
+      setSelectedDateRoutes([]);
+    }
+  };
 
   const data = dashboardData ?? defaultDashboard;
   const { kpi, optimization_impact, recent_routes, top_drivers, upcoming } =
@@ -466,49 +491,101 @@ export default function DashboardView() {
             <Card
               size="small"
               title={
-                <Flex align="center" gap={8}>
-                  <CalendarOutlined style={{ color: "#333" }} />
-                  Upcoming
+                <Flex align="center" justify="space-between" style={{ width: "100%" }}>
+                  <Flex align="center" gap={8}>
+                    <CalendarOutlined style={{ color: "#333" }} />
+                    Upcoming
+                  </Flex>
+                  <DatePicker 
+                    size="small" 
+                    onChange={handleDateChange} 
+                    value={selectedDate}
+                    placeholder="Select Date"
+                    style={{ width: 120, fontWeight: "normal" }}
+                    allowClear
+                  />
                 </Flex>
               }
               styles={{ body: { padding: 12 } }}
               style={{ height: "100%" }}
             >
-              {upcoming.length === 0 ? (
-                <Text type="secondary" style={{ fontSize: 12 }}>
-                  No upcoming schedule
-                </Text>
-              ) : (
-                <Space direction="vertical" style={{ width: "100%" }} size={12}>
-                  {upcoming.map((item, index) => (
-                    <Flex
-                      key={index}
-                      justify="space-between"
-                      align="center"
-                      style={{
-                        padding: "8px 0",
-                        borderBottom:
-                          index < upcoming.length - 1
-                            ? "1px solid #f0f0f0"
-                            : "none",
-                      }}
-                    >
-                      <div>
-                        <Text strong style={{ fontSize: 12 }}>
-                          {item.date}
-                        </Text>
-                        <Text
-                          type="secondary"
-                          style={{ fontSize: 10, display: "block" }}
-                        >
-                          {item.jobs} jobs &bull; {item.routes} routes
-                        </Text>
-                      </div>
-                      <Tag color="default">{item.jobs}</Tag>
+              <div style={{ maxHeight: "250px", overflowY: "auto", overflowX: "hidden", paddingRight: 8 }}>
+                {selectedDate ? (
+                  isLoadingRoutes ? (
+                    <Flex justify="center" align="center" style={{ height: "100%", padding: 20 }}>
+                       <Spin />
                     </Flex>
-                  ))}
-                </Space>
-              )}
+                  ) : selectedDateRoutes.length === 0 ? (
+                    <Text type="secondary" style={{ fontSize: 12 }}>
+                      No routes found for {selectedDate.format("MMM D")}
+                    </Text>
+                  ) : (
+                    <Space direction="vertical" style={{ width: "100%" }} size={8}>
+                      {selectedDateRoutes.map((route: AllRoutes) => (
+                        <Flex
+                          key={route.id}
+                          justify="space-between"
+                          align="center"
+                          style={{
+                            padding: "8px 0",
+                            borderBottom: "1px solid #f0f0f0",
+                          }}
+                        >
+                           <div>
+                            <Text
+                              strong
+                              style={{ cursor: "pointer", color: "#1677ff", fontSize: 12, display: "block" }}
+                              onClick={() => router.push(`/route/${route.optimization_id}`)}
+                            >
+                              {route.name}
+                            </Text>
+                            <Text type="secondary" style={{ fontSize: 10 }}>
+                               {route.total_stops} stops &bull; {route.assigned_team_members && route.assigned_team_members.length > 0 ? route.assigned_team_members.map((m: any) => m.name).join(", ") : "Unassigned"}
+                            </Text>
+                          </div>
+                          <Tag color={getStatusColor(route.status)} style={{ fontSize: 10 }}>
+                            {route.status.replace("_", " ")}
+                          </Tag>
+                        </Flex>
+                      ))}
+                    </Space>
+                  )
+                ) : upcoming.length === 0 ? (
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    No upcoming schedule
+                  </Text>
+                ) : (
+                  <Space direction="vertical" style={{ width: "100%" }} size={12}>
+                    {upcoming.map((item, index) => (
+                      <Flex
+                        key={index}
+                        justify="space-between"
+                        align="center"
+                        style={{
+                          padding: "8px 0",
+                          borderBottom:
+                            index < upcoming.length - 1
+                              ? "1px solid #f0f0f0"
+                              : "none",
+                        }}
+                      >
+                        <div>
+                          <Text strong style={{ fontSize: 12 }}>
+                            {item.date}
+                          </Text>
+                          <Text
+                            type="secondary"
+                            style={{ fontSize: 10, display: "block" }}
+                          >
+                            {item.jobs} jobs &bull; {item.routes} routes
+                          </Text>
+                        </div>
+                        <Tag color="default">{item.jobs}</Tag>
+                      </Flex>
+                    ))}
+                  </Space>
+                )}
+              </div>
             </Card>
           </Col>
         </Row>
