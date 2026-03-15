@@ -1,9 +1,12 @@
 import apiClient from "@/config/apiClient.config";
 import { AllRoutes, Route } from "@/types/routes.type";
 
-export const fetchRoutes = async (status?: string): Promise<AllRoutes[]> => {
-  if (status == "all") status = "";
-  const query = status ? `?status=${status}` : "";
+export const fetchRoutes = async (status?: string, date?: string): Promise<AllRoutes[]> => {
+  if (status === "all") status = "";
+  const params = new URLSearchParams();
+  if (status) params.append("status", status);
+  if (date) params.append("date", date);
+  const query = params.toString() ? `?${params.toString()}` : "";
   const response = await apiClient.get(`routes${query}`);
   return response.data;
 };
