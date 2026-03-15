@@ -2,6 +2,7 @@ import apiClient from "@/config/apiClient.config";
 import { AllRoutes, Route } from "@/types/routes.type";
 
 export const fetchRoutes = async (status?: string): Promise<AllRoutes[]> => {
+  if (status == "all") status = "";
   const query = status ? `?status=${status}` : "";
   const response = await apiClient.get(`routes${query}`);
   return response.data;
@@ -17,7 +18,7 @@ export interface CreateOptimizationRequestPayload {
 }
 
 export const createOptimizationRequest = async (
-  payload: CreateOptimizationRequestPayload
+  payload: CreateOptimizationRequestPayload,
 ): Promise<Route> => {
   const response = await apiClient.post("optimization/requests", payload);
   return response.data;
@@ -34,11 +35,11 @@ export interface UpdateOptimizationRequestPayload {
 
 export const updateOptimizationRequest = async (
   id: number,
-  payload: UpdateOptimizationRequestPayload
+  payload: UpdateOptimizationRequestPayload,
 ): Promise<Route> => {
   const response = await apiClient.patch(
     `optimization/requests/${id}`,
-    payload
+    payload,
   );
   return response.data;
 };
