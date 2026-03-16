@@ -3,7 +3,8 @@ export type JobStatus =
   | "assigned"
   | "in_progress"
   | "completed"
-  | "cancelled";
+  | "cancelled"
+  | "failed";
 export type JobType = "delivery" | "pickup" | "service";
 export type PriorityLevel = "low" | "medium" | "high";
 export type RecurrenceType = "one_time" | "daily" | "weekly" | "monthly";
