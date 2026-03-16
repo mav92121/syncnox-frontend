@@ -7,7 +7,7 @@ import {
 } from "@ant-design/icons";
 import { Job, JobStatus } from "@/types/job.type";
 import { STATUS_COLORS } from "@/utils/jobs.utils";
-import { markJobCompleted } from "@/apis/jobs.api";
+import { updateJobStatus } from "@/apis/jobs.api";
 import { useJobsStore } from "@/store/jobs.store";
 import { useRouteStore } from "@/store/routes.store";
 import { MarkerJobData } from "./optimizationView.utils";
@@ -32,14 +32,14 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
   const { fetchRoutes, selectedStatus } = useRouteStore();
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   const status = jobData?.status;
-  const isCompleted = status === "completed";
+  const showButtons = status === "completed" || status === "failed";
 
-  const handleMarkCompleted = async () => {
+  const handleUpdateJobStatus = async (status: string) => {
     if (!jobData?.id) return;
 
     try {
       setIsMarkingComplete(true);
-      const updatedJob = await markJobCompleted(jobData.id);
+      const updatedJob = await updateJobStatus(jobData.id, status);
       // Reflect the update in the store locally to avoid double PUT
       patchJobLocally(updatedJob);
       await fetchRoutes(selectedStatus);
@@ -94,14 +94,14 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
           </Tag>
         )}
       </div>
-      {jobData && !isCompleted && (
-        <div className="mt-3 pt-3 border-t border-gray-100">
+      {jobData && !showButtons && (
+        <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
           <Button
             type="primary"
             size="small"
             icon={<CheckCircleOutlined />}
             loading={isMarkingComplete}
-            onClick={handleMarkCompleted}
+            onClick={() => handleUpdateJobStatus("completed")}
             style={{
               width: "100%",
               backgroundColor: "#16a34a",
@@ -109,6 +109,13 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
             }}
           >
             Mark as Completed
+          </Button>
+          <Button
+            onClick={() => handleUpdateJobStatus("failed")}
+            type="default"
+            size="small"
+          >
+            Skip
           </Button>
         </div>
       )}

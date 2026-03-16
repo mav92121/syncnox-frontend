@@ -27,6 +27,7 @@ export const STATUS_COLORS: Record<JobStatus, string> = {
   in_progress: "#fa8c16",
   completed: "#52c41a",
   cancelled: "#ff4d4f",
+  failed: "#ff4d4f",
 };
 
 export const priorityStyleMap: Record<string, string> = {
