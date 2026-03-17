@@ -1,6 +1,6 @@
 "use client";
 
-import { ConfigProvider } from "antd";
+import { App, ConfigProvider } from "antd";
 import theme from "@/config/theme.config";
 
 interface AntdConfigProviderProps {
@@ -24,7 +24,7 @@ export default function AntdConfigProvider({
         ),
       }}
     >
-      {children}
+      <App>{children}</App>
     </ConfigProvider>
   );
 }
