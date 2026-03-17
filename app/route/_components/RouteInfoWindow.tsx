@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Typography, Tag, Button, message } from "antd";
+import { Typography, Tag, Button, message, App } from "antd";
 import {
   ClockCircleOutlined,
   EnvironmentOutlined,
@@ -29,6 +29,7 @@ interface RouteInfoWindowProps {
 const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
   const { jobData, title, description } = marker;
   const { patchJobLocally } = useJobsStore();
+  const { modal } = App.useApp();
   const { fetchRoutes, selectedStatus } = useRouteStore();
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   const status = jobData?.status;
@@ -43,12 +44,34 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
       // Reflect the update in the store locally to avoid double PUT
       patchJobLocally(updatedJob);
       await fetchRoutes(selectedStatus);
-      message.success("Job marked as completed");
+      message.success(
+        status === "completed"
+          ? "Job marked as completed"
+          : "Job marked as skipped",
+      );
     } catch (error) {
-      message.error("Failed to mark job as completed");
+      message.error(
+        status === "completed"
+          ? "Failed to mark job as completed"
+          : "Failed to skip job",
+      );
     } finally {
       setIsMarkingComplete(false);
     }
+  };
+
+  const confirmAction = (status: string) => {
+    const isComplete = status === "completed";
+    modal.confirm({
+      title: isComplete ? "Mark as Completed?" : "Skip this job?",
+      content: isComplete
+        ? "Are you sure you want to mark this job as completed?"
+        : "Are you sure you want to skip this job?",
+      okText: isComplete ? "Mark as Completed" : "Skip",
+      okType: isComplete ? "primary" : "danger",
+      cancelText: "Cancel",
+      onOk: () => handleUpdateJobStatus(status),
+    });
   };
 
   return (
@@ -101,7 +124,7 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
             size="small"
             icon={<CheckCircleOutlined />}
             loading={isMarkingComplete}
-            onClick={() => handleUpdateJobStatus("completed")}
+            onClick={() => confirmAction("completed")}
             style={{
               width: "100%",
               backgroundColor: "#16a34a",
@@ -111,7 +134,7 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
             Mark as Completed
           </Button>
           <Button
-            onClick={() => handleUpdateJobStatus("failed")}
+            onClick={() => confirmAction("failed")}
             type="default"
             size="small"
           >
