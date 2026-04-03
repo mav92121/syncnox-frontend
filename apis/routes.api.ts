@@ -50,3 +50,69 @@ export const updateOptimizationRequest = async (
 export const deleteOptimizationRequest = async (id: number): Promise<void> => {
   await apiClient.delete(`optimization/requests/${id}`);
 };
+
+// ─────────────────────────────────────────────
+// Per-Driver Route Operations
+// ─────────────────────────────────────────────
+
+import type { RouteOperationResponse } from "@/types/routes.type";
+
+/** Add a draft job to a specific driver's route → re-optimizes */
+export const addStopToRoute = async (
+  optimizationId: number,
+  routeIndex: number,
+  jobId: number,
+): Promise<RouteOperationResponse> => {
+  const response = await apiClient.post(
+    `optimization/requests/${optimizationId}/routes/${routeIndex}/add-stop`,
+    { job_id: jobId },
+  );
+  return response.data;
+};
+
+/** Remove a job from a specific driver's route → re-optimizes */
+export const removeStopFromRoute = async (
+  optimizationId: number,
+  routeIndex: number,
+  jobId: number,
+): Promise<RouteOperationResponse> => {
+  const response = await apiClient.post(
+    `optimization/requests/${optimizationId}/routes/${routeIndex}/remove-stop/${jobId}`,
+  );
+  return response.data;
+};
+
+/** Swap a route's driver → re-optimizes with new driver's constraints */
+export const swapRouteDriver = async (
+  optimizationId: number,
+  routeIndex: number,
+  newDriverId: number,
+): Promise<RouteOperationResponse> => {
+  const response = await apiClient.post(
+    `optimization/requests/${optimizationId}/routes/${routeIndex}/swap-driver`,
+    { new_driver_id: newDriverId },
+  );
+  return response.data;
+};
+
+/** Reverse the stop order of a driver's route (synchronous) */
+export const reverseRoute = async (
+  optimizationId: number,
+  routeIndex: number,
+): Promise<RouteOperationResponse> => {
+  const response = await apiClient.post(
+    `optimization/requests/${optimizationId}/routes/${routeIndex}/reverse`,
+  );
+  return response.data;
+};
+
+/** Re-optimize a single driver's route via full VRP re-run */
+export const reOptimizeRoute = async (
+  optimizationId: number,
+  routeIndex: number,
+): Promise<RouteOperationResponse> => {
+  const response = await apiClient.post(
+    `optimization/requests/${optimizationId}/routes/${routeIndex}/re-optimize`,
+  );
+  return response.data;
+};

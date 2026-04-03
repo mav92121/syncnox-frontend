@@ -36,7 +36,7 @@ import { useTeamStore } from "@/store/team.store";
 
 interface JobFormProps {
   initialData?: Job | null;
-  onSubmit?: () => void;
+  onSubmit?: (job?: Job) => void;
 }
 
 const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
@@ -81,15 +81,15 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
 
     try {
       if (initialData?.id) {
-        await updateJobAction(transformedValues);
+        const updatedJob = await updateJobAction(transformedValues);
         messageApi.success("Job updated successfully");
         form.resetFields();
-        onSubmit?.();
+        onSubmit?.(updatedJob);
       } else {
-        await createJobAction(transformedValues);
+        const newJob = await createJobAction(transformedValues);
         messageApi.success("Job created successfully");
         form.resetFields();
-        onSubmit?.();
+        onSubmit?.(newJob);
       }
     } catch (e: any) {
       const error = e;

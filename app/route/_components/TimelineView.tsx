@@ -1,7 +1,16 @@
 import React, { useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
-import { Avatar, Tooltip, Select } from "antd";
-import { UserOutlined, HomeFilled } from "@ant-design/icons";
+import { Avatar, Tooltip, Select, Dropdown } from "antd";
+import type { MenuProps } from "antd";
+import {
+  UserOutlined,
+  HomeFilled,
+  MoreOutlined,
+  PlusOutlined,
+  SwapOutlined,
+  RetweetOutlined,
+  ThunderboltOutlined,
+} from "@ant-design/icons";
 import {
   calculateTimeRange,
   generateTimeMarkers,
@@ -15,6 +24,10 @@ import {
 interface TimelineViewProps {
   routes: any[];
   onStopClick?: (stop: any, routeIndex: number, stopIndex: number) => void;
+  onAddStop?: (routeIndex: number) => void;
+  onSwapDriver?: (routeIndex: number) => void;
+  onReverseRoute?: (routeIndex: number) => void;
+  onReOptimize?: (routeIndex: number) => void;
 }
 
 const INTERVAL_OPTIONS = [
@@ -27,7 +40,14 @@ const INTERVAL_OPTIONS = [
   { value: 60, label: "60 min" },
 ];
 
-const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
+const TimelineView: React.FC<TimelineViewProps> = ({
+  routes,
+  onStopClick,
+  onAddStop,
+  onSwapDriver,
+  onReverseRoute,
+  onReOptimize,
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [intervalMinutes, setIntervalMinutes] = useState(30);
 
@@ -46,6 +66,28 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
       generateTimeMarkers(startTime, endTime, intervalMinutes, pixelsPerMinute),
     [startTime, endTime, intervalMinutes, pixelsPerMinute],
   );
+
+  const getRouteMenuItems = (routeIndex: number): MenuProps["items"] => [
+    {
+      key: "add-stop",
+      icon: <PlusOutlined />,
+      label: "Add Job",
+      onClick: () => onAddStop?.(routeIndex),
+    },
+    {
+      key: "swap-driver",
+      icon: <SwapOutlined />,
+      label: "Swap Route with Driver",
+      onClick: () => onSwapDriver?.(routeIndex),
+    },
+    { type: "divider" as const },
+    {
+      key: "re-optimize",
+      icon: <ThunderboltOutlined />,
+      label: "Re-optimize",
+      onClick: () => onReOptimize?.(routeIndex),
+    },
+  ];
 
   return (
     <div className="flex flex-col h-full bg-white select-none">
@@ -124,7 +166,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                       style={{ backgroundColor: routeColor }}
                       className="text-white"
                     />
-                    <div className="flex flex-col overflow-hidden">
+                    <div className="flex flex-col overflow-hidden flex-1 min-w-0">
                       <span className="font-medium truncate text-gray-700">
                         {route.team_member_name ||
                           `Driver ${route.team_member_id}`}
@@ -134,6 +176,20 @@ const TimelineView: React.FC<TimelineViewProps> = ({ routes, onStopClick }) => {
                         {Math.round(route.total_distance_meters / 1000)} km
                       </span>
                     </div>
+
+                    {/* ••• Menu */}
+                    <Dropdown
+                      menu={{ items: getRouteMenuItems(routeIndex) }}
+                      trigger={["click"]}
+                      placement="bottomRight"
+                    >
+                      <div
+                        className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer transition-colors shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreOutlined className="text-gray-500 text-base" />
+                      </div>
+                    </Dropdown>
                   </div>
 
                   {/* Timeline Track */}
