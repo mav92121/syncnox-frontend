@@ -86,3 +86,12 @@ export interface AllRoutes {
   created_at: string;
   updated_at: string;
 }
+
+// ─────────────────────────────────────────────
+// Route Operations
+// ─────────────────────────────────────────────
+
+export interface RouteOperationResponse {
+  success: boolean;
+  message: string;
+}

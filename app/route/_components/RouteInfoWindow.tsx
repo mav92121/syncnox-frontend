@@ -24,9 +24,10 @@ interface MarkerData {
 
 interface RouteInfoWindowProps {
   marker: MarkerData;
+  onRemoveJob?: () => void;
 }
 
-const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
+const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker, onRemoveJob }) => {
   const { jobData, title, description } = marker;
   const { patchJobLocally } = useJobsStore();
   const { modal } = App.useApp();
@@ -34,6 +35,7 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   const status = jobData?.status;
   const showButtons = status === "completed" || status === "failed";
+
 
   const handleUpdateJobStatus = async (status: string) => {
     if (!jobData?.id) return;
@@ -118,28 +120,41 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker }) => {
         )}
       </div>
       {jobData && !showButtons && (
-        <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
-          <Button
-            type="primary"
-            size="small"
-            icon={<CheckCircleOutlined />}
-            loading={isMarkingComplete}
-            onClick={() => confirmAction("completed")}
-            style={{
-              width: "100%",
-              backgroundColor: "#16a34a",
-              borderColor: "#16a34a",
-            }}
-          >
-            Mark as Completed
-          </Button>
-          <Button
-            onClick={() => confirmAction("failed")}
-            type="default"
-            size="small"
-          >
-            Skip
-          </Button>
+        <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
+          <div className="flex gap-2">
+            <Button
+              type="primary"
+              size="small"
+              icon={<CheckCircleOutlined />}
+              loading={isMarkingComplete}
+              onClick={() => confirmAction("completed")}
+              style={{
+                width: "100%",
+                backgroundColor: "#16a34a",
+                borderColor: "#16a34a",
+              }}
+            >
+              Mark as Completed
+            </Button>
+            <Button
+              onClick={() => confirmAction("failed")}
+              type="default"
+              size="small"
+            >
+              Skip
+            </Button>
+          </div>
+          {onRemoveJob && (
+            <Button
+              type="primary"
+              danger
+              size="small"
+              style={{ width: "100%" }}
+              onClick={onRemoveJob}
+            >
+              Remove from Route
+            </Button>
+          )}
         </div>
       )}
     </div>
