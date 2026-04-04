@@ -7,7 +7,7 @@ import { useJobsStore } from "@/store/jobs.store";
 import { useTeamStore } from "@/store/team.store";
 import { Job, JobStatus } from "@/types/job.type";
 
-type JobTab = "all_draft" | JobStatus;
+type JobTab = "all" | JobStatus;
 import BaseTable from "@/components/Table/BaseTable";
 import JobForm from "@/components/Jobs/JobForm";
 import GoogleMaps from "@/components/GoogleMaps";
@@ -24,12 +24,13 @@ export default function JobsList() {
   const {
     jobs,
     draftJobs,
-    allDraftJobs,
+    allJobs,
     isLoading,
     error,
     deleteJobAction,
     deleteJobsAction,
     fetchJobsByStatus,
+    fetchAllJobs,
     resetAllJobs,
     selectedDate,
     setSelectedDate,
@@ -40,7 +41,7 @@ export default function JobsList() {
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [mapViewJob, setMapViewJob] = useState<Job | null>(null);
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
-  const [selectedJobTab, setSelectedJobTab] = useState<JobTab>("all_draft");
+  const [selectedJobTab, setSelectedJobTab] = useState<JobTab>("all");
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
 
   const handleDeleteJobsRequest = () => {
@@ -70,7 +71,9 @@ export default function JobsList() {
     const value = e.target.value as JobTab;
     setSelectedJobTab(value);
     setSelectedJobIds([]);
-    if (value !== "all_draft") {
+    if (value === "all") {
+      fetchAllJobs();
+    } else {
       fetchJobsByStatus(value as JobStatus);
     }
   };
@@ -83,14 +86,14 @@ export default function JobsList() {
 
   // Transform jobs into markers for GoogleMaps
   const displayedJobs =
-    selectedJobTab === "all_draft"
-      ? allDraftJobs
+    selectedJobTab === "all"
+      ? allJobs
       : selectedJobTab === "draft"
         ? draftJobs
         : jobs;
   const markers = displayedJobs
-    .filter((job) => job.location?.lat && job.location?.lng)
-    .map((job, index) => ({
+    .filter((job: Job) => job.location?.lat && job.location?.lng)
+    .map((job: Job, index: number) => ({
       id: job.id,
       position: {
         lat: job.location.lat,
@@ -121,7 +124,7 @@ export default function JobsList() {
         </Button>
       ),
       teamsMap: getTeamsMap(),
-      jobStatus: selectedJobTab === "all_draft" ? "draft" : selectedJobTab,
+      jobStatus: selectedJobTab === "all" ? undefined : selectedJobTab,
     }),
     createActionsColumn<Job>({
       actions: [
@@ -169,7 +172,7 @@ export default function JobsList() {
           onChange={handleJobStatusChange}
           value={selectedJobTab}
         >
-          <Radio.Button value="all_draft">All</Radio.Button>
+          <Radio.Button value="all">All</Radio.Button>
           <Radio.Button value="draft">Draft</Radio.Button>
           <Radio.Button value="assigned">Assigned</Radio.Button>
           <Radio.Button value="completed">Completed</Radio.Button>
@@ -185,7 +188,7 @@ export default function JobsList() {
           <Button
             style={{
               visibility:
-                selectedJobTab === "all_draft" || selectedJobTab === "draft"
+                selectedJobTab === "all" || selectedJobTab === "draft"
                   ? "visible"
                   : "hidden",
             }}
@@ -198,12 +201,12 @@ export default function JobsList() {
             type="primary"
             disabled={
               selectedJobIds.length === 0 ||
-              (selectedJobTab !== "draft" && selectedJobTab !== "all_draft")
+              (selectedJobTab !== "draft" && selectedJobTab !== "all")
             }
             onClick={() => setShowCreateRouteModal(true)}
             style={{
               visibility:
-                selectedJobTab === "all_draft" || selectedJobTab === "draft"
+                selectedJobTab === "all" || selectedJobTab === "draft"
                   ? "visible"
                   : "hidden",
             }}
@@ -225,8 +228,8 @@ export default function JobsList() {
           emptyMessage={
             selectedJobTab === "draft"
               ? "No jobs on the selected date"
-              : selectedJobTab === "all_draft"
-                ? "No draft jobs"
+              : selectedJobTab === "all"
+                ? "No jobs found"
                 : "No jobs to show"
           }
           pagination={true}
@@ -256,11 +259,11 @@ export default function JobsList() {
 
       {showCreateRouteModal &&
         (() => {
-          const selectedJobs = displayedJobs.filter((job) =>
+          const selectedJobs = displayedJobs.filter((job: Job) =>
             selectedJobIds.includes(job.id),
           );
           const uniqueDates = new Set(
-            selectedJobs.map((job) => job.scheduled_date),
+            selectedJobs.map((job: Job) => job.scheduled_date),
           );
           return (
             <CreateRouteModal
@@ -293,7 +296,7 @@ export default function JobsList() {
             selectedMarkerId={mapViewJob.id}
             onMarkerSelect={(id) => {
               // Find and set the new job when marker is clicked
-              const selectedJob = displayedJobs.find((job) => job.id === id);
+              const selectedJob = displayedJobs.find((job: Job) => job.id === id);
               if (selectedJob) {
                 setMapViewJob(selectedJob);
               }
