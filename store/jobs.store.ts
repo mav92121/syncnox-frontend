@@ -15,7 +15,7 @@ interface JobsState {
   // Data
   jobs: Job[];
   draftJobs: Job[];
-  allDraftJobs: Job[];
+  allJobs: Job[];
   draftJobDates: string[];
   selectedDate: string | null;
 
@@ -25,6 +25,7 @@ interface JobsState {
   // Actions
   initializeJobs: () => Promise<void>;
   fetchJobsByStatus: (status: JobStatus) => Promise<void>;
+  fetchAllJobs: () => Promise<void>;
   setSelectedDate: (date: string | null) => void;
   createJobAction: (job: Job) => Promise<Job>;
   updateJobAction: (job: Job) => Promise<Job>;
@@ -43,7 +44,7 @@ export const useJobsStore = create<JobsState>()(
       // Initial state
       jobs: [],
       draftJobs: [],
-      allDraftJobs: [],
+      allJobs: [],
       draftJobDates: [],
       selectedDate: null,
       isLoading: false,
@@ -64,34 +65,8 @@ export const useJobsStore = create<JobsState>()(
         });
 
         try {
-          // Fetch all draft jobs
-          const draftJobsData = await fetchJobs({
-            status: "draft",
-            limit: 1000,
-          });
-
+          await get().fetchAllJobs();
           set((state) => {
-            state.jobs = draftJobsData;
-            state.allDraftJobs = draftJobsData;
-
-            // Extract unique dates and sort
-            state.draftJobDates = [
-              ...new Set(draftJobsData.map((job) => job.scheduled_date)),
-            ].sort();
-
-            // Set initial selected date to closest to today
-            if (state.draftJobDates.length > 0) {
-              state.selectedDate = findClosestDateToToday(state.draftJobDates);
-
-              // Filter draft jobs by selected date
-              state.draftJobs = draftJobsData.filter(
-                (job) => job.scheduled_date === state.selectedDate,
-              );
-            } else {
-              state.selectedDate = null;
-              state.draftJobs = [];
-            }
-
             state.isLoading = false;
           });
         } catch (error) {
@@ -120,7 +95,7 @@ export const useJobsStore = create<JobsState>()(
 
             set((state) => {
               state.jobs = draftJobsData;
-              state.allDraftJobs = draftJobsData;
+              state.allJobs = draftJobsData;
 
               // Update dates
               state.draftJobDates = [
@@ -170,6 +145,49 @@ export const useJobsStore = create<JobsState>()(
         }
       },
 
+      // Fetch all jobs without status filter
+      fetchAllJobs: async () => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          const jobsData = await fetchJobs({ limit: 1000 });
+
+          set((state) => {
+            state.jobs = jobsData;
+            state.allJobs = jobsData;
+
+            // Extract unique dates and sort
+            state.draftJobDates = [
+              ...new Set(jobsData.map((job) => job.scheduled_date)),
+            ].sort();
+
+            // Set initial selected date to closest to today
+            if (state.draftJobDates.length > 0) {
+              state.selectedDate = findClosestDateToToday(state.draftJobDates);
+
+              // Filter draft jobs by selected date
+              state.draftJobs = jobsData.filter(
+                (job) => job.scheduled_date === state.selectedDate,
+              );
+            } else {
+              state.selectedDate = null;
+              state.draftJobs = [];
+            }
+
+            state.isLoading = false;
+          });
+        } catch (error) {
+          set((state) => {
+            state.error =
+              error instanceof Error ? error.message : "Failed to fetch all jobs";
+            state.isLoading = false;
+          });
+        }
+      },
+
       // Set selected date and filter draft jobs
       setSelectedDate: (date: string | null) => {
         set((state) => {
@@ -177,11 +195,11 @@ export const useJobsStore = create<JobsState>()(
 
           // Filter draft jobs from allDraftJobs by new selected date
           if (date) {
-            state.draftJobs = state.allDraftJobs.filter(
+            state.draftJobs = state.allJobs.filter(
               (job) => job.scheduled_date === date,
             );
           } else {
-            state.draftJobs = state.allDraftJobs;
+            state.draftJobs = state.allJobs;
           }
         });
       },
@@ -382,12 +400,12 @@ export const useJobsStore = create<JobsState>()(
             );
           }
 
-          const allDraftExists = state.allDraftJobs.some(
+          const allJobsExists = state.allJobs.some(
             (j) => j.id === job.id,
           );
-          if (allDraftExists) {
-            state.allDraftJobs = state.allDraftJobs.map((j) =>
-              j.id === job.id ? job : j,
+          if (allJobsExists) {
+            state.allJobs = state.allJobs.map((j) =>
+              (j.id === job.id ? job : j),
             );
           }
         });
@@ -395,12 +413,12 @@ export const useJobsStore = create<JobsState>()(
 
       resetAllJobs: () => {
         set((state) => {
-          state.jobs = state.allDraftJobs;
+          state.jobs = state.allJobs;
           state.draftJobs = state.selectedDate
-            ? state.allDraftJobs.filter(
+            ? state.allJobs.filter(
                 (job) => job.scheduled_date === state.selectedDate,
               )
-            : state.allDraftJobs;
+            : state.allJobs;
         });
       },
     })),
