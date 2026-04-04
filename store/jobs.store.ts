@@ -15,6 +15,7 @@ interface JobsState {
   // Data
   jobs: Job[];
   draftJobs: Job[];
+  allDraftJobs: Job[];
   allJobs: Job[];
   draftJobDates: string[];
   selectedDate: string | null;
@@ -44,6 +45,7 @@ export const useJobsStore = create<JobsState>()(
       // Initial state
       jobs: [],
       draftJobs: [],
+      allDraftJobs: [],
       allJobs: [],
       draftJobDates: [],
       selectedDate: null,
@@ -95,7 +97,8 @@ export const useJobsStore = create<JobsState>()(
 
             set((state) => {
               state.jobs = draftJobsData;
-              state.allJobs = draftJobsData;
+              state.allDraftJobs = draftJobsData;
+              // Do NOT overwrite state.allJobs here!
 
               // Update dates
               state.draftJobDates = [
@@ -158,18 +161,24 @@ export const useJobsStore = create<JobsState>()(
           set((state) => {
             state.jobs = jobsData;
             state.allJobs = jobsData;
+            state.allDraftJobs = jobsData.filter((job) => job.status === "draft");
 
             // Extract unique dates and sort
             state.draftJobDates = [
-              ...new Set(jobsData.map((job) => job.scheduled_date)),
+              ...new Set(state.allDraftJobs.map((job) => job.scheduled_date)),
             ].sort();
 
             // Set initial selected date to closest to today
             if (state.draftJobDates.length > 0) {
-              state.selectedDate = findClosestDateToToday(state.draftJobDates);
+              if (
+                !state.selectedDate ||
+                !state.draftJobDates.includes(state.selectedDate)
+              ) {
+                state.selectedDate = findClosestDateToToday(state.draftJobDates);
+              }
 
               // Filter draft jobs by selected date
-              state.draftJobs = jobsData.filter(
+              state.draftJobs = state.allDraftJobs.filter(
                 (job) => job.scheduled_date === state.selectedDate,
               );
             } else {
@@ -195,11 +204,11 @@ export const useJobsStore = create<JobsState>()(
 
           // Filter draft jobs from allDraftJobs by new selected date
           if (date) {
-            state.draftJobs = state.allJobs.filter(
+            state.draftJobs = state.allDraftJobs.filter(
               (job) => job.scheduled_date === date,
             );
           } else {
-            state.draftJobs = state.allJobs;
+            state.draftJobs = state.allDraftJobs;
           }
         });
       },
@@ -408,6 +417,15 @@ export const useJobsStore = create<JobsState>()(
               (j.id === job.id ? job : j),
             );
           }
+
+          const allDraftExists = state.allDraftJobs.some(
+            (j) => j.id === job.id,
+          );
+          if (allDraftExists) {
+            state.allDraftJobs = state.allDraftJobs.map((j) =>
+              (j.id === job.id ? job : j),
+            );
+          }
         });
       },
 
@@ -415,10 +433,10 @@ export const useJobsStore = create<JobsState>()(
         set((state) => {
           state.jobs = state.allJobs;
           state.draftJobs = state.selectedDate
-            ? state.allJobs.filter(
+            ? state.allDraftJobs.filter(
                 (job) => job.scheduled_date === state.selectedDate,
               )
-            : state.allJobs;
+            : state.allDraftJobs;
         });
       },
     })),
