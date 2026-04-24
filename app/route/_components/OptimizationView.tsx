@@ -11,6 +11,7 @@ import {
   Divider,
   Modal,
   Spin,
+  Alert,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -65,6 +66,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     pollOptimizationStatus,
     stopPolling,
     isPolling,
+    error,
   } = useOptimizationStore();
   const { jobs, fetchJobsByDate, fetchJobsByIds } = useJobsStore();
   const { updateRoute } = useRouteStore();
@@ -411,6 +413,18 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
           </div>
         </div>
       </nav>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="p-3 bg-red-50 shrink-0 border-b border-red-100">
+          <Alert
+            message="Optimization Issue"
+            description={error}
+            type="error"
+            showIcon
+          />
+        </div>
+      )}
 
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 relative">
