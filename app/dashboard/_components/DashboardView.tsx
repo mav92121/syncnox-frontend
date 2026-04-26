@@ -491,14 +491,18 @@ export default function DashboardView() {
             <Card
               size="small"
               title={
-                <Flex align="center" justify="space-between" style={{ width: "100%" }}>
+                <Flex
+                  align="center"
+                  justify="space-between"
+                  style={{ width: "100%" }}
+                >
                   <Flex align="center" gap={8}>
                     <CalendarOutlined style={{ color: "#333" }} />
                     Upcoming
                   </Flex>
-                  <DatePicker 
-                    size="small" 
-                    onChange={handleDateChange} 
+                  <DatePicker
+                    size="small"
+                    onChange={handleDateChange}
                     value={selectedDate}
                     placeholder="Select Date"
                     style={{ width: 120, fontWeight: "normal" }}
@@ -509,18 +513,33 @@ export default function DashboardView() {
               styles={{ body: { padding: 12 } }}
               style={{ height: "100%" }}
             >
-              <div style={{ maxHeight: "250px", overflowY: "auto", overflowX: "hidden", paddingRight: 8 }}>
+              <div
+                style={{
+                  maxHeight: "250px",
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  paddingRight: 8,
+                }}
+              >
                 {selectedDate ? (
                   isLoadingRoutes ? (
-                    <Flex justify="center" align="center" style={{ height: "100%", padding: 20 }}>
-                       <Spin />
+                    <Flex
+                      justify="center"
+                      align="center"
+                      style={{ height: "100%", padding: 20 }}
+                    >
+                      <Spin />
                     </Flex>
                   ) : selectedDateRoutes.length === 0 ? (
                     <Text type="secondary" style={{ fontSize: 12 }}>
                       No routes found for {selectedDate.format("MMM D")}
                     </Text>
                   ) : (
-                    <Space direction="vertical" style={{ width: "100%" }} size={8}>
+                    <Space
+                      direction="vertical"
+                      style={{ width: "100%" }}
+                      size={8}
+                    >
                       {selectedDateRoutes.map((route: AllRoutes) => (
                         <Flex
                           key={route.id}
@@ -531,19 +550,35 @@ export default function DashboardView() {
                             borderBottom: "1px solid #f0f0f0",
                           }}
                         >
-                           <div>
+                          <div>
                             <Text
                               strong
-                              style={{ cursor: "pointer", color: "#1677ff", fontSize: 12, display: "block" }}
-                              onClick={() => router.push(`/route/${route.optimization_id}`)}
+                              style={{
+                                cursor: "pointer",
+                                color: "#1677ff",
+                                fontSize: 12,
+                                display: "block",
+                              }}
+                              onClick={() =>
+                                router.push(`/route/${route.optimization_id}`)
+                              }
                             >
                               {route.name}
                             </Text>
                             <Text type="secondary" style={{ fontSize: 10 }}>
-                               {route.total_stops} stops &bull; {route.assigned_team_members && route.assigned_team_members.length > 0 ? route.assigned_team_members.map((m: any) => m.name).join(", ") : "Unassigned"}
+                              {route.total_stops} stops &bull;{" "}
+                              {route.assigned_team_members &&
+                              route.assigned_team_members.length > 0
+                                ? route.assigned_team_members
+                                    .map((m: any) => m.name)
+                                    .join(", ")
+                                : "Unassigned"}
                             </Text>
                           </div>
-                          <Tag color={getStatusColor(route.status)} style={{ fontSize: 10 }}>
+                          <Tag
+                            color={getStatusColor(route.status)}
+                            style={{ fontSize: 10 }}
+                          >
                             {route.status.replace("_", " ")}
                           </Tag>
                         </Flex>
@@ -555,7 +590,11 @@ export default function DashboardView() {
                     No upcoming schedule
                   </Text>
                 ) : (
-                  <Space direction="vertical" style={{ width: "100%" }} size={12}>
+                  <Space
+                    direction="vertical"
+                    style={{ width: "100%" }}
+                    size={12}
+                  >
                     {upcoming.map((item, index) => (
                       <Flex
                         key={index}

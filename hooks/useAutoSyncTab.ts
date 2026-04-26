@@ -4,7 +4,7 @@ import { useIndexStore, TabKey } from "@/store/index.store";
 
 const ROUTE_TO_TAB_MAP: Record<string, TabKey> = {
   "/dashboard": "dashboard",
-  "/plan": "unassigned-jobs",
+  "/plan": "jobs",
   "/insights": "team",
   "/schedule": "schedule",
   "/analytics": "team",

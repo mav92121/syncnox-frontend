@@ -1,20 +1,23 @@
 "use client";
 
-import Plan from "./Plan";
 import { useIndexStore } from "@/store/index.store";
-import Recents from "./Recents";
+import JobsList from "./_components/JobsList";
+import RoutesView from "./_components/RoutesView";
+import ScheduleView from "./_components/ScheduleView";
 
 const page = () => {
   const { currentTab } = useIndexStore();
 
   const renderTabContent = () => {
     switch (currentTab) {
-      case "add-jobs":
-        return <Plan />;
-      case "unassigned-jobs":
-        return <Recents />;
+      case "jobs":
+        return <JobsList />;
+      case "routes":
+        return <RoutesView />;
+      case "schedule":
+        return <ScheduleView />;
       default:
-        return <Recents />;
+        return <JobsList />;
     }
   };
 

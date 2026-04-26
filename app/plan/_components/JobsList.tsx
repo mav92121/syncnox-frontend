@@ -1,8 +1,22 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Typography, Button, Drawer, Modal, Flex, Radio, message } from "antd";
-import { DeleteOutlined, ExclamationCircleFilled } from "@ant-design/icons";
+import {
+  Typography,
+  Button,
+  Drawer,
+  Modal,
+  Flex,
+  Radio,
+  message,
+  Dropdown,
+  type MenuProps,
+} from "antd";
+import {
+  DeleteOutlined,
+  ExclamationCircleFilled,
+  DownOutlined,
+} from "@ant-design/icons";
 import { useJobsStore } from "@/store/jobs.store";
 import { useTeamStore } from "@/store/team.store";
 import { Job, JobStatus } from "@/types/job.type";
@@ -17,6 +31,8 @@ import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import CreateRouteModal from "@/app/plan/_components/CreateRouteModal";
 import DraftJobsDatePicker from "@/components/Jobs/DraftJobsDatePicker";
 import { useIndexStore } from "@/store/index.store";
+import AddJobsModal from "@/app/plan/AddJobsModal";
+import BulkUploadModal from "@/components/BulkUploadModal";
 
 const { Title } = Typography;
 
@@ -43,6 +59,8 @@ export default function JobsList() {
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
   const [selectedJobTab, setSelectedJobTab] = useState<JobTab>("all");
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
+  const [showAddJobModal, setShowAddJobModal] = useState(false);
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
 
   const handleDeleteJobsRequest = () => {
     if (selectedJobIds.length === 0) return;
@@ -146,6 +164,19 @@ export default function JobsList() {
     }),
   ];
 
+  const addJobsMenu: MenuProps["items"] = [
+    {
+      key: "manual",
+      label: "Manually Add Jobs",
+      onClick: () => setShowAddJobModal(true),
+    },
+    {
+      key: "bulk",
+      label: "Bulk Upload Jobs",
+      onClick: () => setShowBulkUploadModal(true),
+    },
+  ];
+
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -213,9 +244,15 @@ export default function JobsList() {
           >
             Create New Route
           </Button>
-          <Link href="/plan" onClick={() => setCurrentTab("add-jobs")}>
-            <Button>Add Jobs</Button>
-          </Link>
+          <Dropdown
+            trigger={["click"]}
+            menu={{ items: addJobsMenu }}
+            placement="bottomRight"
+          >
+            <Button>
+              Add Jobs <DownOutlined />
+            </Button>
+          </Dropdown>
         </Flex>
       </Flex>
 
@@ -296,7 +333,9 @@ export default function JobsList() {
             selectedMarkerId={mapViewJob.id}
             onMarkerSelect={(id) => {
               // Find and set the new job when marker is clicked
-              const selectedJob = displayedJobs.find((job: Job) => job.id === id);
+              const selectedJob = displayedJobs.find(
+                (job: Job) => job.id === id,
+              );
               if (selectedJob) {
                 setMapViewJob(selectedJob);
               }
@@ -317,6 +356,23 @@ export default function JobsList() {
           />
         )}
       </Modal>
+
+      <AddJobsModal
+        open={showAddJobModal}
+        setOpen={setShowAddJobModal}
+        onJobCreated={() => {
+          if (selectedJobTab === "all") fetchAllJobs();
+          else fetchJobsByStatus(selectedJobTab as JobStatus);
+        }}
+      />
+      <BulkUploadModal
+        open={showBulkUploadModal}
+        onClose={() => {
+          setShowBulkUploadModal(false);
+          if (selectedJobTab === "all") fetchAllJobs();
+          else fetchJobsByStatus(selectedJobTab as JobStatus);
+        }}
+      />
     </div>
   );
 }

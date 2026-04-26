@@ -9,6 +9,7 @@ import StatusBadge from "@/components/Jobs/StatusBanner";
 import { useState } from "react";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import Link from "next/link";
+import { useIndexStore } from "@/store/index.store";
 
 const { Title } = Typography;
 
@@ -52,6 +53,7 @@ const DistanceHeader = (props: any) => {
 
 export default function RoutesView() {
   const router = useRouter();
+  const { setCurrentTab } = useIndexStore();
   const { routes, isLoading, deleteRoute, selectedStatus, setSelectedStatus } =
     useRouteStore();
   const [distanceUnit, setDistanceUnit] = useState<"km" | "mi">("km");
@@ -202,7 +204,7 @@ export default function RoutesView() {
           <Radio.Button value="completed">Completed</Radio.Button>
         </Radio.Group>
         <Flex gap={8}>
-          <Link href="/plan">
+          <Link href="/plan" onClick={() => setCurrentTab("jobs")}>
             <Button type="primary">Create New Route</Button>
           </Link>
         </Flex>
