@@ -17,6 +17,8 @@ import {
   ExclamationCircleFilled,
   DownOutlined,
 } from "@ant-design/icons";
+import { Panel, PanelGroup } from "react-resizable-panels";
+import ResizeHandle from "@/components/ResizeHandle";
 import { useJobsStore } from "@/store/jobs.store";
 import { useTeamStore } from "@/store/team.store";
 import { Job, JobStatus } from "@/types/job.type";
@@ -55,12 +57,21 @@ export default function JobsList() {
   const { setCurrentTab } = useIndexStore();
   const { getTeamsMap } = useTeamStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
-  const [mapViewJob, setMapViewJob] = useState<Job | null>(null);
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
   const [selectedJobTab, setSelectedJobTab] = useState<JobTab>("all");
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+
+  // Map state
+  const [isMapOpen, setIsMapOpen] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [selectedMarkerId, setSelectedMarkerId] = useState<
+    number | string | null
+  >(null);
 
   const handleDeleteJobsRequest = () => {
     if (selectedJobIds.length === 0) return;
@@ -134,7 +145,12 @@ export default function JobsList() {
           size="small"
           onClick={() => {
             if (params.data.location?.lat && params.data.location?.lng) {
-              setMapViewJob(params.data);
+              setIsMapOpen(true);
+              setMapCenter({
+                lat: params.data.location.lat,
+                lng: params.data.location.lng,
+              });
+              setSelectedMarkerId(params.data.id);
             }
           }}
         >
@@ -181,7 +197,7 @@ export default function JobsList() {
     return <div>Error: {error}</div>;
   }
 
-  return (
+  const listContent = (
     <div className="flex flex-col h-full">
       <Flex justify="space-between" align="center" className="my-4">
         <Flex gap={24} align="center">
@@ -216,6 +232,9 @@ export default function JobsList() {
             justifyContent: "flex-end",
           }}
         >
+          <Button onClick={() => setIsMapOpen(!isMapOpen)}>
+            {isMapOpen ? "Close Map" : "Map View"}
+          </Button>
           <Button
             style={{
               visibility:
@@ -279,6 +298,44 @@ export default function JobsList() {
           }}
         />
       </div>
+    </div>
+  );
+
+  return (
+    <div className="absolute inset-0">
+      {isMapOpen ? (
+        <PanelGroup direction="vertical">
+          <Panel defaultSize={40} minSize={10}>
+            <div className="h-full">
+              <GoogleMaps
+                markers={markers}
+                center={mapCenter || undefined}
+                zoom={mapCenter ? 17 : undefined}
+                selectedMarkerId={selectedMarkerId}
+                onMarkerSelect={setSelectedMarkerId}
+                InfoWindowModal={({ marker }) => (
+                  <MarkerTooltip
+                    jobType={marker.jobType}
+                    address={marker.description}
+                    duration={marker.duration}
+                    timeWindowStart={marker.timeWindowStart}
+                    timeWindowEnd={marker.timeWindowEnd}
+                    onEdit={() =>
+                      setEditJobData((marker.jobData as Job) ?? null)
+                    }
+                  />
+                )}
+              />
+            </div>
+          </Panel>
+          <ResizeHandle />
+          <Panel defaultSize={60} minSize={5}>
+            <div className="pt-2 px-2 h-full">{listContent}</div>
+          </Panel>
+        </PanelGroup>
+      ) : (
+        <div className="h-full px-2">{listContent}</div>
+      )}
 
       {/* Edit Job Drawer */}
       <Drawer
@@ -311,51 +368,6 @@ export default function JobsList() {
             />
           );
         })()}
-
-      {/* Map View Modal */}
-      <Modal
-        title="Job Location"
-        open={mapViewJob !== null}
-        onCancel={() => setMapViewJob(null)}
-        footer={null}
-        width={800}
-        centered
-        styles={{ body: { height: "500px", padding: 0 } }}
-      >
-        {mapViewJob && (
-          <GoogleMaps
-            markers={markers}
-            center={{
-              lat: mapViewJob.location.lat,
-              lng: mapViewJob.location.lng,
-            }}
-            zoom={17}
-            selectedMarkerId={mapViewJob.id}
-            onMarkerSelect={(id) => {
-              // Find and set the new job when marker is clicked
-              const selectedJob = displayedJobs.find(
-                (job: Job) => job.id === id,
-              );
-              if (selectedJob) {
-                setMapViewJob(selectedJob);
-              }
-            }}
-            InfoWindowModal={({ marker }) => (
-              <MarkerTooltip
-                jobType={marker.jobType}
-                address={marker.description}
-                duration={marker.duration}
-                timeWindowStart={marker.timeWindowStart}
-                timeWindowEnd={marker.timeWindowEnd}
-                onEdit={() => {
-                  setEditJobData((marker.jobData as Job) ?? null);
-                  setMapViewJob(null); // Close map modal when editing
-                }}
-              />
-            )}
-          />
-        )}
-      </Modal>
 
       <AddJobsModal
         open={showAddJobModal}

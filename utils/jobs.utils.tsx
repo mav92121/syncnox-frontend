@@ -22,7 +22,7 @@ export const filterCountryOptions = (input: string, option: any): boolean => {
 
 // Status color mapping
 export const STATUS_COLORS: Record<JobStatus, string> = {
-  draft: "#722ed1", // Bright purple instead of dull gray
+  draft: "#808080", // gray
   assigned: "#1677ff",
   in_progress: "#fa8c16",
   completed: "#52c41a",
