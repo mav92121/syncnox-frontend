@@ -10,6 +10,7 @@ import {
   UserOutlined,
   CarOutlined,
   EnvironmentOutlined,
+  DashboardOutlined,
 } from "@ant-design/icons";
 
 interface SubMenuItem {
@@ -29,35 +30,41 @@ interface MenuItem {
 
 export const MENU_ITEMS: MenuItem[] = [
   {
+    icon: DashboardOutlined,
+    label: "Dashboard",
+    path: "/dashboard",
+    tabKey: "dashboard",
+  },
+  {
     icon: RocketOutlined,
     label: "Plan",
     path: "/plan",
-    tabKey: "unassigned-jobs",
+    tabKey: "jobs",
   },
-  {
-    icon: BarChartOutlined,
-    label: "Insights",
-    path: "/insights",
-    tabKey: "team",
-  },
-  {
-    icon: LineChartOutlined,
-    label: "Analytics",
-    path: "/analytics",
-    tabKey: "optimization",
-  },
-  {
-    icon: AimOutlined,
-    label: "Live Tracking & Alerts",
-    path: "/tracking",
-    tabKey: "routes",
-  },
-  {
-    icon: UserOutlined,
-    label: "Customers",
-    path: "/customers",
-    tabKey: "api",
-  },
+  // {
+  //   icon: BarChartOutlined,
+  //   label: "Insights",
+  //   path: "/insights",
+  //   tabKey: "team",
+  // },
+  // {
+  //   icon: LineChartOutlined,
+  //   label: "Analytics",
+  //   path: "/analytics",
+  //   tabKey: "optimization",
+  // },
+  // {
+  //   icon: AimOutlined,
+  //   label: "Live Tracking & Alerts",
+  //   path: "/tracking",
+  //   tabKey: "routes",
+  // },
+  // {
+  //   icon: UserOutlined,
+  //   label: "Customers",
+  //   path: "/customers",
+  //   tabKey: "api",
+  // },
   {
     icon: SettingOutlined,
     label: "Settings",

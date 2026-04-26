@@ -30,11 +30,11 @@ export interface RouteTabConfig {
 
 // Configuration mapping routes to their respective tabs
 export const routeTabsConfig: RouteTabConfig = {
-  "/dashboard": [
+  "/plan": [
     {
-      key: "dashboard",
-      label: "Dashboard",
-      icon: DashboardOutlined,
+      key: "jobs",
+      label: "Jobs",
+      icon: FileTextOutlined,
     },
     {
       key: "routes",
@@ -42,26 +42,9 @@ export const routeTabsConfig: RouteTabConfig = {
       icon: EnvironmentOutlined,
     },
     {
-      key: "jobs",
-      label: "Jobs",
-      icon: FileTextOutlined,
-    },
-    {
       key: "schedule",
       label: "Schedule",
       icon: CalendarOutlined,
-    },
-  ],
-  "/plan": [
-    {
-      key: "unassigned-jobs",
-      label: "Unassigned Jobs",
-      icon: FileTextOutlined,
-    },
-    {
-      key: "add-jobs",
-      label: "Add Jobs",
-      icon: FileAddOutlined,
     },
   ],
   "/insights": [
