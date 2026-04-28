@@ -15,7 +15,8 @@ import { useBulkUploadStore } from "@/store/bulkUpload.store";
 import type { JobCreate } from "@/types/bulk-upload.type";
 import { useJobsStore } from "@/store/jobs.store";
 import { importBulkJobs } from "@/apis/bulk-upload.api";
-import type { ColDef, RowClassParams } from "ag-grid-community";
+import type { ColDef, RowClassParams, CellValueChangedEvent } from "ag-grid-community";
+import AddressCellEditor from "./AddressCellEditor";
 
 interface DataPreviewStepProps {
   onFinish: () => void;
@@ -47,7 +48,7 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
   const gridRef = useRef<AgGridReact>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  const { geocodedData, columnMapping, saveAsDefault, defaultScheduledDate } =
+  const { geocodedData, columnMapping, saveAsDefault, defaultScheduledDate, updateGeocodedRow } =
     useBulkUploadStore();
   const { refreshDraftJobs } = useJobsStore();
 
@@ -180,26 +181,42 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
         flex: 2,
         minWidth: 200,
         pinned: "left",
+        editable: true,
+        cellEditor: AddressCellEditor,
+        cellEditorPopup: true,
       },
       {
         headerName: "Formatted Address",
         field: "formattedAddress",
         flex: 2,
         minWidth: 200,
+        editable: true,
+        cellEditor: AddressCellEditor,
+        cellEditorPopup: true,
       },
       {
         headerName: "Lat",
         field: "lat",
         width: 100,
+        editable: true,
+        valueParser: (params) => {
+          const val = parseFloat(params.newValue);
+          return isNaN(val) ? null : val;
+        },
         valueFormatter: (params) =>
-          params.value != null ? params.value.toFixed(5) : "-",
+          params.value != null ? Number(params.value).toFixed(5) : "-",
       },
       {
         headerName: "Lng",
         field: "lng",
         width: 100,
+        editable: true,
+        valueParser: (params) => {
+          const val = parseFloat(params.newValue);
+          return isNaN(val) ? null : val;
+        },
         valueFormatter: (params) =>
-          params.value != null ? params.value.toFixed(5) : "-",
+          params.value != null ? Number(params.value).toFixed(5) : "-",
       },
     ];
 
@@ -227,13 +244,71 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
           headerName: fieldLabels[identifier] || identifier,
           field: identifier,
           width: 120,
+          editable: true,
           valueGetter: (params) => params.data?.[identifier] || "",
+          valueSetter: (params) => {
+            if (params.data) {
+              params.data[identifier] = params.newValue;
+              return true;
+            }
+            return false;
+          }
         });
       }
     });
 
     return columns;
   }, [columnMapping]);
+
+  // Handle cell edits
+  const handleCellValueChanged = useCallback(
+    (params: CellValueChangedEvent<ProcessedRow>) => {
+      const { data, colDef, newValue, oldValue } = params;
+      if (!data || newValue === oldValue) return;
+
+      const field = colDef.field;
+      const rowIndex = data.id;
+
+      const latestStoreData = useBulkUploadStore.getState().geocodedData;
+      const storeRow = latestStoreData[rowIndex];
+      if (!storeRow) return;
+
+      const updatedRow = { ...storeRow };
+
+      if (field === "lat" || field === "lng") {
+        updatedRow.geocode_result = {
+          ...updatedRow.geocode_result,
+          [field]: newValue,
+        };
+        // If both lat and lng are now present, clear the geocoding error
+        if (
+          updatedRow.geocode_result.lat != null &&
+          updatedRow.geocode_result.lng != null
+        ) {
+          updatedRow.geocode_result.error = null;
+        }
+        updatedRow.is_duplicate = false;
+      } else if (field === "address" || field === "formattedAddress") {
+        updatedRow.geocode_result = {
+          ...updatedRow.geocode_result,
+          [field === "address" ? "address" : "formatted_address"]: newValue,
+        };
+        updatedRow.is_duplicate = false;
+      } else if (field) {
+        // Update original_data for dynamic columns
+        updatedRow.original_data = {
+          ...updatedRow.original_data,
+          [field]: newValue,
+        };
+      }
+
+      // Clear validation errors since user edited the row, assuming they fixed it
+      updatedRow.validation_errors = [];
+
+      updateGeocodedRow(rowIndex, updatedRow);
+    },
+    [updateGeocodedRow]
+  );
 
   // Row styling based on status
   const getRowClass = useCallback((params: RowClassParams<ProcessedRow>) => {
@@ -288,7 +363,11 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
         mapping_config: saveAsDefault ? columnMapping : null,
       });
 
-      message.success(`Successfully imported ${response.created} jobs!`);
+      if (response.failed && response.failed > 0) {
+        message.warning(`Imported ${response.created} jobs, but ${response.failed} failed.`);
+      } else {
+        message.success(`Successfully imported ${response.created} jobs!`);
+      }
       await refreshDraftJobs();
       onFinish();
     } catch (error: any) {
@@ -392,6 +471,7 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
             rowSelection="multiple"
             suppressRowClickSelection={true}
             getRowClass={getRowClass}
+            onCellValueChanged={handleCellValueChanged}
             headerHeight={40}
             rowHeight={36}
           />
