@@ -292,6 +292,8 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
         updatedRow.geocode_result = {
           ...updatedRow.geocode_result,
           [field === "address" ? "address" : "formatted_address"]: newValue,
+          lat: null,
+          lng: null,
         };
         updatedRow.is_duplicate = false;
       } else if (field) {
@@ -302,8 +304,25 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
         };
       }
 
-      // Clear validation errors since user edited the row, assuming they fixed it
-      updatedRow.validation_errors = [];
+      // Instead of wiping all validation errors, filter out errors related to the edited field
+      if (field && updatedRow.validation_errors && updatedRow.validation_errors.length > 0) {
+        const fieldToErrorKeyword: Record<string, string> = {
+          service_duration: "Service Duration",
+          time_window_start: "Time Window",
+          time_window_end: "Time Window",
+          scheduled_date: "Scheduled Date",
+          email: "Email",
+          priority_level: "Priority Level",
+          job_type: "Job Type",
+        };
+        
+        const errorKeyword = fieldToErrorKeyword[field];
+        if (errorKeyword) {
+          updatedRow.validation_errors = updatedRow.validation_errors.filter(
+            (err) => !err.startsWith(errorKeyword)
+          );
+        }
+      }
 
       updateGeocodedRow(rowIndex, updatedRow);
     },

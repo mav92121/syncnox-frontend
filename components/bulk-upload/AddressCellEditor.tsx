@@ -37,7 +37,6 @@ export default forwardRef((props: ICellEditorParams, ref) => {
           formatted_address: addressData.address_formatted,
           error: null,
         },
-        validation_errors: [],
         is_duplicate: false,
       });
     }
