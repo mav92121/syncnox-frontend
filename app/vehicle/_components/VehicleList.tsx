@@ -60,18 +60,17 @@ const VehicleList = () => {
       width: 180,
     },
     {
-      field: "capacity_weight",
-      headerName: "Capacity (Weight)",
-      width: 200,
-      valueFormatter: (params) =>
-        params.value != null ? `${params.value} kg` : "-",
-    },
-    {
-      field: "capacity_volume",
-      headerName: "Capacity (Volume)",
-      width: 200,
-      valueFormatter: (params) =>
-        params.value != null ? `${params.value} m³` : "-",
+      field: "load_constraints",
+      headerName: "Load Constraints",
+      flex: 1,
+      minWidth: 200,
+      valueFormatter: (params) => {
+        const constraints = params.value;
+        if (!constraints || constraints.length === 0) return "-";
+        return constraints
+          .map((c: any) => `${c.constraint_type}: ${c.max_value} ${c.unit}`)
+          .join(" | ");
+      },
     },
     createActionsColumn<Vehicle>({
       actions: [
