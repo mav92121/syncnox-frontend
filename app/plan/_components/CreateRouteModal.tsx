@@ -143,9 +143,15 @@ const CreateRouteModal = ({
   };
 
   const handleCancel = () => {
-    if (!isPolling && !isSubmitting) {
+    if (
+      (!isPolling && !isSubmitting) ||
+      currentOptimization?.status === "failed" ||
+      error
+    ) {
       setOpen(false);
       form.resetFields();
+      setIsSubmitting(false);
+      clearOptimization();
     }
   };
 
