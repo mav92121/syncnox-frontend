@@ -222,22 +222,6 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
 
       {polylines.map((line, index) => {
         const polylineOptions = { ...line.options };
-        if (showDirectionArrows && window.google) {
-          polylineOptions.icons = [
-            {
-              icon: {
-                path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                scale: 2,
-                strokeColor: line.options?.strokeColor ?? "red",
-                strokeWeight: 2,
-                fillColor: line.options?.strokeColor || "#1890ff",
-                fillOpacity: 1,
-              },
-              offset: "50px",
-              repeat: "100px",
-            },
-          ];
-        }
         return (
           <Polyline key={index} path={line.path} options={polylineOptions} />
         );
