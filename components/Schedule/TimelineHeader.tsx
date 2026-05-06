@@ -3,15 +3,21 @@
 interface TimelineHeaderProps {
   dayStartHour?: number;
   dayEndHour?: number;
+  intervalMinutes?: number;
 }
 
 export default function TimelineHeader({
   dayStartHour = 0,
   dayEndHour = 24,
+  intervalMinutes = 30,
 }: TimelineHeaderProps) {
-  const hours = [];
-  for (let h = dayStartHour; h < dayEndHour; h++) {
-    hours.push(h);
+  const intervals = [];
+  const totalMinutes = (dayEndHour - dayStartHour) * 60;
+  for (let m = 0; m < totalMinutes; m += intervalMinutes) {
+    const totalMinsFromStart = dayStartHour * 60 + m;
+    const hour = Math.floor(totalMinsFromStart / 60);
+    const minute = totalMinsFromStart % 60;
+    intervals.push({ hour, minute });
   }
 
   return (
@@ -23,12 +29,12 @@ export default function TimelineHeader({
 
       {/* Timeline hours */}
       <div className="flex-1 flex relative">
-        {hours.map((hour) => (
+        {intervals.map((interval, i) => (
           <div
-            key={hour}
+            key={i}
             className="flex-1 min-w-[60px] py-2 px-1 text-left text-xs font-medium text-gray-500 border-r border-gray-100"
           >
-            {hour.toString().padStart(2, "0")}:00
+            {interval.hour.toString().padStart(2, "0")}:{interval.minute.toString().padStart(2, "0")}
           </div>
         ))}
       </div>

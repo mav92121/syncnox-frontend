@@ -10,6 +10,7 @@ interface ResourceRowProps {
   dayStartHour?: number;
   dayEndHour?: number;
   timezone?: string;
+  intervalMinutes?: number;
 }
 
 export default function ResourceRow({
@@ -17,10 +18,12 @@ export default function ResourceRow({
   dayStartHour = 0,
   dayEndHour = 24,
   timezone,
+  intervalMinutes = 30,
 }: ResourceRowProps) {
-  const hours = [];
-  for (let h = dayStartHour; h < dayEndHour; h++) {
-    hours.push(h);
+  const intervals = [];
+  const totalMinutes = (dayEndHour - dayStartHour) * 60;
+  for (let m = 0; m < totalMinutes; m += intervalMinutes) {
+    intervals.push(m);
   }
 
   return (
@@ -36,9 +39,9 @@ export default function ResourceRow({
       {/* Timeline area */}
       <div className="flex-1 relative flex">
         {/* Background hour grid */}
-        {hours.map((hour) => (
+        {intervals.map((val, i) => (
           <div
-            key={hour}
+            key={i}
             className="flex-1 min-w-[60px] border-r border-gray-50"
           />
         ))}
