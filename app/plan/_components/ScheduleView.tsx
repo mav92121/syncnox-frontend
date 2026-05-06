@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Typography, Button, Spin, message, Flex, DatePicker } from "antd";
+import { Typography, Button, Spin, message, Flex, DatePicker, Select } from "antd";
 import { LeftOutlined, RightOutlined } from "@ant-design/icons";
 import { ScheduleTimeline } from "@/components/Schedule";
 import { fetchDriverSchedule } from "@/apis/schedule.api";
@@ -13,10 +13,21 @@ import dayjs, { Dayjs } from "dayjs";
 
 const { Title } = Typography;
 
+const INTERVAL_OPTIONS = [
+  { value: 5, label: "5 min" },
+  { value: 10, label: "10 min" },
+  { value: 15, label: "15 min" },
+  { value: 20, label: "20 min" },
+  { value: 25, label: "25 min" },
+  { value: 30, label: "30 min" },
+  { value: 60, label: "60 min" },
+];
+
 export default function ScheduleView() {
   const [selectedDate, setSelectedDate] = useState<Dayjs>(dayjs());
   const [resources, setResources] = useState<ResourceSchedule[]>([]);
   const [loading, setLoading] = useState(false);
+  const [intervalMinutes, setIntervalMinutes] = useState(30);
 
   const loadSchedule = useCallback(async (date: Dayjs) => {
     setLoading(true);
@@ -82,6 +93,12 @@ export default function ScheduleView() {
         </Flex>
 
         <Flex gap={8} align="center">
+          <Select
+            value={intervalMinutes}
+            onChange={setIntervalMinutes}
+            options={INTERVAL_OPTIONS}
+            style={{ width: 100 }}
+          />
           <Button onClick={goToToday}>Today</Button>
           <Button icon={<LeftOutlined />} onClick={goToPreviousDay} />
           <DatePicker
@@ -106,6 +123,7 @@ export default function ScheduleView() {
           dayStartHour={0}
           dayEndHour={24}
           loading={loading}
+          intervalMinutes={intervalMinutes}
         />
       </div>
     </div>

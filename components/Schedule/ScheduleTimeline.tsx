@@ -11,6 +11,7 @@ interface ScheduleTimelineProps {
   dayEndHour?: number;
   timezone?: string;
   loading?: boolean;
+  intervalMinutes?: number;
 }
 
 export default function ScheduleTimeline({
@@ -19,6 +20,7 @@ export default function ScheduleTimeline({
   dayEndHour = 24,
   timezone,
   loading = false,
+  intervalMinutes = 30,
 }: ScheduleTimelineProps) {
   const effectiveTimezone =
     timezone || Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -36,8 +38,12 @@ export default function ScheduleTimeline({
       {/* Scrollable container */}
       <div className="custom-scrollbar overflow-x-auto overflow-y-auto max-h-[calc(100vh-125px)]">
         {/* Fixed header + scrollable body */}
-        <div className="min-w-[1700px]">
-          <TimelineHeader dayStartHour={dayStartHour} dayEndHour={dayEndHour} />
+        <div className="min-w-max">
+          <TimelineHeader 
+            dayStartHour={dayStartHour} 
+            dayEndHour={dayEndHour} 
+            intervalMinutes={intervalMinutes}
+          />
 
           {/* Resource rows */}
           <div>
@@ -48,6 +54,7 @@ export default function ScheduleTimeline({
                 dayStartHour={dayStartHour}
                 dayEndHour={dayEndHour}
                 timezone={effectiveTimezone}
+                intervalMinutes={intervalMinutes}
               />
             ))}
           </div>

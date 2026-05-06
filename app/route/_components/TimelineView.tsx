@@ -280,7 +280,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                             }
                           >
                             <div
-                              className="absolute top-1/2 -translate-y-1/2 h-6 rounded-sm border border-gray-400 cursor-pointer opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center"
+                              className="absolute top-1/2 -translate-y-1/2 h-6 border border-gray-400 cursor-pointer opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center"
                               style={{
                                 left: breakStartPos,
                                 width: breakWidth,
@@ -326,7 +326,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                           }
                         >
                           <div
-                            className="absolute top-1/2 -translate-y-1/2 h-6 rounded-sm border border-gray-300 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
+                            className="absolute top-1/2 -translate-y-1/2 h-6 border border-gray-300 cursor-pointer opacity-60 hover:opacity-100 transition-opacity"
                             style={{
                               left: idleStartPos,
                               width: idleWidth,
