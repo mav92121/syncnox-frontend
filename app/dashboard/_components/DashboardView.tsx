@@ -194,18 +194,24 @@ export default function DashboardView() {
   };
 
   return (
-    <Spin spinning={isLoading} size="large">
-      <div className="flex flex-col h-full overflow-hidden">
-        {/* Title row */}
-        <Flex justify="space-between" align="center">
-          <Title className="m-0 mb-2 pt-2" level={5}>
-            Dashboard
-          </Title>
-          {error && <Text type="danger">{error}</Text>}
-        </Flex>
+    <div className="flex flex-col h-full overflow-hidden relative">
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/60">
+          <Spin size="large" />
+        </div>
+      )}
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-6 gap-3 mb-3 flex-shrink-0">
+      {/* Title row */}
+      <Flex justify="space-between" align="center">
+        <Title className="m-0 mb-2 pt-2" level={5}>
+          Dashboard
+        </Title>
+        {error && <Text type="danger">{error}</Text>}
+      </Flex>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-6 gap-3 mb-3 flex-shrink-0">
           {kpiCards.map((k) => (
             <div
               key={k.label}
@@ -238,7 +244,7 @@ export default function DashboardView() {
         </div>
 
         {/* Middle Row */}
-        <div className="flex gap-3 mb-3 flex-shrink-0">
+        <div className="flex gap-3 mb-3 h-[220px] flex-shrink-0">
           {/* Quick Actions */}
           <div className="bg-gray-50 border border-gray-100 p-3 w-[360px] flex-shrink-0">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2.5">
@@ -398,7 +404,7 @@ export default function DashboardView() {
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2.5 flex-shrink-0">
               <CarOutlined /> Recent Routes
             </div>
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-auto custom-scrollbar">
               <table className="w-full border-collapse text-xs">
                 <thead>
                   <tr>
@@ -497,7 +503,7 @@ export default function DashboardView() {
             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2.5 flex-shrink-0">
               <UserOutlined /> Top Drivers
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto custom-scrollbar">
               {top_drivers.length === 0 ? (
                 <span className="text-xs text-gray-400">
                   No driver data yet
@@ -581,7 +587,6 @@ export default function DashboardView() {
             </div>
           </div>
         </div>
-      </div>
 
       <AddJobsModal
         open={isAddJobModalOpen}
@@ -591,6 +596,6 @@ export default function DashboardView() {
           fetchAllJobs();
         }}
       />
-    </Spin>
+    </div>
   );
 }
