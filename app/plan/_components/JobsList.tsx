@@ -330,11 +330,11 @@ export default function JobsList() {
           </Panel>
           <ResizeHandle />
           <Panel defaultSize={60} minSize={5}>
-            <div className="pt-2 px-2 h-full">{listContent}</div>
+            <div className="pt-2 h-full">{listContent}</div>
           </Panel>
         </PanelGroup>
       ) : (
-        <div className="h-full px-2">{listContent}</div>
+        <div className="h-full">{listContent}</div>
       )}
 
       {/* Edit Job Drawer */}
