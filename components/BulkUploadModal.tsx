@@ -35,7 +35,14 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
       open={open}
       onCancel={handleClose}
       footer={null}
-      width="70vw"
+      width="90vw"
+      centered
+      className="bulk-upload-modal"
+      styles={{
+        body: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 },
+        header: { borderRadius: 0, paddingBottom: '16px' },
+        mask: { backdropFilter: 'blur(4px)' }
+      }}
       destroyOnHidden
     >
       <div>
@@ -47,7 +54,7 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
         />
 
         {/* Render only the current step */}
-        <div className="mt-6">
+        <div className="mt-4 flex-1 min-h-0 flex flex-col">
           {currentStep === 1 && <FileUploadStep />}
           {currentStep === 2 && (
             <ColumnMappingStep onNext={() => setCurrentStep(3)} />
