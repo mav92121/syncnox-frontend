@@ -45,22 +45,32 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
   const checkLocationMapping = (mapping: Record<string, string>) => {
     const hasAddress = Boolean(
       "address_formatted" in mapping &&
-        mapping.address_formatted &&
-        mapping.address_formatted !== "not_mapped"
+      mapping.address_formatted &&
+      mapping.address_formatted !== "not_mapped",
     );
     setHasLocationColumn(hasAddress);
   };
 
   const handleMappingChange = (
-    identifier: string,
-    columnName: string | undefined
+    excelColumn: string,
+    selectedJobField: string | undefined,
   ) => {
     const updated = { ...localMapping };
-    if (!columnName) {
-      delete updated[identifier];
-    } else {
-      updated[identifier] = columnName;
+
+    // Find if this excel column was previously mapped to any other job field and remove it
+    const previousJobField = Object.keys(updated).find(
+      (jf) => updated[jf] === excelColumn,
+    );
+    if (previousJobField && previousJobField !== selectedJobField) {
+      delete updated[previousJobField];
     }
+
+    if (selectedJobField) {
+      updated[selectedJobField] = excelColumn;
+    } else if (previousJobField) {
+      delete updated[previousJobField];
+    }
+
     setLocalMapping(updated);
     checkLocationMapping(updated);
   };
@@ -89,7 +99,7 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
       const response = await geocodeBulkData(
         uploadedFile,
         apiMapping,
-        defaultScheduledDate
+        defaultScheduledDate,
       );
 
       setColumnMapping(apiMapping);
@@ -108,79 +118,94 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
     return null;
   }
 
-  const availableColumns = uploadResponse.sample_data[0]
+  const excelColumns = uploadResponse.sample_data[0]
     ? Object.keys(uploadResponse.sample_data[0])
     : [];
 
-  const mappingOptions = availableColumns.map((col) => ({
-    value: col,
-    label: col,
+  const jobFieldOptions = uploadResponse.columns.map((col) => ({
+    value: col.identifier,
+    label: col.description,
   }));
 
-  // Table should show: Job Field -> Excel Column mapping
-  const tableData = uploadResponse.columns.map((col) => ({
-    key: col.index,
-    identifier: col.identifier, // Job field identifier (e.g., "address_formatted")
-    description: col.description, // Job field description (e.g., "Delivery Address *")
-    mapping: localMapping[col.identifier] || undefined, // Excel column name or undefined
-    sample: col.sample_value, // Sample value from Excel
-  }));
+  const getJobFieldForExcelColumn = (excelColumn: string) => {
+    return (
+      Object.keys(localMapping).find(
+        (jobField) => localMapping[jobField] === excelColumn,
+      ) || undefined
+    );
+  };
 
-  const columns = [
-    {
-      title: "Field", // Job model field
-      dataIndex: "description",
-      key: "description",
-      width: "30%",
-    },
-    {
-      title: "Maps To", // Excel column
-      dataIndex: "mapping",
-      key: "mapping",
-      width: "30%",
-      render: (value: string | undefined, record: any) => (
+  const dynamicColumns = excelColumns.map((excelCol) => ({
+    title: (
+      <div className="flex flex-col gap-2 min-w-[200px] mb-2">
         <Select
-          value={value}
-          onChange={(val) => handleMappingChange(record.identifier, val)}
-          options={mappingOptions}
+          value={getJobFieldForExcelColumn(excelCol)}
+          onChange={(val) => handleMappingChange(excelCol, val)}
+          options={jobFieldOptions}
           style={{ width: "100%" }}
           placeholder="Not Mapped"
           allowClear
+          className="font-normal [&_.ant-select-selector]:!rounded-none"
         />
-      ),
-    },
+        <div className="font-semibold text-gray-700">{excelCol}</div>
+      </div>
+    ),
+    dataIndex: excelCol,
+    key: excelCol,
+    width: 250,
+    ellipsis: true,
+    render: (value: any) => (
+      <div className="truncate" title={value?.toString()}>
+        {value === null || value === undefined ? "" : value.toString()}
+      </div>
+    ),
+  }));
+
+  const tableColumns = [
     {
-      title: "Sample Value", // From Excel
-      dataIndex: "sample",
-      key: "sample",
-      width: "40%",
-      ellipsis: true,
+      title: "",
+      key: "index",
+      render: (_: any, __: any, index: number) => (
+        <span className="font-semibold text-gray-500">{index + 1}</span>
+      ),
+      width: 60,
+      fixed: "left" as const,
     },
+    ...dynamicColumns,
   ];
 
   return (
-    <div className="flex flex-col" style={{ height: "calc(70vh - 120px)" }}>
+    <div className="flex flex-col h-full min-h-0">
+      <div className="mb-2 text-gray-600 font-medium shrink-0">
+        Review Mapped Columns
+      </div>
       {/* Location Error Alert */}
       {!hasLocationColumn && (
         <Alert
           description="There has to be at least one column defining location (address)"
           type="warning"
           showIcon
+          className="mb-4"
         />
       )}
 
       {/* Scrollable Table Container */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar mb-4">
+      <div className="flex-1 min-h-0 relative mb-2 border border-gray-200 rounded-none">
         <Table
-          columns={columns}
-          dataSource={tableData}
+          columns={tableColumns}
+          dataSource={uploadResponse.sample_data.map((row, idx) => ({
+            ...row,
+            key: idx,
+          }))}
           pagination={false}
           size="small"
+          scroll={{ x: "max-content", y: "calc(90vh - 340px)" }}
+          className="bulk-upload-horizontal-table"
         />
       </div>
 
       {/* Sticky Footer */}
-      <div className="flex justify-between items-center pt-4 border-t bg-white">
+      <div className="flex justify-between items-center pt-4 border-t bg-white shrink-0">
         <Checkbox
           checked={saveAsDefault}
           onChange={(e) => setSaveAsDefault(e.target.checked)}
@@ -193,6 +218,7 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
           onClick={handleContinue}
           disabled={!hasLocationColumn}
           loading={isProcessing}
+          className="rounded-none"
         >
           Continue
         </Button>
