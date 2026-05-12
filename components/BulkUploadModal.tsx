@@ -37,8 +37,8 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
       footer={null}
       width="90vw"
       centered
+      className="bulk-upload-modal"
       styles={{
-        content: { borderRadius: 0, padding: '20px 24px', height: '90vh', display: 'flex', flexDirection: 'column' },
         body: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 },
         header: { borderRadius: 0, paddingBottom: '16px' },
         mask: { backdropFilter: 'blur(4px)' }
