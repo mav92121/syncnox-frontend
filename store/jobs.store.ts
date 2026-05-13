@@ -67,7 +67,7 @@ export const useJobsStore = create<JobsState>()(
         });
 
         try {
-          await get().fetchAllJobs();
+          await get().fetchJobsByStatus("draft");
           set((state) => {
             state.isLoading = false;
           });

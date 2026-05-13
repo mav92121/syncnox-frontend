@@ -95,16 +95,21 @@ export const generateTimeMarkers = (
 };
 
 export const ROUTE_COLORS = [
-  "#1890ff", // Blue
-  "#52c41a", // Green
-  "#faad14", // Yellow
-  "#f5222d", // Red
-  "#722ed1", // Purple
-  "#13c2c2", // Cyan
-  "#eb2f96", // Magenta
-  "#fa541c", // Orange
-  "#2f54eb", // Geek Blue
-  "#a0d911", // Lime
+  "#1f77b4", // Steel Blue
+  "#ff7f0e", // Dark Orange
+  "#059669", // Emerald Green
+  "#9467bd", // Muted Purple
+  "#8c564b", // Chestnut Brown
+  "#e377c2", // Orchid Pink
+  "#17becf", // Cyan Blue
+  "#bcbd22", // Olive Yellow
+  "#393b79", // Dark Indigo
+  "#637939", // Olive Green
+  "#8c6d31", // Bronze
+  "#5254a3", // Dark Slate Blue
+  "#7b4173", // Deep Plum
+  "#3182bd", // Medium Blue
+  "#e6550d", // Rust Orange
 ];
 
 export const getRouteColor = (index: number) => {

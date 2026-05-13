@@ -27,7 +27,7 @@ export const useRouteStore = create(
       isLoading: false,
       error: null,
       hasFetched: false,
-      selectedStatus: "all",
+      selectedStatus: "scheduled",
 
       fetchRoutes: async (status?: string) => {
         set({ isLoading: true });

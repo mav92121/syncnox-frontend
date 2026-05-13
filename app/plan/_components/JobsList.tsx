@@ -58,7 +58,7 @@ export default function JobsList() {
   const { getTeamsMap } = useTeamStore();
   const [editJobData, setEditJobData] = useState<Job | null>(null);
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
-  const [selectedJobTab, setSelectedJobTab] = useState<JobTab>("all");
+  const [selectedJobTab, setSelectedJobTab] = useState<JobTab>("draft");
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
@@ -219,10 +219,10 @@ export default function JobsList() {
           onChange={handleJobStatusChange}
           value={selectedJobTab}
         >
-          <Radio.Button value="all">All</Radio.Button>
           <Radio.Button value="draft">Draft</Radio.Button>
           <Radio.Button value="assigned">Assigned</Radio.Button>
           <Radio.Button value="completed">Completed</Radio.Button>
+          <Radio.Button value="all">All</Radio.Button>
         </Radio.Group>
 
         <Flex

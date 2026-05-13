@@ -198,10 +198,10 @@ export default function RoutesView() {
           value={selectedStatus}
           onChange={(e) => setSelectedStatus(e.target.value)}
         >
-          <Radio.Button value="all">All</Radio.Button>
           <Radio.Button value="scheduled">Scheduled</Radio.Button>
           <Radio.Button value="in_transit">In Transit</Radio.Button>
           <Radio.Button value="completed">Completed</Radio.Button>
+          <Radio.Button value="all">All</Radio.Button>
         </Radio.Group>
         <Flex gap={8}>
           <Link href="/plan" onClick={() => setCurrentTab("jobs")}>
