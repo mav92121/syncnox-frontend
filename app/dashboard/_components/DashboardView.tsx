@@ -211,11 +211,11 @@ export default function DashboardView() {
       </Flex>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-6 gap-3 mb-3 flex-shrink-0">
+      <div className="grid grid-cols-6 gap-4 mb-4 flex-shrink-0">
         {kpiCards.map((k) => (
           <div
             key={k.label}
-            className="flex flex-col items-center text-center p-3 bg-white border-[1.5px] border-gray-100"
+            className="flex flex-col items-center text-center p-4 bg-white border-[1.5px] border-gray-100"
           >
             <div
               className="w-7 h-7 flex items-center justify-center mb-1.5 text-sm"
@@ -244,18 +244,18 @@ export default function DashboardView() {
       </div>
 
       {/* Middle Row */}
-      <div className="flex gap-3 mb-3 h-[220px] flex-shrink-0">
+      <div className="flex gap-4 mb-4 h-[250px] flex-shrink-0">
         {/* Quick Actions */}
-        <div className="bg-gray-50 border border-gray-100 p-3 w-[360px] flex-shrink-0">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2.5">
+        <div className="bg-white border-[1.5px] border-gray-100 p-4 w-[380px] flex-shrink-0">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-3">
             <ThunderboltOutlined /> Quick Actions
           </div>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-3">
             {quickActions.map((action) => (
               <button
                 key={action.label}
                 onClick={action.onClick}
-                className="flex flex-col items-center justify-center gap-1.5 p-3 bg-white border border-gray-200 cursor-pointer font-[inherit] transition-all duration-150 hover:bg-green-50 hover:border-green-300 hover:-translate-y-px"
+                className="flex flex-col items-center justify-center gap-2 p-4 bg-white border-[1.5px] border-gray-200 cursor-pointer font-[inherit] transition-all duration-150 hover:bg-green-50 hover:border-green-300 hover:-translate-y-px"
               >
                 <span className="text-gray-800 text-lg">{action.icon}</span>
                 <span className="text-[11px] font-medium text-gray-500">
@@ -267,11 +267,11 @@ export default function DashboardView() {
         </div>
 
         {/* Optimization Impact */}
-        <div className="bg-gray-50 border border-gray-100 p-3 flex-1 flex flex-col">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2.5 flex-shrink-0">
+        <div className="bg-white border-[1.5px] border-gray-100 p-4 flex-1 flex flex-col">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-3 flex-shrink-0">
             <DashboardOutlined /> Optimization Impact
           </div>
-          <div className="grid grid-cols-3 gap-2.5 flex-1">
+          <div className="grid grid-cols-3 gap-3 flex-1">
             {[
               {
                 icon: (
@@ -305,7 +305,7 @@ export default function DashboardView() {
             ].map((item) => (
               <div
                 key={item.unit}
-                className="flex flex-col items-center justify-center text-center p-3 bg-white border border-gray-100"
+                className="flex flex-col items-center justify-center text-center p-4 bg-white border-[1.5px] border-gray-100"
               >
                 <div className="mb-1">{item.icon}</div>
                 <div className="text-xl font-semibold text-gray-900">
@@ -321,8 +321,8 @@ export default function DashboardView() {
         </div>
 
         {/* Upcoming */}
-        <div className="bg-gray-50 border border-gray-100 p-3 w-[240px] flex-shrink-0 flex flex-col">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2.5 flex-shrink-0">
+        <div className="bg-white border-[1.5px] border-gray-100 p-4 w-[280px] flex-shrink-0 flex flex-col">
+          <div className="flex items-center justify-between text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-3 flex-shrink-0">
             <span className="flex items-center gap-1.5">
               <CalendarOutlined /> Upcoming
             </span>
@@ -399,10 +399,10 @@ export default function DashboardView() {
       </div>
 
       {/* Bottom Row */}
-      <div className="flex gap-3 flex-1 min-h-0">
+      <div className="flex gap-4 flex-1 min-h-0">
         {/* Recent Routes */}
-        <div className="flex flex-col flex-1 bg-gray-50 border border-gray-100 p-3 overflow-hidden">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2.5 flex-shrink-0">
+        <div className="flex flex-col flex-1 bg-white border-[1.5px] border-gray-100 p-4 overflow-hidden">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-3 flex-shrink-0">
             <CarOutlined /> Recent Routes
           </div>
           <div className="flex-1 overflow-auto custom-scrollbar">
@@ -492,8 +492,8 @@ export default function DashboardView() {
         </div>
 
         {/* Top Drivers */}
-        <div className="flex flex-col bg-gray-50 border border-gray-100 p-3 w-[240px] flex-shrink-0 overflow-hidden">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2.5 flex-shrink-0">
+        <div className="flex flex-col bg-white border-[1.5px] border-gray-100 p-4 w-[280px] flex-shrink-0 overflow-hidden">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-3 flex-shrink-0">
             <UserOutlined /> Top Drivers
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar">

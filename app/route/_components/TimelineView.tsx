@@ -1,5 +1,6 @@
 import React, { useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
+import type { Job } from "@/types/job.type";
 import { Avatar, Tooltip, Select, Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -23,6 +24,7 @@ import {
 
 interface TimelineViewProps {
   routes: any[];
+  jobs?: Job[];
   onStopClick?: (stop: any, routeIndex: number, stopIndex: number) => void;
   onAddStop?: (routeIndex: number) => void;
   onSwapDriver?: (routeIndex: number) => void;
@@ -42,6 +44,7 @@ const INTERVAL_OPTIONS = [
 
 const TimelineView: React.FC<TimelineViewProps> = ({
   routes,
+  jobs = [],
   onStopClick,
   onAddStop,
   onSwapDriver,
@@ -55,6 +58,12 @@ const TimelineView: React.FC<TimelineViewProps> = ({
     () => calculateTimeRange(routes),
     [routes],
   );
+
+  const jobsMap = useMemo(() => {
+    const map = new Map<number, string>();
+    jobs.forEach(job => map.set(job.id, job.status));
+    return map;
+  }, [jobs]);
 
   // Dynamic pixels per minute based on interval - smaller intervals get more spread
   const pixelsPerMinute = getPixelsPerMinute(intervalMinutes);
@@ -366,6 +375,35 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                       const isDepot = stop.stop_type === "depot";
                       const isJob = stop.stop_type === "job";
 
+                      let jobStatus = "assigned";
+                      if (isJob && stop.job_id) {
+                        jobStatus = jobsMap.get(stop.job_id) || "assigned";
+                      }
+
+                      let blockBgColor = routeColor;
+                      let blockBorderColor = routeColor;
+                      let blockTextColor = "white";
+
+                      if (isJob) {
+                        if (jobStatus === "completed") {
+                          blockBgColor = routeColor;
+                          blockBorderColor = routeColor;
+                          blockTextColor = "white";
+                        } else if (jobStatus === "failed") {
+                          blockBgColor = "#f5222d"; // Red
+                          blockBorderColor = "#f5222d";
+                          blockTextColor = "white";
+                        } else if (jobStatus === "skipped") {
+                          blockBgColor = "#8c8c8c"; // Gray
+                          blockBorderColor = "#8c8c8c";
+                          blockTextColor = "white";
+                        } else {
+                          blockBgColor = "white";
+                          blockBorderColor = routeColor;
+                          blockTextColor = routeColor;
+                        }
+                      }
+
                       // For jobs with service duration, show as a bar
                       if (isJob && serviceDuration > 0) {
                         return (
@@ -392,6 +430,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                                 <div className="text-xs">
                                   Service: {serviceDuration} min
                                 </div>
+                                <div className="text-xs uppercase mt-1 opacity-80">
+                                  Status: {jobStatus}
+                                </div>
                               </div>
                             }
                           >
@@ -400,14 +441,14 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                               style={{
                                 left: left,
                                 width: Math.max(blockWidth, 28), // Minimum width for visibility
-                                backgroundColor: routeColor,
-                                borderColor: routeColor,
+                                backgroundColor: blockBgColor,
+                                borderColor: blockBorderColor,
                               }}
                               onClick={() =>
                                 onStopClick?.(stop, routeIndex, stopIndex)
                               }
                             >
-                              <span className="text-xs font-bold text-white">
+                              <span className="text-xs font-bold" style={{ color: blockTextColor }}>
                                 {stopIndex}
                               </span>
                             </div>
@@ -432,6 +473,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                                   ? arrivalTime.format("HH:mm")
                                   : "--:--"}
                               </div>
+                              {isJob && (
+                                <div className="text-xs uppercase mt-1 opacity-80 text-gray-400">
+                                  Status: {jobStatus}
+                                </div>
+                              )}
                             </div>
                           }
                         >
@@ -439,11 +485,12 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                             className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center border-2 shadow-md transition-all hover:scale-110 cursor-pointer ${
                               isDepot
                                 ? "w-8 h-8 rounded-lg bg-linear-to-br from-slate-700 to-slate-900 border-slate-600 z-10 shadow-lg text-white"
-                                : "w-8 h-8 rounded bg-white z-0"
+                                : "w-8 h-8 rounded z-0"
                             }`}
                             style={{
                               left: left - 14,
-                              borderColor: isDepot ? undefined : routeColor,
+                              backgroundColor: isDepot ? undefined : blockBgColor,
+                              borderColor: isDepot ? undefined : blockBorderColor,
                             }}
                             onClick={() =>
                               onStopClick?.(stop, routeIndex, stopIndex)
@@ -454,7 +501,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                             ) : (
                               <span
                                 className="text-xs font-bold"
-                                style={{ color: routeColor }}
+                                style={{ color: blockTextColor }}
                               >
                                 {stopIndex}
                               </span>
