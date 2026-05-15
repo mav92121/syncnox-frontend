@@ -75,6 +75,7 @@ export const generateMapMarkers = (route: Route, jobs: Job[]) => {
           jobData: job,
           sequenceNumber: stopIndex,
           isDepot: stop.stop_type === "depot",
+          color: color,
         };
       });
   });

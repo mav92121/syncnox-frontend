@@ -13,11 +13,43 @@ export const createCustomMarkerIcon = (
   status: JobStatus,
   isSelected: boolean = false,
   colorOverride?: string,
-  isDepot: boolean = false
+  isDepot: boolean = false,
 ): google.maps.Icon => {
-  const color = isDepot
-    ? "#1f2937"
-    : colorOverride || STATUS_COLORS[status] || STATUS_COLORS.draft;
+  let fillColor = "";
+  let strokeColor = "";
+  let strokeWidth = 0;
+  let textColor = "";
+  let dotColor = "";
+
+  if (isDepot) {
+    fillColor = "#1f2937";
+    strokeColor = "none";
+    textColor = "white";
+    dotColor = "#1f2937";
+  } else {
+    let baseColor =
+      colorOverride || STATUS_COLORS[status] || STATUS_COLORS.draft;
+
+    if (status === "failed" || status === "cancelled") {
+      baseColor = "#ff4d4f"; // red
+      fillColor = baseColor;
+      strokeColor = baseColor;
+      strokeWidth = 0;
+      textColor = "white";
+    } else if (status === "completed") {
+      fillColor = baseColor;
+      strokeColor = baseColor;
+      strokeWidth = 0;
+      textColor = "white";
+    } else {
+      // draft, assigned, in_progress, etc.
+      fillColor = "white";
+      strokeColor = baseColor;
+      strokeWidth = 2;
+      textColor = baseColor;
+    }
+    dotColor = baseColor;
+  }
 
   const scale = isSelected ? 1.2 : 1;
   /* 
@@ -36,7 +68,7 @@ export const createCustomMarkerIcon = (
   // SVG marker icon - teardrop pin with number and dot trail
   const svg = `
 
-    <svg width="${width}" height="${height}" viewBox="0 0 ${baseWidth} ${baseHeight}" xmlns="http://www.w3.org/2000/svg">
+    <svg width="${width}" height="${height}" viewBox="-2 -2 36 49" xmlns="http://www.w3.org/2000/svg">
       <!-- Drop shadow -->
       <defs>
         <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
@@ -56,16 +88,16 @@ export const createCustomMarkerIcon = (
       <!-- Main pin body (teardrop for stops, rounded square for depot) -->
       ${
         isDepot
-          ? `<rect x="2" y="2" width="28" height="28" rx="6" fill="${color}" filter="url(#shadow)"/>
+          ? `<rect x="2" y="2" width="28" height="28" rx="6" fill="${fillColor}" filter="url(#shadow)"/>
            <!-- House Icon -->
-           <path d="M16 8L8 15V24H12V20H20V24H24V15L16 8Z" fill="white"/>`
+           <path d="M16 8L8 15V24H12V20H20V24H24V15L16 8Z" fill="${textColor}"/>`
           : `<path 
             d="M16 0C9.4 0 4 5.4 4 12c0 8 12 24 12 24s12-16 12-24c0-6.6-5.4-12-12-12z" 
-            fill="${color}"
+            fill="${fillColor}"
+            stroke="${strokeColor}"
+            stroke-width="${strokeWidth}"
             filter="url(#shadow)"
           />
-          <!-- White circle background for number -->
-          <circle cx="16" cy="12" r="8" fill="white"/>
           
           <!-- Number text -->
           <text 
@@ -74,16 +106,16 @@ export const createCustomMarkerIcon = (
             font-family="Arial, sans-serif" 
             font-size="11" 
             font-weight="bold" 
-            fill="${color}" 
+            fill="${textColor}" 
             text-anchor="middle" 
             dominant-baseline="central"
           >${number}</text>`
       }
       
       <!-- Dot trail -->
-      <circle cx="16" cy="38" r="1.5" fill="${color}" opacity="0.6"/>
-      <circle cx="16" cy="41" r="1.2" fill="${color}" opacity="0.4"/>
-      <circle cx="16" cy="43.5" r="0.8" fill="${color}" opacity="0.2"/>
+      <circle cx="16" cy="38" r="1.5" fill="${dotColor}" opacity="0.6"/>
+      <circle cx="16" cy="41" r="1.2" fill="${dotColor}" opacity="0.4"/>
+      <circle cx="16" cy="43.5" r="0.8" fill="${dotColor}" opacity="0.2"/>
     </svg>
   `;
 
