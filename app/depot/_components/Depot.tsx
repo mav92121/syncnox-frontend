@@ -162,7 +162,16 @@ const Depot = () => {
           Depots
         </Title>
         <Flex gap={8}>
-          <Button size="small" onClick={() => setIsMapOpen(!isMapOpen)}>
+          <Button
+            size="small"
+            onClick={() => {
+              if (!isMapOpen) {
+                setMapCenter(null);
+                setSelectedMarkerId(null);
+              }
+              setIsMapOpen(!isMapOpen);
+            }}
+          >
             {isMapOpen ? "Close Map" : "Map View"}
           </Button>
           <Button size="small" type="primary" onClick={handleCreate}>
@@ -193,8 +202,8 @@ const Depot = () => {
               <div className="h-full">
                 <GoogleMaps
                   markers={markers}
-                  center={mapCenter || undefined}
-                  zoom={mapCenter ? 17 : undefined}
+                  center={mapCenter || { lat: 40.7128, lng: -74.0060 }}
+                  zoom={mapCenter ? 17 : 10}
                   selectedMarkerId={selectedMarkerId}
                   onMarkerSelect={setSelectedMarkerId}
                   InfoWindowModal={({ marker }) => (
