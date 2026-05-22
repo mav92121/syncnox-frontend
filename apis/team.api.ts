@@ -23,3 +23,14 @@ export const updateTeam = async (team: Team): Promise<Team> => {
 export const deleteTeam = async (teamId: number): Promise<void> => {
   await apiClient.delete(`${url}/${teamId}`);
 };
+
+export const activateDriver = async (driverId: number): Promise<{ activation_code: string }> => {
+  const response = await apiClient.post<{ activation_code: string }>(`/driver/${driverId}/activate`);
+  return response.data;
+};
+
+export const deactivateDriver = async (driverId: number): Promise<{ status: string }> => {
+  const response = await apiClient.post<{ status: string }>(`/driver/${driverId}/deactivate`);
+  return response.data;
+};
+

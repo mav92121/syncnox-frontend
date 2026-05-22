@@ -13,6 +13,7 @@ import { useTeamStore } from "@/store/team.store";
 import { useDepotStore } from "@/store/depots.store";
 import BasicInformation from "./BasicInformation";
 import SkillsAndCost from "./SkillsAndCost";
+import MobileAppSection from "./MobileAppSection";
 
 const TeamMemberForm = ({
   initialData = null,
@@ -172,10 +173,16 @@ const TeamMemberForm = ({
 
   const isDriver = roleType === "driver";
 
-  // Filter menu items based on role - only show Basic Information for non-drivers
+  // Filter menu items based on role - only show Basic Information for non-drivers, and show Mobile App section only in edit mode
+  const menuItems = [
+    { key: "basic", label: "Basic Information" },
+    { key: "skillsAndCost", label: "Costs & Skills (Optional)" },
+    ...(initialData ? [{ key: "mobileApp", label: "Mobile App" }] : []),
+  ];
+
   const filteredMenuItems = isDriver
-    ? MENU_ITEMS
-    : MENU_ITEMS.filter((item) => item.key === "basic");
+    ? menuItems
+    : menuItems.filter((item) => item.key === "basic");
 
   return (
     <Flex style={{ height: "100%", overflow: "hidden" }}>
@@ -269,6 +276,20 @@ const TeamMemberForm = ({
                     onRemoveSkill={handleRemoveSkill}
                   />
                 </div>
+
+                {initialData && (
+                  <div
+                    style={{
+                      display:
+                        activeSection === "mobileApp" ? "block" : "none",
+                    }}
+                  >
+                    <MobileAppSection
+                      driverId={initialData.id}
+                      initialActivationCode={initialData.activation_code}
+                    />
+                  </div>
+                )}
               </>
             ) : (
               // For non-driver roles, show only basic information (first 5 fields)
