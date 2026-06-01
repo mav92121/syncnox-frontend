@@ -116,3 +116,23 @@ export const reOptimizeRoute = async (
   );
   return response.data;
 };
+
+// ─────────────────────────────────────────────
+// Route Sharing (Driver Mobile App)
+// ─────────────────────────────────────────────
+
+export interface ShareRouteResponse {
+  shared_count: number;
+  driver_ids: number[];
+  online_drivers: number[];
+}
+
+/** Share all routes in an optimization request to their assigned drivers. */
+export const shareOptimizationRoutes = async (
+  optimizationRequestId: number,
+): Promise<ShareRouteResponse> => {
+  const response = await apiClient.post(
+    `optimization/${optimizationRequestId}/share`,
+  );
+  return response.data;
+};
