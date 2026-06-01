@@ -48,6 +48,8 @@ import {
   swapRouteDriver,
   reverseRoute,
   reOptimizeRoute,
+  shareOptimizationRoutes,
+  type ShareRouteResponse,
 } from "@/apis/routes.api";
 
 const { Title, Text } = Typography;
@@ -89,6 +91,10 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const [tempRouteName, setTempRouteName] = useState(route.route_name);
   const [isSavingName, setIsSavingName] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareResult, setShareResult] = useState<ShareRouteResponse | null>(
+    null,
+  );
 
   // Route operations modal state
   const [addStopRouteIndex, setAddStopRouteIndex] = useState<number | null>(
@@ -138,6 +144,21 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.currentTarget.blur();
+    }
+  };
+
+  const handleShareToApp = async () => {
+    setIsSharing(true);
+    try {
+      const result = await shareOptimizationRoutes(route.id);
+      setShareResult(result);
+    } catch (err: any) {
+      const detail =
+        err?.response?.data?.detail ??
+        "Failed to share routes. Please try again.";
+      message.error(detail);
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -405,11 +426,15 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             <Button icon={<ExportOutlined />} onClick={handleExportRoutes}>
               Export
             </Button>
-            <Tooltip title="Coming soon">
-              <Button type="primary" icon={<ShareAltOutlined />}>
-                Share to App
-              </Button>
-            </Tooltip>
+            <Button
+              type="primary"
+              icon={isSharing ? <LoadingOutlined /> : <ShareAltOutlined />}
+              loading={isSharing}
+              disabled={isSharing}
+              onClick={handleShareToApp}
+            >
+              Share to App
+            </Button>
           </div>
         </div>
       </nav>
@@ -533,6 +558,61 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
           onSuccess={handleSwapSuccess}
         />
       )}
+
+      <Modal
+        open={shareResult !== null}
+        onCancel={() => setShareResult(null)}
+        onOk={() => setShareResult(null)}
+        title={
+          <span className="flex items-center gap-2">
+            <ShareAltOutlined className="text-green-500" />
+            Route Shared Successfully
+          </span>
+        }
+        okText="Done"
+        cancelButtonProps={{ style: { display: "none" } }}
+        centered
+      >
+        {shareResult && (
+          <div className="space-y-4 py-2">
+            <div className="flex items-center justify-between p-4 rounded-lg bg-green-50 border border-green-100">
+              <span className="text-green-700 font-medium">
+                Drivers notified
+              </span>
+              <span className="text-2xl font-bold text-green-600">
+                {shareResult.shared_count}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg bg-blue-50 border border-blue-100 text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {shareResult.online_drivers.length}
+                </div>
+                <div className="text-xs text-blue-500 mt-1">
+                  Online — received instantly
+                </div>
+              </div>
+              <div className="p-3 rounded-lg bg-gray-50 border border-gray-200 text-center">
+                <div className="text-2xl font-bold text-gray-500">
+                  {shareResult.shared_count - shareResult.online_drivers.length}
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Offline — will receive on next login
+                </div>
+              </div>
+            </div>
+
+            {shareResult.shared_count === 0 && (
+              <Alert
+                type="warning"
+                showIcon
+                message="No drivers with assigned routes found. Make sure routes have drivers assigned before sharing."
+              />
+            )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
