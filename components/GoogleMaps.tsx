@@ -12,6 +12,15 @@ import { Layers } from "lucide-react";
 import { Job, JobType } from "@/types/job.type";
 import { createCustomMarkerIcon } from "@/utils/customMapMarker";
 
+// Declared outside the component to keep the reference stable across renders.
+// Including 'drawing' here ensures the DrawingManager in ServiceZoneMap works
+// even though both components share the same useJsApiLoader id.
+export const GOOGLE_MAPS_LIBRARIES: ("drawing" | "geometry" | "places")[] = [
+  "drawing",
+  "geometry",
+  "places",
+];
+
 type MapType = "roadmap" | "satellite" | "hybrid" | "terrain";
 
 const containerStyle = {
@@ -89,6 +98,8 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || "",
+    version: "3.64",
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
   const [mapTypeId, setMapTypeId] = useState<MapType>("roadmap");
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);

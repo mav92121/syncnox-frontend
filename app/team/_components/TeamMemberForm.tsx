@@ -14,6 +14,7 @@ import { useDepotStore } from "@/store/depots.store";
 import BasicInformation from "./BasicInformation";
 import SkillsAndCost from "./SkillsAndCost";
 import MobileAppSection from "./MobileAppSection";
+import ServiceZonesSection from "./ServiceZonesSection";
 
 const TeamMemberForm = ({
   initialData = null,
@@ -177,6 +178,7 @@ const TeamMemberForm = ({
   const menuItems = [
     { key: "basic", label: "Basic Information" },
     { key: "skillsAndCost", label: "Costs & Skills (Optional)" },
+    ...(initialData ? [{ key: "serviceZones", label: "Service Areas" }] : []),
     ...(initialData ? [{ key: "mobileApp", label: "Mobile App" }] : []),
   ];
 
@@ -276,6 +278,17 @@ const TeamMemberForm = ({
                     onRemoveSkill={handleRemoveSkill}
                   />
                 </div>
+
+                {initialData && (
+                  <div
+                    style={{
+                      display:
+                        activeSection === "serviceZones" ? "block" : "none",
+                    }}
+                  >
+                    <ServiceZonesSection driverId={initialData.id} />
+                  </div>
+                )}
 
                 {initialData && (
                   <div

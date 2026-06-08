@@ -3,7 +3,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 
 dayjs.extend(customParseFormat);
 
-export type MenuKey = "basic" | "skillsAndCost" | "mobileApp";
+export type MenuKey = "basic" | "skillsAndCost" | "mobileApp" | "serviceZones";
 
 export interface TeamMemberFormProps {
   initialData?: any;

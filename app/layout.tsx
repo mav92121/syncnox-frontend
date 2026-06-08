@@ -34,7 +34,7 @@ export default function RootLayout({
         className={`${inter.className} antialiased text-[13px] overflow-hidden`}
       >
         <Script
-          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&libraries=places,maps`}
+          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_API_KEY}&v=3.64&libraries=places,maps,drawing,geometry`}
           strategy="beforeInteractive"
         />
         <SessionProvider>
