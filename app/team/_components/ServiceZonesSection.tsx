@@ -1,9 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { Button, Spin, Alert, Tag, message } from "antd";
+import { Button, Spin, Alert, Tag } from "antd";
 import { EnvironmentOutlined } from "@ant-design/icons";
 import ServiceZoneMap, { ZonePolygon } from "./ServiceZoneMap";
-import { saveDriverZones, fetchDriverZones } from "@/apis/team.api";
+import { fetchDriverZones } from "@/apis/team.api";
 
 const ZONE_COLOR_NAMES: Record<string, string> = {
   "#E8834B": "Orange",
@@ -16,15 +16,16 @@ const ZONE_COLOR_NAMES: Record<string, string> = {
 
 interface ServiceZonesSectionProps {
   driverId: number;
+  zones: ZonePolygon[];
+  onZonesChange: (zones: ZonePolygon[]) => void;
 }
 
 const ServiceZonesSection: React.FC<ServiceZonesSectionProps> = ({
   driverId,
+  zones,
+  onZonesChange,
 }) => {
-  const [messageApi, contextHolder] = message.useMessage();
-  const [zones, setZones] = useState<ZonePolygon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
   // Load existing zones
   useEffect(() => {
@@ -33,7 +34,7 @@ const ServiceZonesSection: React.FC<ServiceZonesSectionProps> = ({
       try {
         const data = await fetchDriverZones(driverId);
         if (data && data.length > 0) {
-          setZones(data);
+          onZonesChange(data);
         }
       } catch {
         // No zones yet – that's fine
@@ -42,28 +43,15 @@ const ServiceZonesSection: React.FC<ServiceZonesSectionProps> = ({
       }
     };
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [driverId]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await saveDriverZones(driverId, zones);
-      messageApi.success("Service zones saved successfully");
-    } catch {
-      messageApi.error("Failed to save service zones");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   const handleClearAll = () => {
-    setZones([]);
+    onZonesChange([]);
   };
 
   return (
     <div className="px-1 flex flex-col gap-4">
-      {contextHolder}
-
       {/* Header */}
       <div>
         <h3 className="m-0 mb-1 font-semibold text-gray-800 text-sm">
@@ -82,15 +70,25 @@ const ServiceZonesSection: React.FC<ServiceZonesSectionProps> = ({
           <Spin size="large" />
         </div>
       ) : (
-        <ServiceZoneMap zones={zones} onZonesChange={setZones} />
+        <ServiceZoneMap zones={zones} onZonesChange={onZonesChange} />
       )}
 
       {/* Zones summary list */}
       {zones.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs font-semibold text-gray-700">
-            Defined zones:
-          </span>
+          <div className="flex items-center gap-3 justify-between">
+            <span className="text-xs font-semibold text-gray-700">
+              Defined zones:
+            </span>
+            <Button
+              size="small"
+              onClick={handleClearAll}
+              danger
+              className="p-0 h-auto font-medium text-xs"
+            >
+              Clear All Zones
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {zones.map((zone, idx) => (
               <Tag
@@ -124,23 +122,6 @@ const ServiceZonesSection: React.FC<ServiceZonesSectionProps> = ({
       <span className="block text-xs text-gray-400 italic">
         {"* If another driver's service area overlaps, jobs will be shared between the two drivers."}
       </span>
-
-      {/* Action buttons */}
-      <div className="flex gap-2 justify-end">
-        {zones.length > 0 && (
-          <Button onClick={handleClearAll} danger>
-            Clear All Zones
-          </Button>
-        )}
-        <Button
-          type="primary"
-          loading={isSaving}
-          onClick={handleSave}
-          icon={<EnvironmentOutlined />}
-        >
-          Save Zones
-        </Button>
-      </div>
     </div>
   );
 };
