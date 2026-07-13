@@ -11,6 +11,7 @@ import {
 import { transformFormToApi, transformApiToForm } from "./teamMemberForm.utils";
 import { useTeamStore } from "@/store/team.store";
 import { useDepotStore } from "@/store/depots.store";
+import { saveDriverZones } from "@/apis/team.api";
 import BasicInformation from "./BasicInformation";
 import SkillsAndCost from "./SkillsAndCost";
 import MobileAppSection from "./MobileAppSection";
@@ -25,6 +26,7 @@ const TeamMemberForm = ({
   const { depots } = useDepotStore();
   const [form] = Form.useForm();
   const [activeSection, setActiveSection] = useState<MenuKey>("basic");
+  const [zones, setZones] = useState<any[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
   const [scheduleBreak, setScheduleBreak] = useState(false);
@@ -77,6 +79,14 @@ const TeamMemberForm = ({
     try {
       if (initialData?.id) {
         await updateTeamAction(transformedValues);
+        if (roleType === "driver") {
+          try {
+            await saveDriverZones(initialData.id, zones);
+          } catch (zoneError) {
+            console.error("Failed to save service zones:", zoneError);
+            messageApi.error("Failed to save service zones");
+          }
+        }
         messageApi.success("Team member updated successfully");
         form.resetFields();
         onSubmit?.();
@@ -286,7 +296,11 @@ const TeamMemberForm = ({
                         activeSection === "serviceZones" ? "block" : "none",
                     }}
                   >
-                    <ServiceZonesSection driverId={initialData.id} />
+                    <ServiceZonesSection
+                      driverId={initialData.id}
+                      zones={zones}
+                      onZonesChange={setZones}
+                    />
                   </div>
                 )}
 
