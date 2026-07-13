@@ -108,11 +108,11 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     setTempRouteName(route.route_name);
   }, [route.route_name]);
 
-  useEffect(() => {
-    return () => {
-      clearOptimization();
-    };
-  }, [clearOptimization]);
+  // useEffect(() => {
+  //   return () => {
+  //     clearOptimization();
+  //   };
+  // }, [clearOptimization]);
 
   const handleNameClick = () => {
     setIsEditingName(true);
