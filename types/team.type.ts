@@ -1,4 +1,10 @@
 export type TeamRoleType = "admin" | "driver" | "manager";
+
+export interface ServiceZone {
+  id: string;
+  paths: { lat: number; lng: number }[];
+  color: string;
+}
 export type TeamStatusType = "active" | "inactive" | "online" | "offline";
 
 export interface Team {
@@ -24,6 +30,7 @@ export interface Team {
   cost_per_hr: number;
   cost_per_hr_overtime: number;
   tenant_id: number;
+  service_zones?: ServiceZone[];
   created_at: string;
   updated_at: string;
 }

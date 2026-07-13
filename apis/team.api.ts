@@ -1,5 +1,6 @@
 import apiClient from "@/config/apiClient.config";
 import { Team } from "@/types/team.type";
+import type { ZonePolygon } from "@/app/team/_components/ServiceZoneMap";
 
 const url = "/team-members";
 
@@ -32,5 +33,14 @@ export const activateDriver = async (driverId: number): Promise<{ activation_cod
 export const deactivateDriver = async (driverId: number): Promise<{ status: string }> => {
   const response = await apiClient.post<{ status: string }>(`/driver/${driverId}/deactivate`);
   return response.data;
+};
+
+export const fetchDriverZones = async (driverId: number): Promise<ZonePolygon[]> => {
+  const response = await apiClient.get<ZonePolygon[]>(`/driver/${driverId}/zones`);
+  return response.data;
+};
+
+export const saveDriverZones = async (driverId: number, zones: ZonePolygon[]): Promise<void> => {
+  await apiClient.put(`/driver/${driverId}/zones`, { zones });
 };
 
