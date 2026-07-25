@@ -4,6 +4,12 @@ import dayjs from "dayjs";
 export const HEADER_HEIGHT = 40;
 export const ROW_HEIGHT = 60;
 
+// Safety cap: timeline renders at most 24 hours of data.
+// Optimization results with bad routing data (e.g. INT_MAX travel times
+// producing year-2094 arrival times) would otherwise generate tens-of-millions
+// of time markers, freezing the browser's JS thread entirely.
+const MAX_TIMELINE_HOURS = 24;
+
 /**
  * Calculate dynamic pixels per minute based on interval
  * Smaller intervals get more pixels per minute for better spread
@@ -30,6 +36,7 @@ export const calculateTimeRange = (routes: Routes[]) => {
   routes.forEach((route) => {
     route.stops.forEach((stop: Stop) => {
       const time = dayjs(stop.arrival_time);
+      if (!time.isValid()) return;
       if (!minTime || time.isBefore(minTime)) minTime = time;
       if (!maxTime || time.isAfter(maxTime)) maxTime = time;
     });
@@ -39,6 +46,15 @@ export const calculateTimeRange = (routes: Routes[]) => {
     // Default fallback if no stops
     minTime = dayjs().startOf("day");
     maxTime = dayjs().endOf("day");
+  }
+
+  // Guard: clamp maxTime so the timeline never exceeds MAX_TIMELINE_HOURS.
+  // Bad optimization results can produce arrival_times in year 2094+ (caused
+  // by INT_MAX travel-time values from failed routing), which would create
+  // 71 million+ time markers and hang the browser forever.
+  const cappedMax = minTime.add(MAX_TIMELINE_HOURS, "hour");
+  if (maxTime.isAfter(cappedMax)) {
+    maxTime = cappedMax;
   }
 
   // Add buffer
@@ -54,8 +70,11 @@ export const getPosition = (
   pixelsPerMinute: number = 4
 ): number => {
   const time = dayjs(timeString);
+  if (!time.isValid()) return 0;
   const diffMinutes = time.diff(startTime, "minute", true);
-  return diffMinutes * pixelsPerMinute;
+  // Clamp so a far-future stop doesn't extend the rendered position infinitely
+  const clampedDiff = Math.min(diffMinutes, MAX_TIMELINE_HOURS * 60);
+  return clampedDiff * pixelsPerMinute;
 };
 
 export const generateTimeMarkers = (
@@ -66,6 +85,12 @@ export const generateTimeMarkers = (
 ) => {
   const markers = [];
   let currentTime: dayjs.Dayjs;
+
+  // Hard safety cap — should never be needed after calculateTimeRange clamp,
+  // but protects against any future callers that bypass it.
+  const safeEndTime = endTime.isAfter(startTime.add(MAX_TIMELINE_HOURS + 1, "hour"))
+    ? startTime.add(MAX_TIMELINE_HOURS + 1, "hour")
+    : endTime;
 
   // For intervals that divide evenly into an hour, align to the appropriate boundary
   if (60 % intervalMinutes === 0) {
@@ -81,7 +106,7 @@ export const generateTimeMarkers = (
     currentTime = startTime.clone();
   }
 
-  while (currentTime.isBefore(endTime)) {
+  while (currentTime.isBefore(safeEndTime)) {
     if (currentTime.isAfter(startTime) || currentTime.isSame(startTime)) {
       markers.push({
         time: currentTime,
