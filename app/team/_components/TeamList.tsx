@@ -147,7 +147,7 @@ const TeamList = () => {
   return (
     <div className="flex flex-col h-full">
       <Flex justify="space-between">
-        <Title className="m-0 mb-2 pt-2" level={5}>
+        <Title className="m-0 mb-2 pt-2" level={4}>
           Team Members
         </Title>
         <Button
