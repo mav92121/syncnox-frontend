@@ -204,7 +204,7 @@ export default function DashboardView() {
 
       {/* Title row */}
       <Flex justify="space-between" align="center">
-        <Title className="m-0 mb-2 pt-2" level={5}>
+        <Title className="m-0 mb-2 pt-2" level={4}>
           Dashboard
         </Title>
         {error && <Text type="danger">{error}</Text>}
