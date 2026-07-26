@@ -78,7 +78,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         <Suspense fallback={null}>
           <NavBar />
         </Suspense>
-        <main className="flex-1 overflow-y-auto p-2 relative">{children}</main>
+        <main className="flex-1 overflow-y-auto p-2 px-4 pb-4 relative">{children}</main>
       </div>
       {showCompletion ? (
         <CompletionScreen onClose={() => setShowCompletion(false)} />
