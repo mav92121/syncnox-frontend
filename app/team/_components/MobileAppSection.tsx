@@ -65,7 +65,7 @@ const MobileAppSection = ({
     if (!code) return "";
     const clean = code.replace(/\D/g, "");
     if (clean.length === 12) {
-      return `${clean.slice(0, 4)} – ${clean.slice(4, 8)} – ${clean.slice(8, 12)}`;
+      return `${clean.slice(0, 4)}   ${clean.slice(4, 8)}   ${clean.slice(8, 12)}`;
     }
     return code;
   };
