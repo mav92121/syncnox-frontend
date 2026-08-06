@@ -36,6 +36,7 @@ interface JobsState {
   fetchJobsByDate: (date: string) => Promise<void>;
   fetchJobsByIds: (jobIds: number[]) => Promise<void>;
   patchJobLocally: (job: Job) => void;
+  updateJobStatusLocally: (jobId: number, status: JobStatus) => void;
   resetAllJobs: () => void;
 }
 
@@ -426,6 +427,15 @@ export const useJobsStore = create<JobsState>()(
               (j.id === job.id ? job : j),
             );
           }
+        });
+      },
+
+      updateJobStatusLocally: (jobId: number, status: JobStatus) => {
+        set((state) => {
+          state.jobs = state.jobs.map((j) => (j.id === jobId ? { ...j, status } : j));
+          state.draftJobs = state.draftJobs.map((j) => (j.id === jobId ? { ...j, status } : j));
+          state.allDraftJobs = state.allDraftJobs.map((j) => (j.id === jobId ? { ...j, status } : j));
+          state.allJobs = state.allJobs.map((j) => (j.id === jobId ? { ...j, status } : j));
         });
       },
 

@@ -373,7 +373,13 @@ const CreateRouteModal = ({
 
             {/* 4th Row: Submit Button */}
             <Form.Item className="mb-0">
-              <Button type="primary" htmlType="submit" block>
+              <Button
+                type="primary"
+                htmlType="submit"
+                block
+                loading={isSubmitting || isPolling}
+                disabled={isSubmitting || isPolling}
+              >
                 Create and Optimize Route
               </Button>
             </Form.Item>

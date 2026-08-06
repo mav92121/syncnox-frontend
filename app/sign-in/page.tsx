@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useIndexStore } from "@/store/index.store";
 
+import { useState } from "react";
+
 const { Title } = Typography;
 
 interface SignInFormValues {
@@ -16,8 +18,10 @@ export default function SignInPage() {
   const [form] = Form.useForm();
   const router = useRouter();
   const { setCurrentTab } = useIndexStore();
+  const [loading, setLoading] = useState(false);
 
   const onFinish = async (values: SignInFormValues) => {
+    setLoading(true);
     try {
       const result = await signIn("credentials", {
         email: values.email,
@@ -38,6 +42,8 @@ export default function SignInPage() {
     } catch (error) {
       console.error("❌ [SIGN-IN] Login error:", error);
       message.error("An error occurred during login");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -91,6 +97,7 @@ export default function SignInPage() {
               block
               className="mt-2"
               size="large"
+              loading={loading}
             >
               Sign In
             </Button>

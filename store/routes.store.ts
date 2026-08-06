@@ -16,6 +16,7 @@ interface RouteStore {
   setSelectedStatus: (status: string) => void;
   setCurrentRoute: (route: Route | null) => void;
   updateRoute: (route: Route) => void;
+  updateStopStatusLocally: (routeId: number, stopId: number, stopStatus: string) => void;
   deleteRoute: (id: number) => Promise<void>;
 }
 
@@ -62,6 +63,38 @@ export const useRouteStore = create(
           }
           if (state.currentRoute?.id === updatedRoute.id) {
             state.currentRoute = { ...state.currentRoute, ...updatedRoute };
+          }
+        });
+      },
+      updateStopStatusLocally: (routeId: number, stopId: number, stopStatus: string) => {
+        set((state) => {
+          // Update summary in state.routes (AllRoutes[])
+          const routeIndex = state.routes.findIndex((r) => r.id === routeId || r.optimization_id === routeId);
+          if (routeIndex !== -1) {
+            const target = state.routes[routeIndex];
+            if (stopStatus === "completed") {
+              target.completed_stops = (target.completed_stops || 0) + 1;
+            } else if (stopStatus === "failed") {
+              target.failed_stops = (target.failed_stops || 0) + 1;
+            }
+            target.attempted_stops = (target.attempted_stops || 0) + 1;
+            if (target.total_stops > 0) {
+              target.progress_percentage = Math.round((target.attempted_stops / target.total_stops) * 100);
+            }
+          }
+
+          // Update detailed stops in state.currentRoute (Route | null)
+          if (state.currentRoute && (state.currentRoute.id === routeId || (state.currentRoute as any).optimization_id === routeId)) {
+            state.currentRoute.result?.routes?.forEach((r) => {
+              r.stops?.forEach((s: any) => {
+                if (s.id === stopId || s.job_id === stopId) {
+                  s.status = stopStatus;
+                  if (s.job) {
+                    s.job.status = stopStatus;
+                  }
+                }
+              });
+            });
           }
         });
       },

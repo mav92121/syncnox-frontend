@@ -12,6 +12,7 @@ import { useRouteStore } from "@/store/routes.store";
 import { useDepotStore } from "@/store/depots.store";
 import { useVehicleStore } from "@/store/vehicle.store";
 import { useAutoSyncTab } from "@/hooks/useAutoSyncTab";
+import { useDispatchSocket } from "@/hooks/useDispatchSocket";
 import { useOnboardingStore } from "@/store/onboarding.store";
 import { OnboardingModal } from "@/components/Onboarding";
 import CompletionScreen from "@/components/Onboarding/CompletionScreen";
@@ -20,6 +21,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const isSignInPage = pathname === "/sign-in";
   const hasInitialized = useRef(false);
+
+  useDispatchSocket();
   const { data: session } = useSession();
   const { setUser, clearUser } = useIndexStore();
   const { initializeTeams } = useTeamStore();

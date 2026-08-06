@@ -107,6 +107,7 @@ const MobileAppSection = ({
               <Button
                 type="primary"
                 danger
+                loading={loading}
                 onClick={confirmDeactivate}
                 className="mb-8 !rounded-none shadow-none"
               >
@@ -135,6 +136,7 @@ const MobileAppSection = ({
 
               <Button
                 type="primary"
+                loading={loading}
                 onClick={handleActivate}
                 className="h-10 px-8 text-[13px] font-medium !rounded-none shadow-none mb-8"
               >

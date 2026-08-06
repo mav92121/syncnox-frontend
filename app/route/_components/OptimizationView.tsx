@@ -510,6 +510,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
               <div className="flex-1 overflow-hidden">
                 <TimelineView
                   routes={route.result?.routes || []}
+                  jobs={jobs}
                   onStopClick={handleStopClick}
                   onAddStop={(idx) => setAddStopRouteIndex(idx)}
                   onSwapDriver={(idx) => setSwapDriverRouteIndex(idx)}
