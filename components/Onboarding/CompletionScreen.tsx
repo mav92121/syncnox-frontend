@@ -3,6 +3,7 @@ import { Button, Card, Modal, Typography } from "antd";
 import { CheckCircle, Truck, User } from "lucide-react";
 import { useVehicleStore } from "@/store/vehicle.store";
 import { useTeamStore } from "@/store/team.store";
+import { useOnboardingStore } from "@/store/onboarding.store";
 
 const { Title, Text } = Typography;
 
@@ -13,6 +14,7 @@ interface CompletionScreenProps {
 const CompletionScreen = ({ onClose }: CompletionScreenProps) => {
   const { vehicles } = useVehicleStore();
   const { teams } = useTeamStore();
+  const { isLoading } = useOnboardingStore();
 
   return (
     <Modal
@@ -71,6 +73,7 @@ const CompletionScreen = ({ onClose }: CompletionScreenProps) => {
         <Button
           type="primary"
           size="large"
+          loading={isLoading}
           onClick={onClose}
           className="h-12 px-12 text-base"
         >

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Button, Typography, message } from "antd";
 import { ArrowRight, Plus, Trash2, LucideIcon } from "lucide-react";
+import { useOnboardingStore } from "@/store/onboarding.store";
 
 const { Text } = Typography;
 
@@ -29,6 +30,7 @@ const OnboardingListStep = <T extends { id: number }>({
   emptyErrorMessage,
 }: OnboardingListStepProps<T>) => {
   const [showForm, setShowForm] = useState(items.length === 0);
+  const { isLoading } = useOnboardingStore();
 
   const handleItemAdded = () => {
     setShowForm(false);
@@ -115,6 +117,7 @@ const OnboardingListStep = <T extends { id: number }>({
         <Button
           type="primary"
           onClick={handleContinue}
+          loading={isLoading}
           disabled={items.length === 0}
           icon={<ArrowRight size={14} />}
           iconPosition="end"

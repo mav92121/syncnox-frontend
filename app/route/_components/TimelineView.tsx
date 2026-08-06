@@ -61,7 +61,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
 
   const jobsMap = useMemo(() => {
     const map = new Map<number, string>();
-    jobs.forEach(job => map.set(job.id, job.status));
+    jobs.forEach(job => map.set(Number(job.id), job.status));
     return map;
   }, [jobs]);
 
@@ -376,8 +376,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                       const isJob = stop.stop_type === "job";
 
                       let jobStatus = "assigned";
-                      if (isJob && stop.job_id) {
-                        jobStatus = jobsMap.get(stop.job_id) || "assigned";
+                      if (isJob) {
+                        const mapStatus = stop.job_id ? jobsMap.get(Number(stop.job_id)) : undefined;
+                        jobStatus = mapStatus || stop.job?.status || stop.status || "assigned";
                       }
 
                       let blockBgColor = routeColor;
@@ -385,7 +386,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                       let blockTextColor = "white";
 
                       if (isJob) {
-                        if (jobStatus === "completed") {
+                        if (jobStatus === "completed" || jobStatus === "success") {
                           blockBgColor = routeColor;
                           blockBorderColor = routeColor;
                           blockTextColor = "white";
