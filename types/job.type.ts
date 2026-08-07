@@ -39,6 +39,7 @@ export interface Job {
   documents: Record<string, unknown>[];
   payment_status: PaymentStatus;
   pod_notes: string;
+  completed_at?: string | null;
   route_name?: string;
   optimization_id?: number;
 }

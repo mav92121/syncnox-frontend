@@ -68,14 +68,6 @@ export default function RoutesView() {
       field: "name",
     },
     {
-      headerName: "Route Status",
-      field: "status",
-      cellRenderer: (params: any) => (
-        <StatusBadge value={params.value} styleMap={statusStyleMap} />
-      ),
-      width: 150,
-    },
-    {
       headerName: "View",
       cellRenderer: (params: any) => {
         return (
@@ -96,6 +88,12 @@ export default function RoutesView() {
       headerName: "Scheduled Date",
       field: "scheduled_date",
       width: 150,
+    },
+    {
+      headerName: "Team Members",
+      field: "assigned_team_members",
+      valueFormatter: (params) =>
+        params.value?.map((m: any) => m.name).join(", ") || "-",
     },
     {
       headerName: "Distance",
@@ -136,10 +134,12 @@ export default function RoutesView() {
       ),
     },
     {
-      headerName: "Team Members",
-      field: "assigned_team_members",
-      valueFormatter: (params) =>
-        params.value?.map((m: any) => m.name).join(", ") || "-",
+      headerName: "Route Status",
+      field: "status",
+      cellRenderer: (params: any) => (
+        <StatusBadge value={params.value} styleMap={statusStyleMap} />
+      ),
+      width: 150,
     },
     {
       headerName: "Total Stops",

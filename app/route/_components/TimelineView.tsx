@@ -42,6 +42,40 @@ const INTERVAL_OPTIONS = [
   { value: 60, label: "60 min" },
 ];
 
+const formatDurationSeconds = (seconds: number): string => {
+  if (!seconds || seconds <= 0) return "";
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.round((seconds % 3600) / 60);
+
+  if (hours > 0 && minutes > 0) {
+    return `${hours}h ${minutes}m`;
+  } else if (hours > 0) {
+    return `${hours}h`;
+  } else {
+    return `${minutes} min`;
+  }
+};
+
+const getRouteDurationStr = (route: any): string => {
+  if (route.total_duration_seconds && route.total_duration_seconds > 0) {
+    return formatDurationSeconds(route.total_duration_seconds);
+  }
+  if (route.stops && route.stops.length > 0) {
+    const firstStop = route.stops[0];
+    const lastStop = route.stops[route.stops.length - 1];
+    if (firstStop?.arrival_time && lastStop?.arrival_time) {
+      const start = dayjs(firstStop.arrival_time);
+      const end = dayjs(lastStop.arrival_time);
+      const lastService = lastStop.service_duration_minutes || 0;
+      const diffMins = end.diff(start, "minute") + lastService;
+      if (diffMins > 0) {
+        return formatDurationSeconds(diffMins * 60);
+      }
+    }
+  }
+  return "";
+};
+
 const TimelineView: React.FC<TimelineViewProps> = ({
   routes,
   jobs = [],
@@ -158,6 +192,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
 
             {routes.map((route, routeIndex) => {
               const routeColor = getRouteColor(routeIndex);
+              const durationStr = getRouteDurationStr(route);
 
               return (
                 <div
@@ -176,13 +211,18 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                       className="text-white"
                     />
                     <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                      <span className="font-medium truncate text-gray-700">
-                        {route.team_member_name ||
-                          `Driver ${route.team_member_id}`}
-                      </span>
+                      <div className="flex items-center justify-between gap-1 min-w-0">
+                        <span className="font-medium truncate text-gray-700 text-sm">
+                          {route.team_member_name ||
+                            `Driver ${route.team_member_id}`}
+                        </span>
+                        <span className="text-[9px] text-gray-500 font-normal shrink-0 absolute right-11">
+                          {route.stops.length} stops
+                        </span>
+                      </div>
                       <span className="text-xs text-gray-400 truncate">
-                        {route.stops.length} stops •{" "}
                         {Math.round(route.total_distance_meters / 1000)} km
+                        {durationStr ? ` • ${durationStr}` : ""}
                       </span>
                     </div>
 
