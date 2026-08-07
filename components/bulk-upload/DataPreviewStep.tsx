@@ -9,6 +9,7 @@ import {
   CloseCircleOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
+  FilterOutlined,
 } from "@ant-design/icons";
 
 import { useBulkUploadStore } from "@/store/bulkUpload.store";
@@ -51,6 +52,9 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
   const { geocodedData, columnMapping, saveAsDefault, defaultScheduledDate, updateGeocodedRow } =
     useBulkUploadStore();
   const { refreshDraftJobs } = useJobsStore();
+
+  type FilterType = "all" | "geocoding_error" | "validation_error" | "duplicate" | "ready";
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
   // Process and categorize row data
   const { rowData, stats } = useMemo(() => {
@@ -118,6 +122,19 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
       },
     };
   }, [geocodedData]);
+
+  // Filter row data based on selected status filter
+  const displayedRowData = useMemo(() => {
+    if (activeFilter === "all") return rowData;
+    if (activeFilter === "ready") {
+      return rowData.filter((r) => r.status === "success" || r.status === "duplicate");
+    }
+    return rowData.filter((r) => r.status === activeFilter);
+  }, [rowData, activeFilter]);
+
+  const handleFilterClick = (filter: FilterType) => {
+    setActiveFilter((prev) => (prev === filter ? "all" : filter));
+  };
 
   // Column definitions with enhanced styling
   const columnDefs: ColDef[] = useMemo(() => {
@@ -401,55 +418,156 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
       className="flex flex-col h-full"
       style={{ height: "calc(70vh - 100px)" }}
     >
-      {/* Stats Summary */}
-      <div className="flex flex-wrap items-center gap-4 mb-4 p-3 bg-gray-50 border">
-        <div className="flex items-center gap-2">
-          <InfoCircleOutlined className="text-gray-500" />
-          <span className="text-sm text-gray-600">
-            <strong>{stats.total}</strong> total rows
+      {/* Interactive Filter Bar */}
+      <div className="flex flex-wrap items-center gap-2 mb-3 p-2.5 bg-gray-50/80 border border-gray-200 rounded-lg shadow-2xs">
+        <div className="flex items-center gap-1.5 px-2 text-gray-500 border-r border-gray-200 pr-3 mr-1">
+          <FilterOutlined className="text-sm text-gray-500" />
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            Filter:
           </span>
         </div>
-        <div className="h-4 w-px bg-gray-300" />
 
+        {/* All Rows Filter Pill */}
+        <Tooltip title={activeFilter === "all" ? "Showing all rows" : "Click to show all rows"}>
+          <button
+            type="button"
+            onClick={() => handleFilterClick("all")}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ${
+              activeFilter === "all"
+                ? "bg-white border-gray-300 shadow-sm text-gray-900 ring-2 ring-gray-400/20"
+                : "bg-white/60 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300 hover:shadow-2xs"
+            }`}
+          >
+            <InfoCircleOutlined className={activeFilter === "all" ? "text-gray-700" : "text-gray-400"} />
+            <span>All Rows</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                activeFilter === "all"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-700 border border-gray-200"
+              }`}
+            >
+              {stats.total}
+            </span>
+          </button>
+        </Tooltip>
+
+        {/* Geocoding Errors Filter Pill */}
         {stats.geocodingErrors > 0 && (
-          <div className="flex items-center gap-1.5">
-            <CloseCircleOutlined style={{ color: "#ff4d4f" }} />
-            <span className="text-sm">
-              <strong className="text-red-600">{stats.geocodingErrors}</strong>
-              <span className="text-gray-600 ml-1">geocoding errors</span>
-            </span>
-          </div>
+          <Tooltip title={activeFilter === "geocoding_error" ? "Showing geocoding errors (Click to reset)" : `Click to filter ${stats.geocodingErrors} geocoding error(s)`}>
+            <button
+              type="button"
+              onClick={() => handleFilterClick("geocoding_error")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ${
+                activeFilter === "geocoding_error"
+                  ? "bg-red-50 border-red-400 ring-2 ring-red-400/30 text-red-900 shadow-sm font-semibold"
+                  : "bg-white/60 border-red-200 text-red-600 hover:bg-red-50/80 hover:border-red-300 hover:shadow-2xs"
+              }`}
+            >
+              <CloseCircleOutlined style={{ color: "#ff4d4f" }} />
+              <span>Geocoding Errors</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                  activeFilter === "geocoding_error"
+                    ? "bg-red-600 text-white"
+                    : "bg-red-100 text-red-700 border border-red-200"
+                }`}
+              >
+                {stats.geocodingErrors}
+              </span>
+            </button>
+          </Tooltip>
         )}
 
+        {/* Validation Errors Filter Pill */}
         {stats.validationErrors > 0 && (
-          <div className="flex items-center gap-1.5">
-            <ExclamationCircleOutlined style={{ color: "#fa8c16" }} />
-            <span className="text-sm">
-              <strong className="text-orange-600">
+          <Tooltip title={activeFilter === "validation_error" ? "Showing validation errors (Click to reset)" : `Click to filter ${stats.validationErrors} validation error(s)`}>
+            <button
+              type="button"
+              onClick={() => handleFilterClick("validation_error")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ${
+                activeFilter === "validation_error"
+                  ? "bg-orange-50 border-orange-400 ring-2 ring-orange-400/30 text-orange-900 shadow-sm font-semibold"
+                  : "bg-white/60 border-orange-200 text-orange-600 hover:bg-orange-50/80 hover:border-orange-300 hover:shadow-2xs"
+              }`}
+            >
+              <ExclamationCircleOutlined style={{ color: "#fa8c16" }} />
+              <span>Validation Errors</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                  activeFilter === "validation_error"
+                    ? "bg-orange-500 text-white"
+                    : "bg-orange-100 text-orange-700 border border-orange-200"
+                }`}
+              >
                 {stats.validationErrors}
-              </strong>
-              <span className="text-gray-600 ml-1">validation errors</span>
-            </span>
-          </div>
+              </span>
+            </button>
+          </Tooltip>
         )}
 
+        {/* Duplicates Filter Pill */}
         {stats.duplicates > 0 && (
-          <div className="flex items-center gap-1.5">
-            <WarningOutlined style={{ color: "#1890ff" }} />
-            <span className="text-sm">
-              <strong className="text-blue-600">{stats.duplicates}</strong>
-              <span className="text-gray-600 ml-1">duplicates</span>
-            </span>
-          </div>
+          <Tooltip title={activeFilter === "duplicate" ? "Showing duplicate rows (Click to reset)" : `Click to filter ${stats.duplicates} duplicate row(s)`}>
+            <button
+              type="button"
+              onClick={() => handleFilterClick("duplicate")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ${
+                activeFilter === "duplicate"
+                  ? "bg-blue-50 border-blue-400 ring-2 ring-blue-400/30 text-blue-900 shadow-sm font-semibold"
+                  : "bg-white/60 border-blue-200 text-blue-600 hover:bg-blue-50/80 hover:border-blue-300 hover:shadow-2xs"
+              }`}
+            >
+              <WarningOutlined style={{ color: "#1890ff" }} />
+              <span>Duplicates</span>
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                  activeFilter === "duplicate"
+                    ? "bg-blue-600 text-white"
+                    : "bg-blue-100 text-blue-700 border border-blue-200"
+                }`}
+              >
+                {stats.duplicates}
+              </span>
+            </button>
+          </Tooltip>
         )}
 
-        <div className="flex items-center gap-1.5 ml-auto">
-          <CheckCircleOutlined style={{ color: "#52c41a" }} />
-          <span className="text-sm">
-            <strong className="text-green-600">{stats.readyToImport}</strong>
-            <span className="text-gray-600 ml-1">ready to import</span>
-          </span>
-        </div>
+        {/* Ready to Import Filter Pill */}
+        <Tooltip title={activeFilter === "ready" ? "Showing ready rows (Click to reset)" : `Click to filter ${stats.readyToImport} ready row(s)`}>
+          <button
+            type="button"
+            onClick={() => handleFilterClick("ready")}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ml-auto ${
+              activeFilter === "ready"
+                ? "bg-green-50 border-green-500 ring-2 ring-green-400/30 text-green-900 shadow-sm font-semibold"
+                : "bg-white/60 border-green-200 text-green-700 hover:bg-green-50/80 hover:border-green-300 hover:shadow-2xs"
+            }`}
+          >
+            <CheckCircleOutlined style={{ color: "#52c41a" }} />
+            <span>Ready to Import</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                activeFilter === "ready"
+                  ? "bg-green-600 text-white"
+                  : "bg-green-100 text-green-800 border border-green-200"
+              }`}
+            >
+              {stats.readyToImport}
+            </span>
+          </button>
+        </Tooltip>
+
+        {/* Clear Filter Link */}
+        {activeFilter !== "all" && (
+          <button
+            type="button"
+            onClick={() => setActiveFilter("all")}
+            className="text-xs text-gray-500 hover:text-gray-900 underline cursor-pointer ml-2 px-1 py-0.5"
+          >
+            Reset
+          </button>
+        )}
       </div>
 
       {/* Error Alerts */}
@@ -479,7 +597,7 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
         >
           <AgGridReact
             ref={gridRef}
-            rowData={rowData}
+            rowData={displayedRowData}
             columnDefs={columnDefs}
             defaultColDef={{
               sortable: true,
