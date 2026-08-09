@@ -50,7 +50,11 @@ const SideBar = () => {
   const businessName = onboarding?.company_name || "Admin";
   const initials = getInitials(businessName);
 
-  const isActive = useCallback((path: string) => pathname === path, [pathname]);
+  const isActive = useCallback(
+    (path: string) =>
+      pathname === path || (path === "/plan" && pathname.startsWith("/route")),
+    [pathname]
+  );
 
   // Check if any sub-item is active
   const hasActiveSubItem = useCallback(

@@ -333,9 +333,9 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     0;
   const totalVehicles = route.result?.routes?.length || 0;
 
-  const handleBackToDashboard = () => {
+  const handleBackToPlanRoutes = () => {
     setCurrentTab("routes");
-    router.push("/dashboard");
+    router.push("/plan");
   };
 
   return (
@@ -372,7 +372,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             <Icon
               component={ArrowLeftOutlined}
               style={{ color: "#003220" }}
-              onClick={handleBackToDashboard}
+              onClick={handleBackToPlanRoutes}
             />
 
             {/* Fixed width container for name to prevent layout shift */}
