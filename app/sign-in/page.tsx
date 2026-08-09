@@ -48,10 +48,7 @@ export default function SignInPage() {
   };
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center pt-24 gap-4"
-      style={{ backgroundColor: "#F6FFED" }}
-    >
+    <div className="min-h-screen flex flex-col items-center pt-24 gap-4 bg-emerald-50">
       <div className="flex flex-col items-center gap-2">
         <img src="logo.svg" alt="Syncnox Logo" className="h-12 mb-4" />
 
