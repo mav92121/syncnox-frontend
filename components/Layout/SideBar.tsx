@@ -78,6 +78,7 @@ const SideBar = () => {
       okText: "Logout",
       cancelText: "Cancel",
       okType: "danger",
+      maskClosable: true,
       onOk: async () => {
         try {
           clearUser();
@@ -211,7 +212,12 @@ const SideBar = () => {
           onClick={handleLogout}
           className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-none transition-colors cursor-pointer"
         >
-          <LogoutOutlined className="text-xs" />
+          <Image
+            src="/logout.svg"
+            alt="Logout"
+            width={16}
+            height={16}
+          />
           Logout
         </button>
       </div>

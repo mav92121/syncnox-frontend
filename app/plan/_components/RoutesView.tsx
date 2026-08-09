@@ -205,7 +205,7 @@ export default function RoutesView() {
         </Radio.Group>
         <Flex gap={8}>
           <Link href="/plan" onClick={() => setCurrentTab("jobs")}>
-            <Button type="primary">Create New Route</Button>
+            <Button >Create New Route</Button>
           </Link>
         </Flex>
       </Flex>

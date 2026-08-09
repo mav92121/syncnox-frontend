@@ -83,6 +83,7 @@ export const createActionsColumn = <T extends { id: number }>(
               content: `Are you sure you want to delete this ${entityName.toLowerCase()}?`,
               okText: "Delete",
               okType: "danger",
+              maskClosable: true,
               cancelText: "Cancel",
               onOk: async () => {
                 try {

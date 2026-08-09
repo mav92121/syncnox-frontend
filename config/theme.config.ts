@@ -55,10 +55,18 @@ const theme: ThemeConfig = {
     // },
     Button: {
       // Ensure button styling is consistent
-      // primaryShadow: "0 2px 0 rgba(0, 50, 32, 0.1)",
       controlHeight: 38,
       paddingBlock: 8,
       fontSize: 12,
+      borderRadius: 0,
+      defaultColor: "#1f2937",
+      defaultBorderColor: "#d9d9d9",
+      defaultBg: "#ffffff",
+      defaultHoverColor: "#003220",
+      defaultHoverBorderColor: "#003220",
+      defaultHoverBg: "#ffffff",
+      defaultActiveColor: "#003220",
+      defaultActiveBorderColor: "#003220",
     },
     Checkbox: {
       // Match Checkbox UI exactly with AG Grid Table
@@ -85,6 +93,15 @@ const theme: ThemeConfig = {
     },
     Progress: {
       colorPrimary: "#003220",
+    },
+    Radio: {
+      colorPrimary: "#003220",
+      buttonColor: "#1f2937",
+      buttonBg: "#ffffff",
+      buttonCheckedBg: "#003220",
+      buttonSolidCheckedColor: "#ffffff",
+      buttonSolidCheckedBg: "#003220",
+      buttonSolidCheckedHoverBg: "#003220",
     },
   },
 };
