@@ -1,13 +1,24 @@
 "use client";
 import Link from "next/link";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useCallback } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
-import { Avatar, Modal, Typography } from "antd";
-import { UserOutlined, UpOutlined, DownOutlined } from "@ant-design/icons";
+import { usePathname, useRouter } from "next/navigation";
+import { Button, Avatar, Modal, Popover, Typography } from "antd";
+import {
+  LogoutOutlined,
+  MailOutlined,
+  TeamOutlined,
+  CarOutlined,
+  EnvironmentOutlined,
+  SettingOutlined,
+} from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/store/index.store";
+import { useOnboardingStore } from "@/store/onboarding.store";
+import { useTeamStore } from "@/store/team.store";
+import { useVehicleStore } from "@/store/vehicle.store";
+import { useDepotStore } from "@/store/depots.store";
 import { signOut } from "next-auth/react";
-import { HOVER_CLOSE_DELAY, MENU_ITEMS } from "./sidebar.constants";
+import { MENU_ITEMS } from "./sidebar.constants";
 
 const { Title } = Typography;
 
@@ -18,16 +29,32 @@ interface BottomMenuItem {
   isDanger?: boolean;
 }
 
+const getInitials = (name: string) => {
+  if (!name) return "AD";
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "AD";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[1][0]).toUpperCase();
+};
+
 const SideBar = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [hoveredMenu, setHoveredMenu] = useState<string | null>(null);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const subMenuTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathname = usePathname();
+  const router = useRouter();
   const { user, clearUser, setCurrentTab, setSidebarNavigation } =
     useIndexStore();
+  const { onboarding } = useOnboardingStore();
+  const { teams } = useTeamStore();
+  const { vehicles } = useVehicleStore();
+  const { depots } = useDepotStore();
 
-  const isActive = useCallback((path: string) => pathname === path, [pathname]);
+  const businessName = onboarding?.company_name || "Admin";
+  const initials = getInitials(businessName);
+
+  const isActive = useCallback(
+    (path: string) =>
+      pathname === path || (path === "/plan" && pathname.startsWith("/route")),
+    [pathname]
+  );
 
   // Check if any sub-item is active
   const hasActiveSubItem = useCallback(
@@ -48,44 +75,6 @@ const SideBar = () => {
     [pathname, setCurrentTab, setSidebarNavigation]
   );
 
-  const handleMouseEnter = useCallback(() => {
-    if (closeTimerRef.current) {
-      clearTimeout(closeTimerRef.current);
-      closeTimerRef.current = null;
-    }
-    setIsExpanded(true);
-
-    // Auto-open submenu if a sub-item is currently active
-    const activeParentMenu = MENU_ITEMS.find(
-      (item) =>
-        item.subItems && item.subItems.some((sub) => pathname === sub.path)
-    );
-    if (activeParentMenu) {
-      setHoveredMenu(activeParentMenu.path);
-    }
-  }, [pathname]);
-
-  const handleMouseLeave = useCallback(() => {
-    closeTimerRef.current = setTimeout(() => {
-      setIsExpanded(false);
-      setHoveredMenu(null);
-    }, HOVER_CLOSE_DELAY);
-  }, []);
-
-  const handleMenuItemHover = useCallback((path: string | null) => {
-    if (subMenuTimerRef.current) {
-      clearTimeout(subMenuTimerRef.current);
-      subMenuTimerRef.current = null;
-    }
-    setHoveredMenu(path);
-  }, []);
-
-  const handleMenuItemLeave = useCallback(() => {
-    subMenuTimerRef.current = setTimeout(() => {
-      setHoveredMenu(null);
-    }, 150);
-  }, []);
-
   const handleLogout = useCallback(() => {
     Modal.confirm({
       title: <Title level={5}>Confirm Logout</Title>,
@@ -93,6 +82,7 @@ const SideBar = () => {
       okText: "Logout",
       cancelText: "Cancel",
       okType: "danger",
+      maskClosable: true,
       onOk: async () => {
         try {
           clearUser();
@@ -104,21 +94,14 @@ const SideBar = () => {
     });
   }, [clearUser]);
 
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
-      if (subMenuTimerRef.current) clearTimeout(subMenuTimerRef.current);
-    };
-  }, []);
-
   const bottomMenuItems: BottomMenuItem[] = [
     {
       icon: (props) => (
         <Image
           src="/logout.svg"
           alt="Logout"
-          width={24}
-          height={24}
+          width={20}
+          height={20}
           {...props}
         />
       ),
@@ -128,62 +111,152 @@ const SideBar = () => {
     },
   ];
 
+  const userPopoverContent = (
+    <div className="w-[260px] p-3 font-sans">
+      {/* Centered Avatar & Identity */}
+      <div className="flex flex-col items-center pt-1">
+        <Avatar
+          size={52}
+          style={{ backgroundColor: "#003220", color: "#ffffff" }}
+          className="font-bold text-lg shadow-md border-2 border-white mb-2"
+        >
+          {initials}
+        </Avatar>
+        <h3
+          className="text-sm font-bold text-gray-900 leading-tight mb-0.5 text-center truncate max-w-full px-2"
+          title={businessName}
+        >
+          {businessName}
+        </h3>
+        {user?.email && (
+          <p
+            className="text-[11px] text-gray-500 flex items-center justify-center gap-1.5 truncate max-w-full px-2"
+            title={user.email}
+          >
+            <MailOutlined className="text-[10px] text-gray-400 shrink-0" />
+            <span className="truncate">{user.email}</span>
+          </p>
+        )}
+      </div>
+
+      {/* Resource Metrics Section - Team, Vehicles, Depots */}
+      <div className="my-2.5 p-2 rounded-none border border-emerald-100/80 space-y-1.5">
+        <div className="flex items-center justify-between text-xs px-2 py-1 bg-white rounded-none border border-emerald-100/50 shadow-2xs">
+          <div className="flex items-center gap-2 text-gray-700 font-medium">
+            <div className="w-5 h-5 rounded-none bg-emerald-100/80 flex items-center justify-center text-[#003220] text-xs shrink-0">
+              <TeamOutlined />
+            </div>
+            <span>Team Members</span>
+          </div>
+          <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
+            {teams.length}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-xs px-2 py-1 bg-white rounded-none border border-emerald-100/50 shadow-2xs">
+          <div className="flex items-center gap-2 text-gray-700 font-medium">
+            <div className="w-5 h-5 rounded-none bg-emerald-100/80 flex items-center justify-center text-[#003220] text-xs shrink-0">
+              <CarOutlined />
+            </div>
+            <span>Vehicles</span>
+          </div>
+          <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
+            {vehicles.length}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-xs px-2 py-1 bg-white rounded-none border border-emerald-100/50 shadow-2xs">
+          <div className="flex items-center gap-2 text-gray-700 font-medium">
+            <div className="w-5 h-5 rounded-none bg-emerald-100/80 flex items-center justify-center text-[#003220] text-xs shrink-0">
+              <EnvironmentOutlined />
+            </div>
+            <span>Depots</span>
+          </div>
+          <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
+            {depots.length}
+          </span>
+        </div>
+      </div>
+
+      {/* Organization Info Box */}
+      {/* <div className="p-2.5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-100 flex flex-col items-center text-center">
+        <p className="text-[9px] font-extrabold text-[#003220]/70 uppercase tracking-widest mb-0.5">
+          Organization
+        </p>
+        <h4
+          className="text-xs font-bold text-gray-900 truncate w-full px-1 mb-1.5"
+          title={businessName}
+        >
+          {businessName}
+        </h4>
+        <div className="flex items-center justify-center gap-2">
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-[#003220] border border-emerald-200 uppercase tracking-wider">
+            Admin
+          </span>
+          <span className="text-gray-300 text-[10px]">•</span>
+          <span className="text-[10px] text-gray-600 font-semibold">
+            Standard Plan
+          </span>
+        </div>
+      </div> */}
+
+      {/* Bottom Action Controls */}
+      <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between gap-2">
+        <button
+          onClick={() => {
+            handleNavigation("/team", "team");
+            router.push("/team");
+          }}
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-none transition-colors cursor-pointer"
+        >
+          <SettingOutlined className="text-xs" />
+          Settings
+        </button>
+        <button
+          onClick={handleLogout}
+          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-none transition-colors cursor-pointer"
+        >
+          <Image
+            src="/logout.svg"
+            alt="Logout"
+            width={16}
+            height={16}
+          />
+          Logout
+        </button>
+      </div>
+    </div>
+  );
+
   const getMenuItemClasses = (path: string, hasActiveSub = false) => {
     const active = isActive(path);
     if (active) {
-      return "w-full flex items-center py-2.5 transition-all duration-200 cursor-pointer bg-primary text-white";
+      return "w-full flex items-center py-2 px-3 rounded-none transition-all duration-200 cursor-pointer bg-primary text-white";
     }
     if (hasActiveSub) {
-      // Parent has an active sub-item - show subtle indication
-      return "w-full flex items-center py-2.5 transition-all duration-200 cursor-pointer bg-gray-100 text-gray-700";
+      return "w-full flex items-center py-2 px-3 rounded-none transition-all duration-200 cursor-pointer bg-gray-100 text-gray-700 font-medium";
     }
-    return "w-full flex items-center py-2.5 transition-all duration-200 cursor-pointer hover:bg-gray-50 text-gray-700";
+    return "w-full flex items-center py-2 px-3 rounded-none transition-all duration-200 cursor-pointer hover:bg-gray-50 text-gray-700";
   };
 
-  const getLabelClasses = (active: boolean) =>
-    `ml-3 text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${
-      active ? "font-medium" : ""
-    } ${isExpanded ? "opacity-100 max-w-xs" : "opacity-0 max-w-0"}`;
-
   return (
-    <aside
-      className={`h-screen bg-white flex flex-col border-r overflow-hidden transition-all duration-300 ease-in-out shrink-0 ${
-        isExpanded ? "w-64" : "w-16"
-      }`}
-      style={{ willChange: "width" }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <aside className="h-screen bg-white flex flex-col border-r overflow-hidden shrink-0 w-48">
       {/* Logo Section */}
-      <div className="pt-3 px-4 mb-4 h-16 flex items-center">
-        <div className="transition-all duration-300 ease-in-out w-full">
-          {isExpanded ? (
-            <Link
-              href="/dashboard"
-              onClick={() => handleNavigation("/dashboard", "dashboard")}
-            >
-              <div className="flex items-center cursor-pointer">
-                <Image
-                  src="/syncnox.svg"
-                  alt="SYNCNOX"
-                  width={140}
-                  height={38}
-                  priority
-                />
-              </div>
-            </Link>
-          ) : (
-            <div className="flex justify-center">
-              <Image
-                src="/logo.svg"
-                alt="Logo"
-                width={21}
-                height={21}
-                priority
-              />
-            </div>
-          )}
-        </div>
+      <div className="pt-3 px-3 mb-2 h-14 flex items-center">
+        <Link
+          href="/dashboard"
+          onClick={() => handleNavigation("/dashboard", "dashboard")}
+        >
+          <div className="flex items-center cursor-pointer">
+            <Image
+              src="/syncnox.svg"
+              alt="SYNCNOX"
+              width={125}
+              height={34}
+              priority
+            />
+          </div>
+        </Link>
       </div>
 
       {/* Main Menu Items */}
@@ -199,59 +272,27 @@ const SideBar = () => {
           const activeSub = hasActiveSubItem(item.subItems);
           const active = isActive(item.path) || activeSub;
           const Icon = item.icon;
-          const isSubmenuOpen = hoveredMenu === item.path;
 
           return (
-            <div
-              key={item.path}
-              className="mb-1"
-              onMouseEnter={() => hasSubItems && handleMenuItemHover(item.path)}
-              onMouseLeave={() => hasSubItems && handleMenuItemLeave()}
-            >
+            <div key={item.path} className="mb-1">
               {hasSubItems ? (
-                // Menu item with sub-items (accordion on hover)
+                // Menu item with sub-items (always visible)
                 <>
-                  <button className={getMenuItemClasses(item.path, activeSub)}>
-                    <div
-                      className={`w-5 h-5 flex items-center justify-center shrink-0 ${
-                        active ? "ml-[13px]" : "ml-3"
-                      }`}
-                    >
+                  <div className={getMenuItemClasses(item.path, activeSub)}>
+                    <div className="w-5 h-5 flex items-center justify-center shrink-0">
                       <Icon
                         className={`text-base ${
-                          active ? "text-white text-xl" : ""
+                          active ? "text-primary" : "text-gray-700"
                         }`}
                       />
                     </div>
-                    <span
-                      style={{ transitionProperty: "opacity, max-width" }}
-                      className={getLabelClasses(active)}
-                    >
+                    <span className="ml-2.5 text-sm font-medium whitespace-nowrap overflow-hidden">
                       {item.label}
                     </span>
-                    {isExpanded && (
-                      <span
-                        className={`ml-auto mr-3 ${
-                          active ? "text-white" : "text-gray-400"
-                        }`}
-                      >
-                        {isSubmenuOpen ? (
-                          <UpOutlined style={{ fontSize: 10 }} />
-                        ) : (
-                          <DownOutlined style={{ fontSize: 10 }} />
-                        )}
-                      </span>
-                    )}
-                  </button>
+                  </div>
 
-                  {/* Sub-items (accordion style on hover) */}
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      isSubmenuOpen && isExpanded
-                        ? "max-h-48 opacity-100"
-                        : "max-h-0 opacity-0"
-                    }`}
-                  >
+                  {/* Sub-items (always open) */}
+                  <div className="mt-1 mb-1 space-y-0.5">
                     {item.subItems!.map((subItem) => {
                       const SubIcon = subItem.icon;
                       const subActive = isActive(subItem.path);
@@ -264,18 +305,18 @@ const SideBar = () => {
                           }
                         >
                           <div
-                            className={`flex items-center py-2 pl-11 pr-3 text-sm cursor-pointer transition-colors ${
+                            className={`flex items-center py-1.5 pl-8 pr-2.5 text-xs rounded-none cursor-pointer transition-colors ${
                               subActive
-                                ? "bg-primary text-white"
+                                ? "bg-primary text-white font-medium"
                                 : "hover:bg-gray-50 text-gray-600"
                             }`}
                           >
                             <SubIcon
-                              className={`mr-2 text-sm ${
-                                subActive ? "text-white" : ""
+                              className={`mr-2 text-xs shrink-0 ${
+                                subActive ? "text-white" : "text-gray-500"
                               }`}
                             />
-                            {subItem.label}
+                            <span className="truncate">{subItem.label}</span>
                           </div>
                         </Link>
                       );
@@ -289,20 +330,17 @@ const SideBar = () => {
                   onClick={() => handleNavigation(item.path, item.tabKey)}
                 >
                   <button className={getMenuItemClasses(item.path)}>
-                    <div
-                      className={`w-5 h-5 flex items-center justify-center shrink-0 ${
-                        active ? "ml-[13px]" : "ml-3"
-                      }`}
-                    >
+                    <div className="w-5 h-5 flex items-center justify-center shrink-0">
                       <Icon
                         className={`text-base ${
-                          active ? "text-white text-xl" : ""
+                          active ? "text-white" : "text-gray-700"
                         }`}
                       />
                     </div>
                     <span
-                      style={{ transitionProperty: "opacity, max-width" }}
-                      className={getLabelClasses(active)}
+                      className={`ml-2.5 text-sm whitespace-nowrap overflow-hidden ${
+                        active ? "font-medium" : ""
+                      }`}
                     >
                       {item.label}
                     </span>
@@ -315,26 +353,34 @@ const SideBar = () => {
       </nav>
 
       {/* Bottom Section - User Profile & Actions */}
-      <footer className="border-t pt-3 pb-4 px-2">
+      <footer className="border-t pt-2.5 pb-3 px-2">
         {/* User Profile */}
-        <div
-          className={`flex items-center pl-1 mb-3 cursor-pointer ${
-            isExpanded ? "" : "justify-center"
-          }`}
+        <Popover
+          content={userPopoverContent}
+          trigger="click"
+          placement="top"
+          overlayClassName="user-profile-popover"
+          arrow={false}
+          styles={{ container: { padding: 2, borderRadius: 10, marginLeft: 30 } }}
         >
-          <Avatar size={32} icon={<UserOutlined />} className="shrink-0" />
-          <div
-            className={`ml-2 overflow-hidden transition-all duration-300 ${
-              isExpanded ? "opacity-100 max-w-xs" : "opacity-0 max-w-0"
-            }`}
-            style={{ transitionProperty: "opacity, max-width" }}
-          >
-            <p className="text-xs text-gray-700">Admin</p>
-            {user?.email && (
-              <p className="text-xs text-gray-500">{user.email}</p>
-            )}
+          <div className="flex items-center px-2 py-1.5 mb-1.5 cursor-pointer rounded hover:bg-gray-50 transition-colors group">
+            <Avatar
+              size={30}
+              style={{ backgroundColor: "#003220", color: "#ffffff" }}
+              className="font-bold text-xs shrink-0 shadow-sm transition-transform group-hover:scale-105"
+            >
+              {initials}
+            </Avatar>
+            <div className="ml-2 overflow-hidden truncate">
+              <p
+                className="text-xs font-semibold text-gray-800 truncate group-hover:text-primary transition-colors"
+                title={businessName}
+              >
+                {businessName}
+              </p>
+            </div>
           </div>
-        </div>
+        </Popover>
 
         {/* Bottom Menu Items */}
         {bottomMenuItems.map((item) => {
@@ -343,7 +389,7 @@ const SideBar = () => {
             <button
               key={item.label}
               onClick={item.action}
-              className={`w-full flex items-center pl-3 py-2.5 transition-all duration-200 cursor-pointer ${
+              className={`w-full flex items-center px-2.5 py-1.5 rounded-none transition-all duration-200 cursor-pointer ${
                 item.isDanger
                   ? "text-red-600 hover:bg-red-50"
                   : "text-gray-700 hover:bg-gray-50"
@@ -354,12 +400,7 @@ const SideBar = () => {
                   className={`text-base ${item.isDanger ? "text-red-600" : ""}`}
                 />
               </div>
-              <span
-                className={`ml-3 text-sm whitespace-nowrap overflow-hidden transition-all duration-300 ${
-                  isExpanded ? "opacity-100 max-w-xs" : "opacity-0 max-w-0"
-                }`}
-                style={{ transitionProperty: "opacity, max-width" }}
-              >
+              <span className="ml-2.5 text-xs font-medium whitespace-nowrap overflow-hidden">
                 {item.label}
               </span>
             </button>

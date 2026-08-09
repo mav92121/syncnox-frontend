@@ -34,7 +34,7 @@ const theme: ThemeConfig = {
       hoverBorderColor: "#003220",
       //   activeShadow: "0 0 0 1px rgba(0, 50, 32, 0.1)",
       // Fix dropdown options
-      optionSelectedBg: "#F6FFED",
+      optionSelectedBg: "#ecfdf5",
       optionActiveBg: "#f5f5f5",
       optionSelectedColor: "#003220",
       controlHeight: 38,
@@ -55,10 +55,18 @@ const theme: ThemeConfig = {
     // },
     Button: {
       // Ensure button styling is consistent
-      // primaryShadow: "0 2px 0 rgba(0, 50, 32, 0.1)",
       controlHeight: 38,
       paddingBlock: 8,
       fontSize: 12,
+      borderRadius: 0,
+      defaultColor: "#1f2937",
+      defaultBorderColor: "#d9d9d9",
+      defaultBg: "#ffffff",
+      defaultHoverColor: "#003220",
+      defaultHoverBorderColor: "#003220",
+      defaultHoverBg: "#ffffff",
+      defaultActiveColor: "#003220",
+      defaultActiveBorderColor: "#003220",
     },
     Checkbox: {
       // Match Checkbox UI exactly with AG Grid Table
@@ -71,8 +79,8 @@ const theme: ThemeConfig = {
       fontSize: 12,
     },
     Table: {
-      rowSelectedBg: "#F6FFED",
-      rowSelectedHoverBg: "#F6FFED",
+      rowSelectedBg: "#ecfdf5",
+      rowSelectedHoverBg: "#ecfdf5",
       fontSize: 12,
     },
     Message: {
@@ -85,6 +93,15 @@ const theme: ThemeConfig = {
     },
     Progress: {
       colorPrimary: "#003220",
+    },
+    Radio: {
+      colorPrimary: "#003220",
+      buttonColor: "#1f2937",
+      buttonBg: "#ffffff",
+      buttonCheckedBg: "#003220",
+      buttonSolidCheckedColor: "#ffffff",
+      buttonSolidCheckedBg: "#003220",
+      buttonSolidCheckedHoverBg: "#003220",
     },
   },
 };

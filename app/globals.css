@@ -7,7 +7,7 @@
   --foreground: #171717;
   --primary: #003220;
   --border: #e5e7eb;
-  --secondary: #f6ffed;
+  --secondary: #ecfdf5;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -126,12 +126,71 @@ body {
   border-radius: 0 !important;
 }
 
-.ant-btn-color-default {
-  border-color: #003220 !important;
+/* Default Non-Danger Button Styling - Global */
+.ant-btn-default:not(.ant-btn-color-danger):not(.ant-btn-dangerous):not(.ant-btn-status-danger),
+.ant-btn-color-default:not(.ant-btn-color-danger):not(.ant-btn-dangerous):not(.ant-btn-status-danger) {
+  border-color: #d9d9d9 !important;
+  color: #1f2937 !important;
+  border-radius: 0 !important;
+  transition: all 0.2s ease-in-out !important;
 }
 
-.ant-btn-color-default:hover {
+.ant-btn-default:not(.ant-btn-color-danger):not(.ant-btn-dangerous):not(.ant-btn-status-danger):hover,
+.ant-btn-color-default:not(.ant-btn-color-danger):not(.ant-btn-dangerous):not(.ant-btn-status-danger):hover {
+  border-color: #003220 !important;
   color: #003220 !important;
+  background-color: #ffffff !important;
+}
+
+.ant-btn-default:not(.ant-btn-color-danger):not(.ant-btn-dangerous):not(.ant-btn-status-danger):hover .anticon,
+.ant-btn-default:not(.ant-btn-color-danger):not(.ant-btn-dangerous):not(.ant-btn-status-danger):hover svg,
+.ant-btn-color-default:not(.ant-btn-color-danger):not(.ant-btn-dangerous):not(.ant-btn-status-danger):hover .anticon,
+.ant-btn-color-default:not(.ant-btn-color-danger):not(.ant-btn-dangerous):not(.ant-btn-status-danger):hover svg {
+  color: #003220 !important;
+}
+
+/* Danger Button Styling - Global */
+.ant-btn-color-danger:not(:disabled):not([disabled]),
+.ant-btn-dangerous:not(:disabled):not([disabled]),
+.ant-btn-status-danger:not(:disabled):not([disabled]) {
+  border-color: #ff4d4f !important;
+  color: #ff4d4f !important;
+  border-radius: 0 !important;
+}
+
+.ant-btn-color-danger:not(:disabled):not([disabled]):hover,
+.ant-btn-dangerous:not(:disabled):not([disabled]):hover,
+.ant-btn-status-danger:not(:disabled):not([disabled]):hover {
+  border-color: #ff7875 !important;
+  color: #ff7875 !important;
+  background-color: #fff2f0 !important;
+}
+
+.ant-btn-color-danger:not(:disabled):not([disabled]) .anticon,
+.ant-btn-color-danger:not(:disabled):not([disabled]) svg,
+.ant-btn-dangerous:not(:disabled):not([disabled]) .anticon,
+.ant-btn-dangerous:not(:disabled):not([disabled]) svg,
+.ant-btn-status-danger:not(:disabled):not([disabled]) .anticon,
+.ant-btn-status-danger:not(:disabled):not([disabled]) svg {
+  color: inherit !important;
+}
+
+/* Radio Button Styling - Global */
+.ant-radio-button-wrapper:not(.ant-radio-button-wrapper-checked) {
+  border-color: #d9d9d9 !important;
+  color: #1f2937 !important;
+  transition: all 0.2s ease-in-out !important;
+}
+
+.ant-radio-button-wrapper:not(.ant-radio-button-wrapper-checked):hover {
+  color: #003220 !important;
+  border-color: #003220 !important;
+  border-inline-start-color: #003220 !important;
+  z-index: 2 !important;
+}
+
+.ant-radio-button-wrapper:not(.ant-radio-button-wrapper-checked):hover::before {
+  opacity: 0 !important;
 }
 
 /* Bulk Upload Modal Full Height */

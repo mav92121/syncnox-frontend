@@ -55,6 +55,8 @@ const MobileAppSection = ({
       content: "This will clear the activation key and log the driver out. Are you sure?",
       okText: "Yes",
       cancelText: "No",
+      okType: "danger",
+      maskClosable: true,
       okButtonProps: { danger: true, className: "!rounded-none" },
       cancelButtonProps: { className: "!rounded-none" },
       onOk: handleDeactivate,
@@ -105,7 +107,7 @@ const MobileAppSection = ({
               </p>
 
               <Button
-                type="primary"
+                // type="primary"
                 danger
                 loading={loading}
                 onClick={confirmDeactivate}

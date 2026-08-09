@@ -81,6 +81,7 @@ export default function JobsList() {
       icon: <ExclamationCircleFilled />,
       content: `Are you sure you want to delete ${selectedJobIds.length} jobs?`,
       okText: "Delete",
+      okType:'danger',
       okButtonProps: { danger: true },
       cancelText: "Cancel",
       onOk: async () => {
@@ -232,21 +233,6 @@ export default function JobsList() {
             justifyContent: "flex-end",
           }}
         >
-          <Button onClick={() => setIsMapOpen(!isMapOpen)}>
-            {isMapOpen ? "Close Map" : "Map View"}
-          </Button>
-          <Button
-            style={{
-              visibility:
-                selectedJobTab === "all" || selectedJobTab === "draft"
-                  ? "visible"
-                  : "hidden",
-            }}
-            danger
-            disabled={selectedJobIds.length === 0}
-            onClick={handleDeleteJobsRequest}
-            icon={<DeleteOutlined style={{ fontSize: 18 }} />}
-          />
           <Button
             type="primary"
             disabled={
@@ -262,6 +248,21 @@ export default function JobsList() {
             }}
           >
             Create New Route
+          </Button>
+          <Button
+            style={{
+              visibility:
+                selectedJobTab === "all" || selectedJobTab === "draft"
+                  ? "visible"
+                  : "hidden",
+            }}
+            danger
+            disabled={selectedJobIds.length === 0}
+            onClick={handleDeleteJobsRequest}
+            icon={<DeleteOutlined style={{ fontSize: 18 }} />}
+          />
+          <Button onClick={() => setIsMapOpen(!isMapOpen)}>
+            {isMapOpen ? "Close Map" : "Map View"}
           </Button>
           <Dropdown
             trigger={["click"]}
