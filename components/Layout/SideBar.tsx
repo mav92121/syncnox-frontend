@@ -11,6 +11,7 @@ import {
   CarOutlined,
   EnvironmentOutlined,
   SettingOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/store/index.store";
 import { useOnboardingStore } from "@/store/onboarding.store";
@@ -23,16 +24,16 @@ import { MENU_ITEMS } from "./sidebar.constants";
 const { Title } = Typography;
 
 interface BottomMenuItem {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: (props: any) => React.ReactNode;
   label: string;
-  action?: () => void;
+  action: () => void;
   isDanger?: boolean;
 }
 
 const getInitials = (name: string) => {
-  if (!name) return "AD";
+  if (!name) return "";
   const words = name.trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return "AD";
+  if (words.length === 0) return "";
   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
   return (words[0][0] + words[1][0]).toUpperCase();
 };
@@ -47,8 +48,9 @@ const SideBar = () => {
   const { vehicles } = useVehicleStore();
   const { depots } = useDepotStore();
 
+  const hasCompanyName = Boolean(onboarding?.company_name?.trim());
   const businessName = onboarding?.company_name || "Admin";
-  const initials = getInitials(businessName);
+  const initials = hasCompanyName ? getInitials(onboarding?.company_name || "") : "";
 
   const isActive = useCallback(
     (path: string) =>
@@ -118,9 +120,10 @@ const SideBar = () => {
         <Avatar
           size={52}
           style={{ backgroundColor: "#003220", color: "#ffffff" }}
-          className="font-bold text-lg shadow-md border-2 border-white mb-2"
+          className="font-bold text-sm shadow-md border-2 border-white flex items-center justify-center"
+          icon={!hasCompanyName ? <UserOutlined /> : undefined}
         >
-          {initials}
+          {hasCompanyName ? initials : null}
         </Avatar>
         <h3
           className="text-sm font-bold text-gray-900 leading-tight mb-0.5 text-center truncate max-w-full px-2"
@@ -236,7 +239,7 @@ const SideBar = () => {
     if (hasActiveSub) {
       return "w-full flex items-center py-2 px-3 rounded-none transition-all duration-200 cursor-pointer bg-gray-100 text-gray-700 font-medium";
     }
-    return "w-full flex items-center py-2 px-3 rounded-none transition-all duration-200 cursor-pointer hover:bg-gray-50 text-gray-700";
+    return "w-full flex items-center py-2 px-3 rounded-none transition-all duration-200 cursor-pointer hover:bg-emerald-50 text-gray-700";
   };
 
   return (
@@ -308,7 +311,7 @@ const SideBar = () => {
                             className={`flex items-center py-1.5 pl-8 pr-2.5 text-xs rounded-none cursor-pointer transition-colors ${
                               subActive
                                 ? "bg-primary text-white font-medium"
-                                : "hover:bg-gray-50 text-gray-600"
+                                : "hover:bg-emerald-50 text-gray-600"
                             }`}
                           >
                             <SubIcon
@@ -363,13 +366,14 @@ const SideBar = () => {
           arrow={false}
           styles={{ container: { padding: 2, borderRadius: 10, marginLeft: 30 } }}
         >
-          <div className="flex items-center px-2 py-1.5 mb-1.5 cursor-pointer rounded hover:bg-gray-50 transition-colors group">
+          <div className="flex items-center px-2 py-1.5 mb-1.5 cursor-pointer rounded hover:bg-emerald-50 transition-colors group">
             <Avatar
-              size={30}
+              size={32}
               style={{ backgroundColor: "#003220", color: "#ffffff" }}
-              className="font-bold text-xs shrink-0 shadow-sm transition-transform group-hover:scale-105"
+              className="font-bold text-xs shrink-0 shadow-sm flex items-center justify-center"
+              icon={!hasCompanyName ? <UserOutlined /> : undefined}
             >
-              {initials}
+              {hasCompanyName ? initials : null}
             </Avatar>
             <div className="ml-2 overflow-hidden truncate">
               <p
@@ -392,7 +396,7 @@ const SideBar = () => {
               className={`w-full flex items-center px-2.5 py-1.5 rounded-none transition-all duration-200 cursor-pointer ${
                 item.isDanger
                   ? "text-red-600 hover:bg-red-50"
-                  : "text-gray-700 hover:bg-gray-50"
+                  : "text-gray-700 hover:bg-emerald-50"
               }`}
             >
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
