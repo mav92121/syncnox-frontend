@@ -126,7 +126,7 @@ const SideBar = () => {
           {hasCompanyName ? initials : null}
         </Avatar>
         <h3
-          className="text-sm font-bold text-gray-900 leading-tight mb-0.5 text-center truncate max-w-full px-2"
+          className="text-sm font-bold text-gray-900 leading-tight mb-0.5 text-center truncate max-w-full px-2 mt-2"
           title={businessName}
         >
           {businessName}
@@ -204,7 +204,7 @@ const SideBar = () => {
       </div> */}
 
       {/* Bottom Action Controls */}
-      <div className="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between gap-2">
+      <div className="mt-3 flex items-center justify-between gap-2">
         <button
           onClick={() => {
             handleNavigation("/team", "team");
@@ -366,9 +366,9 @@ const SideBar = () => {
           arrow={false}
           styles={{ container: { padding: 2, borderRadius: 10, marginLeft: 30 } }}
         >
-          <div className="flex items-center px-2 py-1.5 mb-1.5 cursor-pointer rounded hover:bg-emerald-50 transition-colors group">
+          <div className="flex items-center px-1 py-1.5 mb-1.5 cursor-pointer rounded hover:bg-emerald-50 transition-colors group">
             <Avatar
-              size={32}
+              size={34}
               style={{ backgroundColor: "#003220", color: "#ffffff" }}
               className="font-bold text-xs shrink-0 shadow-sm flex items-center justify-center"
               icon={!hasCompanyName ? <UserOutlined /> : undefined}
