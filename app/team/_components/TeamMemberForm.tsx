@@ -29,7 +29,7 @@ const TeamMemberForm = ({
   const [zones, setZones] = useState<any[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
-  const [scheduleBreak, setScheduleBreak] = useState(false);
+  const [scheduleBreak, setScheduleBreak] = useState(true);
   const [roleType, setRoleType] = useState<string>("driver");
   const [startLocationSameAsDepot, setStartLocationSameAsDepot] =
     useState(true);

@@ -45,6 +45,19 @@ export const transformFormToApi = (
     );
   }
 
+  // Transform day_schedules: dayjs objects -> string (HH:mm)
+  if (values.day_schedules) {
+    const formattedSchedules: Record<string, any> = {};
+    for (const [day, item] of Object.entries(values.day_schedules as Record<string, any>)) {
+      formattedSchedules[day] = {
+        enabled: !!item?.enabled,
+        start_time: item?.start_time ? dayjs(item.start_time).format("HH:mm") : null,
+        end_time: item?.end_time ? dayjs(item.end_time).format("HH:mm") : null,
+      };
+    }
+    transformedValues.day_schedules = formattedSchedules;
+  }
+
   // Transform break times
   if (scheduleBreak && values.break_time_start) {
     transformedValues.break_time_start = dayjs(values.break_time_start).format(
@@ -57,13 +70,15 @@ export const transformFormToApi = (
     );
   }
 
-  // Transform phone: object {countryCode, number} -> string phone_number
-  if (values.phone) {
+  // Transform phone: object {countryCode, number} -> string phone_number or null
+  if (values.phone && values.phone.number && values.phone.number.trim() !== "") {
     const { countryCode, number } = values.phone;
-    const codeOnly = countryCode.match(/\+\d+/)?.[0] || "";
+    const codeOnly = countryCode?.match(/\+\d+/)?.[0] || "";
     transformedValues.phone_number = `${codeOnly}-${number}`;
-    delete transformedValues.phone;
+  } else {
+    transformedValues.phone_number = null;
   }
+  delete transformedValues.phone;
 
   // Handle start/end location based on "same as depot" checkboxes
   if (locationOptions) {
@@ -104,6 +119,19 @@ export const transformApiToForm = (initialData: Team): any => {
     formValues.work_end_time = dayjs(formValues.work_end_time, "HH:mm");
   }
 
+  // Transform day_schedules: string (HH:mm) -> dayjs objects
+  if (formValues.day_schedules) {
+    const parsedSchedules: Record<string, any> = {};
+    for (const [day, item] of Object.entries(formValues.day_schedules as Record<string, any>)) {
+      parsedSchedules[day] = {
+        enabled: !!item?.enabled,
+        start_time: item?.start_time ? dayjs(item.start_time, "HH:mm") : dayjs("08:00", "HH:mm"),
+        end_time: item?.end_time ? dayjs(item.end_time, "HH:mm") : dayjs("16:00", "HH:mm"),
+      };
+    }
+    formValues.day_schedules = parsedSchedules;
+  }
+
   // Transform break times
   if (formValues.break_time_start) {
     formValues.break_time_start = dayjs(formValues.break_time_start, "HH:mm");
@@ -118,9 +146,14 @@ export const transformApiToForm = (initialData: Team): any => {
     const country = COUNTRY_CODES.find((c) => c.code === code);
     formValues.phone = {
       countryCode: country ? `${country.flag} ${code}` : `🇺🇸 ${code}`,
-      number: number,
+      number: number || "",
     };
     delete formValues.phone_number;
+  } else {
+    formValues.phone = {
+      countryCode: `🇺🇸 +1`,
+      number: "",
+    };
   }
 
   return formValues;

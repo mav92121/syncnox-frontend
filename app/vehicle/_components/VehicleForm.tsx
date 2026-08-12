@@ -12,6 +12,7 @@ import {
   Flex,
   Typography,
   Divider,
+  Radio,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -31,6 +32,7 @@ interface VehicleFormProps {
 const VEHICLE_TYPES: { value: VehicleType; label: string }[] = [
   { value: "car", label: "Car" },
   { value: "van", label: "Van" },
+  { value: "vehicle", label: "Vehicle"},
   { value: "bus", label: "Bus" },
   { value: "small_truck", label: "Small Truck" },
   { value: "truck", label: "Truck" },
@@ -52,10 +54,8 @@ const CONSTRAINT_UNITS: Record<ConstraintType, { value: string; label: string }[
     { value: "L", label: "L" },
     { value: "ft3", label: "ft³" },
   ],
-  item_count: [
-    { value: "items", label: "items" },
+  quantity: [
     { value: "units", label: "units" },
-    { value: "boxes", label: "boxes" },
   ],
   pallets: [
     { value: "pallets", label: "pallets" },
@@ -76,7 +76,7 @@ const CONSTRAINT_UNITS: Record<ConstraintType, { value: string; label: string }[
 const CONSTRAINT_TYPES: { value: ConstraintType; label: string }[] = [
   { value: "weight", label: "Weight" },
   { value: "volume", label: "Volume" },
-  { value: "item_count", label: "Item count" },
+  { value: "quantity", label: "Quantity" },
   { value: "pallets", label: "Pallets" },
   { value: "distance", label: "Distance" },
   { value: "duration", label: "Duration" },
@@ -97,10 +97,12 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
 
   const defaultValues = {
     name: `Vehicle ${
-      vehicles.length > 0 ? Math.max(...vehicles.map((v) => v.id)) + 1 : 1
+      vehicles.length > 0 ? vehicles.length + 1 : 1
     }`,
     type: "car" as VehicleType,
     load_constraints: [],
+    required_skills: [],
+    relation: "and",
   };
 
   // prefill form
@@ -113,6 +115,8 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
         model: initialData.model,
         type: initialData.type,
         load_constraints: initialData.load_constraints ?? [],
+        required_skills: initialData.required_skills ?? [],
+        relation: initialData.relation ?? "and",
       });
     } else {
       form.resetFields();
@@ -123,6 +127,8 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
     try {
       const payload = {
         ...values,
+        required_skills: values.required_skills ?? [],
+        relation: values.relation ?? "and",
         load_constraints: (values.load_constraints ?? []).map(
           (c: LoadConstraint) => ({
             constraint_type: c.constraint_type,
@@ -211,10 +217,55 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
             <Col span={24}>
               <Form.Item label="Type" name="type">
                 <Select
+                  showSearch
                   placeholder="Select vehicle type"
                   options={VEHICLE_TYPES}
                   allowClear
                 />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Divider style={{ marginTop: 4, marginBottom: 16 }} />
+
+          {/* Required Skills & Skill Relation */}
+          <Text
+            strong
+            style={{
+              display: "block",
+              letterSpacing: "0.08em",
+              fontSize: 11,
+              color: "#8c8c8c",
+              marginBottom: 4,
+            }}
+          >
+            REQUIRED SKILLS (OPTIONAL)
+          </Text>
+          <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 12 }}>
+            Drivers assigning to this vehicle must possess the matching required skills.
+          </Text>
+
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Required Skills" name="required_skills">
+                <Select
+                  mode="tags"
+                  style={{ width: "100%" }}
+                  placeholder="Type a skill and press Enter (e.g., Heavy License, Refrigerated)"
+                  options={[]}
+                  tokenSeparators={[","]}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Skill Logic Requirement (Relation)" name="relation">
+                <Radio.Group optionType="button" buttonStyle="solid">
+                  <Radio.Button value="and">All Required (AND)</Radio.Button>
+                  <Radio.Button value="or">At Least One Required (OR)</Radio.Button>
+                </Radio.Group>
               </Form.Item>
             </Col>
           </Row>

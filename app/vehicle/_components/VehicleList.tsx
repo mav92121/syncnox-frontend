@@ -100,13 +100,13 @@ const VehicleList = () => {
         </Title>
         <Button
           type="primary"
-          size="small"
+          // size="small"
           onClick={() => setAddModalOpen(true)}
         >
           Add Vehicle
         </Button>
       </Flex>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 mt-1">
         <BaseTable<Vehicle>
           columnDefs={columns}
           rowData={vehicles}

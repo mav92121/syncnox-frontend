@@ -7,12 +7,13 @@ export type VehicleType =
   | "scooter"
   | "foot"
   | "bike"
-  | "mountain_bike";
+  | "mountain_bike"
+  | "vehicle";
 
 export type ConstraintType =
   | "weight"
   | "volume"
-  | "item_count"
+  | "quantity"
   | "pallets"
   | "distance"
   | "duration"
@@ -35,6 +36,8 @@ export interface Vehicle {
   license_plate: string | null;
   make: string | null;
   model: string | null;
+  required_skills?: string[];
+  relation?: "or" | "and" | null;
   created_at: string;
   updated_at: string;
 }

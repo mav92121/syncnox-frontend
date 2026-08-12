@@ -78,8 +78,8 @@ const TeamList = () => {
       headerName: "Work Timings",
       valueGetter: (params) =>
         formatTimeWindow(
-          params.data?.work_start_time,
-          params.data?.work_end_time
+          params.data?.work_start_time ?? undefined,
+          params.data?.work_end_time ?? undefined
         ),
       width: 150,
     },
@@ -87,8 +87,8 @@ const TeamList = () => {
       headerName: "Break",
       valueGetter: (params) =>
         formatTimeWindow(
-          params.data?.break_time_start,
-          params.data?.break_time_end
+          params.data?.break_time_start ?? undefined,
+          params.data?.break_time_end ?? undefined
         ),
       width: 150,
     },
@@ -152,13 +152,13 @@ const TeamList = () => {
         </Title>
         <Button
           type="primary"
-          size="small"
+          // size="small"
           onClick={() => setAddModalOpen(true)}
         >
           Add Team Member
         </Button>
       </Flex>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 mt-1">
         <BaseTable<Team>
           columnDefs={columns}
           rowData={teams}

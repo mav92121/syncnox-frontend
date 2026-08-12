@@ -163,7 +163,6 @@ const Depot = () => {
         </Title>
         <Flex gap={8}>
           <Button
-            size="small"
             onClick={() => {
               if (!isMapOpen) {
                 setMapCenter(null);
@@ -174,13 +173,13 @@ const Depot = () => {
           >
             {isMapOpen ? "Close Map" : "Map View"}
           </Button>
-          <Button size="small" type="primary" onClick={handleCreate}>
+          <Button type="primary" onClick={handleCreate}>
             Add Depot
           </Button>
         </Flex>
       </Flex>
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 mt-1">
         <BaseTable<DepotType>
           columnDefs={columns}
           rowData={depots}
