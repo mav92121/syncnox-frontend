@@ -11,6 +11,7 @@ export type VehicleType =
   | "vehicle";
 
 export type ConstraintType =
+  | "capacity"
   | "weight"
   | "volume"
   | "quantity"

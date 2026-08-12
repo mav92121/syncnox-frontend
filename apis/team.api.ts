@@ -44,3 +44,34 @@ export const saveDriverZones = async (driverId: number, zones: ZonePolygon[]): P
   await apiClient.put(`/driver/${driverId}/zones`, { zones });
 };
 
+export const bulkImportTeams = async (file: File): Promise<Team[]> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await apiClient.post<Team[]>(`${url}/bulk-import`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+};
+
+export const batchCreateTeams = async (
+  teams: Partial<Team>[]
+): Promise<Team[]> => {
+  const response = await apiClient.post<Team[]>(`${url}/batch`, teams);
+  return response.data;
+};
+
+export const downloadTeamTemplate = async (): Promise<void> => {
+  const response = await apiClient.get(`${url}/template/download`, {
+    responseType: "blob",
+  });
+  const blob = new Blob([response.data], { type: "text/csv" });
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.setAttribute("download", "drivers_template.csv");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
+
+

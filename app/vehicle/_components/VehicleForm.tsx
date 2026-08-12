@@ -44,6 +44,10 @@ const VEHICLE_TYPES: { value: VehicleType; label: string }[] = [
 
 // Maps each constraint type to its available units
 const CONSTRAINT_UNITS: Record<ConstraintType, { value: string; label: string }[]> = {
+  capacity: [
+    { value: "seats", label: "seats" },
+    { value: "passengers", label: "passengers" },
+  ],
   weight: [
     { value: "kg", label: "kg" },
     { value: "lb", label: "lb" },

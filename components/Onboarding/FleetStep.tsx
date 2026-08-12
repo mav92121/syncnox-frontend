@@ -16,6 +16,7 @@ const FleetStep = ({ onNext }: FleetStepProps) => {
       items={vehicles}
       itemLabelSingular="vehicle"
       itemLabelPlural="Vehicles"
+      entityType="vehicle"
       Icon={Truck}
       FormComponent={VehicleForm}
       getItemDisplay={(v) => ({ name: v.name, secondary: v.type ?? undefined })}
@@ -25,5 +26,6 @@ const FleetStep = ({ onNext }: FleetStepProps) => {
     />
   );
 };
+
 
 export default FleetStep;

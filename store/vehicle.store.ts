@@ -7,6 +7,8 @@ import {
   createVehicle,
   updateVehicle,
   deleteVehicle as deleteVehicleApi,
+  bulkImportVehicles,
+  batchCreateVehicles,
 } from "@/apis/vehicle.api";
 
 interface VehicleStore {
@@ -19,6 +21,8 @@ interface VehicleStore {
   createVehicleAction: (vehicle: Partial<Vehicle>) => Promise<Vehicle>;
   updateVehicleAction: (vehicle: Vehicle) => Promise<Vehicle>;
   deleteVehicleAction: (vehicleId: number) => Promise<void>;
+  bulkImportVehiclesAction: (file: File) => Promise<Vehicle[]>;
+  batchCreateVehiclesAction: (vehicles: Partial<Vehicle>[]) => Promise<Vehicle[]>;
   getVehiclesMap: () => Record<number, string>;
 }
 
@@ -127,6 +131,52 @@ export const useVehicleStore = create(
               error instanceof Error
                 ? error.message
                 : "Failed to delete vehicle";
+          });
+          throw error;
+        }
+      },
+
+      bulkImportVehiclesAction: async (file: File) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          const imported = await bulkImportVehicles(file);
+          set((state) => {
+            state.vehicles.push(...imported);
+            state.isLoading = false;
+          });
+          return imported;
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to import vehicles";
+          });
+          throw error;
+        }
+      },
+
+      batchCreateVehiclesAction: async (vehicles: Partial<Vehicle>[]) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          const created = await batchCreateVehicles(vehicles);
+          set((state) => {
+            state.vehicles.unshift(...created);
+            state.isLoading = false;
+          });
+          return created;
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to create vehicles";
           });
           throw error;
         }

@@ -12,6 +12,8 @@ import dayjs from "dayjs";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 import { statusStyleMap } from "./teamMemberForm.utils";
 import { formatTimeWindow } from "@/utils/app.utils";
+import BulkImportModal from "@/components/BulkImport/BulkImportModal";
+import { FileSpreadsheet, Plus } from "lucide-react";
 
 const { Title } = Typography;
 
@@ -20,6 +22,7 @@ const TeamList = () => {
   const { vehicles } = useVehicleStore();
   const [editTeamData, setEditTeamData] = useState<Team | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
   const vehiclesMap = vehicles.reduce((acc, vehicle) => {
     acc[vehicle.id] = vehicle.name;
@@ -146,17 +149,25 @@ const TeamList = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <Flex justify="space-between">
+      <Flex justify="space-between" align="center">
         <Title className="m-0 mb-2 pt-2" level={4}>
           Team Members
         </Title>
-        <Button
-          type="primary"
-          // size="small"
-          onClick={() => setAddModalOpen(true)}
-        >
-          Add Team Member
-        </Button>
+        <Flex gap={8}>
+          <Button
+            icon={<FileSpreadsheet size={16} />}
+            onClick={() => setBulkModalOpen(true)}
+          >
+            Bulk Import
+          </Button>
+          <Button
+            type="primary"
+            icon={<Plus size={16} />}
+            onClick={() => setAddModalOpen(true)}
+          >
+            Add Team Member
+          </Button>
+        </Flex>
       </Flex>
       <div className="flex-1 min-h-0 mt-1">
         <BaseTable<Team>
@@ -165,13 +176,19 @@ const TeamList = () => {
           rowSelection="multiple"
           loading={isLoading}
           emptyMessage="No teams to show"
-          //   pagination={true}
           containerStyle={{ height: "100%" }}
         />
       </div>
 
       {/* Add Team Member Modal */}
       <AddTeamMemberModal open={addModalOpen} setOpen={setAddModalOpen} />
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        entityType="driver"
+      />
 
       {/* Edit Team Member Drawer */}
       <Drawer

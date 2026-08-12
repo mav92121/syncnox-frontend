@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { Button, Typography, message } from "antd";
-import { ArrowRight, Plus, Trash2, LucideIcon } from "lucide-react";
+import { ArrowRight, Plus, Trash2, LucideIcon, FileSpreadsheet } from "lucide-react";
 import { useOnboardingStore } from "@/store/onboarding.store";
+import BulkImportModal from "@/components/BulkImport/BulkImportModal";
 
 const { Text } = Typography;
 
@@ -10,6 +11,7 @@ interface OnboardingListStepProps<T extends { id: number }> {
   items: T[];
   itemLabelSingular: string;
   itemLabelPlural: string;
+  entityType?: "vehicle" | "driver";
   Icon: LucideIcon;
   FormComponent: React.ComponentType<{ onSubmit: () => void }>;
   getItemDisplay: (item: T) => { name: string; secondary?: string };
@@ -22,6 +24,7 @@ const OnboardingListStep = <T extends { id: number }>({
   items,
   itemLabelSingular,
   itemLabelPlural,
+  entityType,
   Icon,
   FormComponent,
   getItemDisplay,
@@ -30,6 +33,7 @@ const OnboardingListStep = <T extends { id: number }>({
   emptyErrorMessage,
 }: OnboardingListStepProps<T>) => {
   const [showForm, setShowForm] = useState(items.length === 0);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const { isLoading } = useOnboardingStore();
 
   const handleItemAdded = () => {
@@ -75,7 +79,7 @@ const OnboardingListStep = <T extends { id: number }>({
           </div>
         )}
 
-        {/* Form or Add Button */}
+        {/* Form or Add Buttons */}
         {showForm ? (
           <div className="border border-gray-200">
             {/* Card Header with Close Button */}
@@ -101,32 +105,66 @@ const OnboardingListStep = <T extends { id: number }>({
             </div>
           </div>
         ) : (
-          <Button
-            type="dashed"
-            icon={<Plus size={14} />}
-            onClick={() => setShowForm(true)}
-            className="h-10 w-full"
-          >
-            Add {items.length > 0 ? "another" : "a"} {itemLabelSingular}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              type="dashed"
+              icon={<Plus size={14} />}
+              onClick={() => setShowForm(true)}
+              className="h-10 flex-1"
+            >
+              Add {items.length > 0 ? "another" : "a"} {itemLabelSingular}
+            </Button>
+            {entityType && (
+              <Button
+                icon={<FileSpreadsheet size={14} />}
+                onClick={() => setBulkModalOpen(true)}
+                className="h-10 border-dashed"
+              >
+                Import Excel/CSV
+              </Button>
+            )}
+          </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="pt-3 flex justify-end shrink-0">
-        <Button
-          type="primary"
-          onClick={handleContinue}
-          loading={isLoading}
-          disabled={items.length === 0}
-          icon={<ArrowRight size={14} />}
-          iconPosition="end"
-        >
-          Continue
-        </Button>
+      <div className="pt-3 flex justify-between items-center shrink-0 border-t mt-2">
+        {entityType && showForm && (
+          <Button
+            size="small"
+            type="link"
+            icon={<FileSpreadsheet size={14} />}
+            onClick={() => setBulkModalOpen(true)}
+            className="text-xs px-0"
+          >
+            Import via Excel/CSV
+          </Button>
+        )}
+        <div className="ml-auto">
+          <Button
+            type="primary"
+            onClick={handleContinue}
+            loading={isLoading}
+            disabled={items.length === 0}
+            icon={<ArrowRight size={14} />}
+            iconPosition="end"
+          >
+            Continue
+          </Button>
+        </div>
       </div>
+
+      {entityType && (
+        <BulkImportModal
+          open={bulkModalOpen}
+          onClose={() => setBulkModalOpen(false)}
+          entityType={entityType}
+          onSuccess={() => setShowForm(false)}
+        />
+      )}
     </div>
   );
 };
 
 export default OnboardingListStep;
+

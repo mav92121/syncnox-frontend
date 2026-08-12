@@ -8,6 +8,8 @@ import { Typography, Flex, Button, Drawer } from "antd";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import AddVehicleModal from "./AddVehicleModal";
 import VehicleForm from "./VehicleForm";
+import BulkImportModal from "@/components/BulkImport/BulkImportModal";
+import { FileSpreadsheet, Plus } from "lucide-react";
 
 const { Title } = Typography;
 
@@ -23,6 +25,7 @@ const VehicleList = () => {
   const { isLoading, vehicles, deleteVehicleAction } = useVehicleStore();
 
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [editVehicleData, setEditVehicleData] = useState<Vehicle | null>(null);
 
   const columns: ColDef<Vehicle>[] = [
@@ -94,17 +97,25 @@ const VehicleList = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <Flex justify="space-between">
+      <Flex justify="space-between" align="center">
         <Title className="m-0 mb-2 pt-2" level={4}>
           Vehicles
         </Title>
-        <Button
-          type="primary"
-          // size="small"
-          onClick={() => setAddModalOpen(true)}
-        >
-          Add Vehicle
-        </Button>
+        <Flex gap={8}>
+          <Button
+            icon={<FileSpreadsheet size={16} />}
+            onClick={() => setBulkModalOpen(true)}
+          >
+            Bulk Import
+          </Button>
+          <Button
+            type="primary"
+            icon={<Plus size={16} />}
+            onClick={() => setAddModalOpen(true)}
+          >
+            Add Vehicle
+          </Button>
+        </Flex>
       </Flex>
       <div className="flex-1 min-h-0 mt-1">
         <BaseTable<Vehicle>
@@ -119,6 +130,13 @@ const VehicleList = () => {
 
       {/* Add Vehicle Modal */}
       <AddVehicleModal open={addModalOpen} setOpen={setAddModalOpen} />
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        entityType="vehicle"
+      />
 
       {/* Edit Vehicle Drawer */}
       <Drawer
@@ -137,5 +155,6 @@ const VehicleList = () => {
     </div>
   );
 };
+
 
 export default VehicleList;

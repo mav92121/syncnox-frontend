@@ -26,3 +26,34 @@ export const updateVehicle = async (vehicle: Vehicle): Promise<Vehicle> => {
 export const deleteVehicle = async (vehicleId: number): Promise<void> => {
   await apiClient.delete(`${url}/${vehicleId}`);
 };
+
+export const bulkImportVehicles = async (file: File): Promise<Vehicle[]> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await apiClient.post<Vehicle[]>(`${url}/bulk-import`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data;
+};
+
+export const batchCreateVehicles = async (
+  vehicles: Partial<Vehicle>[]
+): Promise<Vehicle[]> => {
+  const response = await apiClient.post<Vehicle[]>(`${url}/batch`, vehicles);
+  return response.data;
+};
+
+export const downloadVehicleTemplate = async (): Promise<void> => {
+  const response = await apiClient.get(`${url}/template/download`, {
+    responseType: "blob",
+  });
+  const blob = new Blob([response.data], { type: "text/csv" });
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.setAttribute("download", "vehicles_template.csv");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
+
