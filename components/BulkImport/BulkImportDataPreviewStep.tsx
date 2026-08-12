@@ -67,6 +67,18 @@ export default function BulkImportDataPreviewStep({
         const capVal = getVal("capacity");
         const capNum = capVal ? parseFloat(capVal) || null : null;
 
+        const weightVal = getVal("weight");
+        const weightNum = weightVal ? parseFloat(weightVal) || null : null;
+
+        const volumeVal = getVal("volume");
+        const volumeNum = volumeVal ? parseFloat(volumeVal) || null : null;
+
+        const qtyVal = getVal("quantity");
+        const qtyNum = qtyVal ? parseFloat(qtyVal) || null : null;
+
+        const palletsVal = getVal("pallets");
+        const palletsNum = palletsVal ? parseFloat(palletsVal) || null : null;
+
         const skillsStr = getVal("required_skills");
 
         return {
@@ -74,6 +86,10 @@ export default function BulkImportDataPreviewStep({
           name: rawName,
           type: vType,
           capacity: capNum !== null ? capNum : "",
+          weight: weightNum !== null ? weightNum : "",
+          volume: volumeNum !== null ? volumeNum : "",
+          quantity: qtyNum !== null ? qtyNum : "",
+          pallets: palletsNum !== null ? palletsNum : "",
           license_plate: getVal("license_plate"),
           make: getVal("make"),
           model: getVal("model"),
@@ -130,9 +146,23 @@ export default function BulkImportDataPreviewStep({
     try {
       if (entityType === "vehicle") {
         const payload = validRows.map((r) => {
-          const loadConstraints = r.capacity !== "" && !isNaN(Number(r.capacity))
-            ? [{ constraint_type: "capacity" as const, max_value: Number(r.capacity), unit: "seats" }]
-            : [];
+          const loadConstraints: { constraint_type: any; max_value: number; unit: string }[] = [];
+
+          if (r.capacity !== "" && !isNaN(Number(r.capacity))) {
+            loadConstraints.push({ constraint_type: "capacity", max_value: Number(r.capacity), unit: "seats" });
+          }
+          if (r.weight !== "" && !isNaN(Number(r.weight))) {
+            loadConstraints.push({ constraint_type: "weight", max_value: Number(r.weight), unit: "kg" });
+          }
+          if (r.volume !== "" && !isNaN(Number(r.volume))) {
+            loadConstraints.push({ constraint_type: "volume", max_value: Number(r.volume), unit: "m3" });
+          }
+          if (r.quantity !== "" && !isNaN(Number(r.quantity))) {
+            loadConstraints.push({ constraint_type: "quantity", max_value: Number(r.quantity), unit: "units" });
+          }
+          if (r.pallets !== "" && !isNaN(Number(r.pallets))) {
+            loadConstraints.push({ constraint_type: "pallets", max_value: Number(r.pallets), unit: "pallets" });
+          }
 
           return {
             name: r.name.trim(),
@@ -231,7 +261,71 @@ export default function BulkImportDataPreviewStep({
           type="number"
           value={val}
           onChange={(e) => updateCell(idx, "capacity", e.target.value)}
-          placeholder="e.g. 4"
+          placeholder="Seats"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Weight (kg)",
+      dataIndex: "weight",
+      key: "weight",
+      width: 110,
+      render: (val: any, record: any, idx: number) => (
+        <Input
+          size="small"
+          type="number"
+          value={val}
+          onChange={(e) => updateCell(idx, "weight", e.target.value)}
+          placeholder="kg"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Volume (m³)",
+      dataIndex: "volume",
+      key: "volume",
+      width: 110,
+      render: (val: any, record: any, idx: number) => (
+        <Input
+          size="small"
+          type="number"
+          value={val}
+          onChange={(e) => updateCell(idx, "volume", e.target.value)}
+          placeholder="m³"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Quantity (Units)",
+      dataIndex: "quantity",
+      key: "quantity",
+      width: 120,
+      render: (val: any, record: any, idx: number) => (
+        <Input
+          size="small"
+          type="number"
+          value={val}
+          onChange={(e) => updateCell(idx, "quantity", e.target.value)}
+          placeholder="Units"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Pallets",
+      dataIndex: "pallets",
+      key: "pallets",
+      width: 100,
+      render: (val: any, record: any, idx: number) => (
+        <Input
+          size="small"
+          type="number"
+          value={val}
+          onChange={(e) => updateCell(idx, "pallets", e.target.value)}
+          placeholder="Pallets"
           className="text-xs"
         />
       ),

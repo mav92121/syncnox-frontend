@@ -13,6 +13,10 @@ const VEHICLE_FIELDS: SystemFieldDefinition[] = [
   { key: "name", label: "Vehicle Name", required: true },
   { key: "type", label: "Vehicle Type" },
   { key: "capacity", label: "Capacity (Seats)" },
+  { key: "weight", label: "Max Weight (kg)" },
+  { key: "volume", label: "Max Volume (m³)" },
+  { key: "quantity", label: "Max Quantity / Units" },
+  { key: "pallets", label: "Max Pallets" },
   { key: "license_plate", label: "License Plate" },
   { key: "make", label: "Make" },
   { key: "model", label: "Model" },
@@ -40,6 +44,10 @@ function autoMatchField(header: string, entityType: "vehicle" | "driver"): strin
   if (entityType === "vehicle") {
     if (["vehicle", "name", "vehicule", "vehicle name", "title"].includes(clean)) return "name";
     if (clean.includes("capacity") || clean.includes("passenger") || clean.includes("seats")) return "capacity";
+    if (clean.includes("weight") || clean.includes("poids") || clean.includes("kg") || clean.includes("lbs")) return "weight";
+    if (clean.includes("volume") || clean.includes("vlm") || clean.includes("m3")) return "volume";
+    if (clean.includes("quantity") || clean.includes("qty") || clean.includes("count") || clean.includes("units")) return "quantity";
+    if (clean.includes("pallet")) return "pallets";
     if (clean.includes("license") || clean.includes("skills") || clean.includes("driving") || clean.includes("required")) return "required_skills";
     if (clean.includes("plate") || clean.includes("immatriculation")) return "license_plate";
     if (clean.includes("type")) return "type";
