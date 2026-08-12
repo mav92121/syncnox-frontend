@@ -26,6 +26,7 @@ export default function BulkImportModal({
   const [rawHeaders, setRawHeaders] = useState<string[]>([]);
   const [rawRows, setRawRows] = useState<Record<string, any>[]>([]);
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [skipFirstRow, setSkipFirstRow] = useState(false);
   const [importedCount, setImportedCount] = useState<number | null>(null);
 
   const entityTitle = entityType === "vehicle" ? "Vehicles" : "Drivers";
@@ -35,6 +36,7 @@ export default function BulkImportModal({
     setRawHeaders([]);
     setRawRows([]);
     setMapping({});
+    setSkipFirstRow(false);
     setImportedCount(null);
   };
 
@@ -124,6 +126,8 @@ export default function BulkImportModal({
                 rawHeaders={rawHeaders}
                 rawRows={rawRows}
                 initialMapping={mapping}
+                skipFirstRow={skipFirstRow}
+                onSkipFirstRowChange={setSkipFirstRow}
                 onMappingConfirmed={handleMappingConfirmed}
                 onBack={() => setCurrentStep(1)}
               />
@@ -132,7 +136,7 @@ export default function BulkImportModal({
             {currentStep === 3 && (
               <BulkImportDataPreviewStep
                 entityType={entityType}
-                rawRows={rawRows}
+                rawRows={skipFirstRow ? rawRows.slice(1) : rawRows}
                 mapping={mapping}
                 onBack={() => setCurrentStep(2)}
                 onSuccess={handleImportSuccess}
