@@ -144,9 +144,16 @@ const SideBar = () => {
 
       {/* Resource Metrics Section - Team, Vehicles, Depots */}
       <div className="my-2.5 p-2 rounded-none border border-emerald-100/80 space-y-1.5">
-        <div className="flex items-center justify-between text-xs px-2 py-1 bg-white rounded-none border border-emerald-100/50 shadow-2xs">
-          <div className="flex items-center gap-2 text-gray-700 font-medium">
-            <div className="w-5 h-5 rounded-none bg-emerald-100/80 flex items-center justify-center text-[#003220] text-xs shrink-0">
+        <button
+          type="button"
+          onClick={() => {
+            handleNavigation("/team", "team");
+            router.push("/team");
+          }}
+          className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-emerald-100/50 shadow-2xs hover:bg-emerald-50/80 hover:border-emerald-300 transition-all cursor-pointer text-left group"
+        >
+          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
               <TeamOutlined />
             </div>
             <span>Team Members</span>
@@ -154,11 +161,18 @@ const SideBar = () => {
           <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
             {teams.length}
           </span>
-        </div>
+        </button>
 
-        <div className="flex items-center justify-between text-xs px-2 py-1 bg-white rounded-none border border-emerald-100/50 shadow-2xs">
-          <div className="flex items-center gap-2 text-gray-700 font-medium">
-            <div className="w-5 h-5 rounded-none bg-emerald-100/80 flex items-center justify-center text-[#003220] text-xs shrink-0">
+        <button
+          type="button"
+          onClick={() => {
+            handleNavigation("/vehicle", "vehicle");
+            router.push("/vehicle");
+          }}
+          className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-emerald-100/50 shadow-2xs hover:bg-emerald-50/80 hover:border-emerald-300 transition-all cursor-pointer text-left group"
+        >
+          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
               <CarOutlined />
             </div>
             <span>Vehicles</span>
@@ -166,11 +180,18 @@ const SideBar = () => {
           <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
             {vehicles.length}
           </span>
-        </div>
+        </button>
 
-        <div className="flex items-center justify-between text-xs px-2 py-1 bg-white rounded-none border border-emerald-100/50 shadow-2xs">
-          <div className="flex items-center gap-2 text-gray-700 font-medium">
-            <div className="w-5 h-5 rounded-none bg-emerald-100/80 flex items-center justify-center text-[#003220] text-xs shrink-0">
+        <button
+          type="button"
+          onClick={() => {
+            handleNavigation("/depot", "depot");
+            router.push("/depot");
+          }}
+          className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-emerald-100/50 shadow-2xs hover:bg-emerald-50/80 hover:border-emerald-300 transition-all cursor-pointer text-left group"
+        >
+          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
               <EnvironmentOutlined />
             </div>
             <span>Depots</span>
@@ -178,7 +199,7 @@ const SideBar = () => {
           <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
             {depots.length}
           </span>
-        </div>
+        </button>
       </div>
 
       {/* Organization Info Box */}

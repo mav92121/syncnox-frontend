@@ -209,7 +209,7 @@ const TeamList = () => {
             <>
               {/* Detail header */}
               <div className="flex items-center gap-3 p-3.5 px-5 border-b border-gray-200 shrink-0 bg-white">
-                <div className="w-11 h-11 bg-[#003220] text-white flex items-center justify-center text-base font-bold shrink-0 rounded-none">
+                <div className="w-11 h-11 bg-primary text-white flex items-center justify-center text-base font-bold shrink-0 rounded-none">
                   {getInitials(selectedTeam.name)}
                 </div>
                 <div>
