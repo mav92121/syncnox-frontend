@@ -5,6 +5,8 @@ import { Table, Input, Select, Button, Tag, Popconfirm, message } from "antd";
 import { Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useVehicleStore } from "@/store/vehicle.store";
 import { useTeamStore } from "@/store/team.store";
+import { useDepotStore } from "@/store/depots.store";
+import { useLocationMappingStore } from "@/store/location-mapping.store";
 import { parse_skills, parse_time_slot, infer_vehicle_type } from "@/utils/importHelper.utils";
 
 const VEHICLE_TYPES = [
@@ -25,8 +27,17 @@ const DRIVER_ROLES = [
   { value: "manager", label: "Manager" },
 ];
 
+const LOCATION_CATEGORIES = [
+  { value: "Metro Station", label: "Metro Station" },
+  { value: "Transit Hub", label: "Transit Hub" },
+  { value: "Depot", label: "Depot" },
+  { value: "Warehouse", label: "Warehouse" },
+  { value: "Waypoint", label: "Waypoint" },
+  { value: "Landmark", label: "Custom Landmark" },
+];
+
 interface BulkImportDataPreviewStepProps {
-  entityType: "vehicle" | "driver";
+  entityType: "vehicle" | "driver" | "location";
   rawRows: Record<string, any>[];
   mapping: Record<string, string>; // { [excelHeader]: systemFieldKey }
   onBack: () => void;
@@ -42,6 +53,8 @@ export default function BulkImportDataPreviewStep({
 }: BulkImportDataPreviewStepProps) {
   const { batchCreateVehiclesAction } = useVehicleStore();
   const { batchCreateTeamsAction } = useTeamStore();
+  const { batchCreateLocationMappingsAction } = useLocationMappingStore();
+  const { createDepot } = useDepotStore();
 
   // Convert raw rows & mapping into initial structured records
   const [records, setRecords] = useState<Record<string, any>[]>(() => {
@@ -95,7 +108,7 @@ export default function BulkImportDataPreviewStep({
           model: getVal("model"),
           required_skills: skillsStr,
         };
-      } else {
+      } else if (entityType === "driver") {
         const rawName = getVal("name");
         const rawRole = getVal("role_type").toLowerCase();
         const role = ["driver", "admin", "manager"].includes(rawRole) ? rawRole : "driver";
@@ -115,6 +128,22 @@ export default function BulkImportDataPreviewStep({
           saturday: getVal("saturday"),
           sunday: getVal("sunday"),
         };
+      } else {
+        const rawName = getVal("name");
+        const rawCategory = getVal("category");
+        const category = rawCategory || "Metro Station";
+
+        return {
+          _key: idx,
+          name: rawName,
+          code: getVal("code"),
+          address: getVal("address"),
+          latitude: getVal("latitude"),
+          longitude: getVal("longitude"),
+          category: category,
+          service_zone: getVal("service_zone"),
+          operating_hours: getVal("operating_hours"),
+        };
       }
     });
   });
@@ -133,10 +162,10 @@ export default function BulkImportDataPreviewStep({
     setRecords((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const validRecordsCount = records.filter((r) => r.name.trim().length > 0).length;
+  const validRecordsCount = records.filter((r) => r.name && r.name.trim().length > 0).length;
 
   const handleImport = async () => {
-    const validRows = records.filter((r) => r.name.trim().length > 0);
+    const validRows = records.filter((r) => r.name && r.name.trim().length > 0);
     if (validRows.length === 0) {
       message.error("No valid records to import. Please make sure names are specified.");
       return;
@@ -178,7 +207,7 @@ export default function BulkImportDataPreviewStep({
         const created = await batchCreateVehiclesAction(payload);
         message.success(`Successfully imported ${created.length} vehicles!`);
         onSuccess(created.length);
-      } else {
+      } else if (entityType === "driver") {
         const payload = validRows.map((r) => {
           const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
           const day_schedules: Record<string, any> = {};
@@ -202,6 +231,26 @@ export default function BulkImportDataPreviewStep({
         const created = await batchCreateTeamsAction(payload);
         message.success(`Successfully imported ${created.length} drivers!`);
         onSuccess(created.length);
+      } else {
+        // Location / Station Reference Mapping import (saved to metro_station mapping table)
+        const payloads = validRows.map((r) => {
+          const stationName = r.name ? r.name.trim() : "";
+          const addressStr = r.address ? r.address.trim() : "";
+          const stationCode = r.code ? r.code.trim() : "";
+
+          const aliases = stationCode ? [stationCode] : [];
+
+          return {
+            name: stationName || addressStr,
+            address: addressStr || stationName,
+            aliases: aliases.length > 0 ? aliases : undefined,
+            is_active: true,
+          };
+        });
+
+        const count = await batchCreateLocationMappingsAction(payloads);
+        message.success(`Successfully imported ${count} location reference mapping(s)!`);
+        onSuccess(count);
       }
     } catch (err: any) {
       message.error(err.message || "Failed to import records");
@@ -299,42 +348,10 @@ export default function BulkImportDataPreviewStep({
       ),
     },
     {
-      title: "Quantity (Units)",
-      dataIndex: "quantity",
-      key: "quantity",
-      width: 120,
-      render: (val: any, record: any, idx: number) => (
-        <Input
-          size="small"
-          type="number"
-          value={val}
-          onChange={(e) => updateCell(idx, "quantity", e.target.value)}
-          placeholder="Units"
-          className="text-xs"
-        />
-      ),
-    },
-    {
-      title: "Pallets",
-      dataIndex: "pallets",
-      key: "pallets",
-      width: 100,
-      render: (val: any, record: any, idx: number) => (
-        <Input
-          size="small"
-          type="number"
-          value={val}
-          onChange={(e) => updateCell(idx, "pallets", e.target.value)}
-          placeholder="Pallets"
-          className="text-xs"
-        />
-      ),
-    },
-    {
       title: "License Plate",
       dataIndex: "license_plate",
       key: "license_plate",
-      width: 130,
+      width: 120,
       render: (val: string, record: any, idx: number) => (
         <Input
           size="small"
@@ -346,50 +363,27 @@ export default function BulkImportDataPreviewStep({
       ),
     },
     {
-      title: "Make / Model",
-      key: "make_model",
-      width: 170,
-      render: (_: any, record: any, idx: number) => (
-        <div className="flex gap-1">
-          <Input
-            size="small"
-            value={record.make}
-            onChange={(e) => updateCell(idx, "make", e.target.value)}
-            placeholder="Make"
-            className="text-xs w-1/2"
-          />
-          <Input
-            size="small"
-            value={record.model}
-            onChange={(e) => updateCell(idx, "model", e.target.value)}
-            placeholder="Model"
-            className="text-xs w-1/2"
-          />
-        </div>
-      ),
-    },
-    {
       title: "Required Skills",
       dataIndex: "required_skills",
       key: "required_skills",
-      width: 160,
+      width: 140,
       render: (val: string, record: any, idx: number) => (
         <Input
           size="small"
           value={val}
           onChange={(e) => updateCell(idx, "required_skills", e.target.value)}
-          placeholder="Class 1, Class 4..."
+          placeholder="e.g. HAZMAT"
           className="text-xs"
         />
       ),
     },
     {
-      title: "",
-      key: "actions",
-      width: 50,
-      render: (_: any, record: any, idx: number) => (
-        <Popconfirm title="Remove row?" onConfirm={() => removeRow(idx)} okText="Yes" cancelText="No">
-          <Button size="small" type="text" danger icon={<Trash2 size={14} />} />
+      title: "Action",
+      key: "action",
+      width: 60,
+      render: (_: any, __: any, idx: number) => (
+        <Popconfirm title="Remove row?" onConfirm={() => removeRow(idx)}>
+          <Button type="text" danger size="small" icon={<Trash2 size={14} />} />
         </Popconfirm>
       ),
     },
@@ -439,13 +433,13 @@ export default function BulkImportDataPreviewStep({
       title: "Email",
       dataIndex: "email",
       key: "email",
-      width: 150,
+      width: 170,
       render: (val: string, record: any, idx: number) => (
         <Input
           size="small"
           value={val}
           onChange={(e) => updateCell(idx, "email", e.target.value)}
-          placeholder="email@example.com"
+          placeholder="Email address"
           className="text-xs"
         />
       ),
@@ -460,175 +454,227 @@ export default function BulkImportDataPreviewStep({
           size="small"
           value={val}
           onChange={(e) => updateCell(idx, "phone_number", e.target.value)}
-          placeholder="+123456789"
+          placeholder="Phone"
           className="text-xs"
         />
       ),
     },
     {
-      title: "Skills / Licenses",
+      title: "Skills",
       dataIndex: "skills",
       key: "skills",
-      width: 150,
+      width: 130,
       render: (val: string, record: any, idx: number) => (
         <Input
           size="small"
           value={val}
           onChange={(e) => updateCell(idx, "skills", e.target.value)}
-          placeholder="Class 1, Class 5..."
+          placeholder="e.g. License C"
           className="text-xs"
         />
       ),
     },
     {
-      title: "Mon Schedule",
+      title: "Monday",
       dataIndex: "monday",
       key: "monday",
-      width: 120,
+      width: 110,
       render: (val: string, record: any, idx: number) => (
         <Input
           size="small"
           value={val}
           onChange={(e) => updateCell(idx, "monday", e.target.value)}
-          placeholder="09:00 - 17:00"
+          placeholder="08:00 - 16:00"
           className="text-xs"
         />
       ),
     },
     {
-      title: "Tue Schedule",
-      dataIndex: "tuesday",
-      key: "tuesday",
-      width: 120,
-      render: (val: string, record: any, idx: number) => (
-        <Input
-          size="small"
-          value={val}
-          onChange={(e) => updateCell(idx, "tuesday", e.target.value)}
-          placeholder="09:00 - 17:00"
-          className="text-xs"
-        />
-      ),
-    },
-    {
-      title: "Wed Schedule",
-      dataIndex: "wednesday",
-      key: "wednesday",
-      width: 120,
-      render: (val: string, record: any, idx: number) => (
-        <Input
-          size="small"
-          value={val}
-          onChange={(e) => updateCell(idx, "wednesday", e.target.value)}
-          placeholder="09:00 - 17:00"
-          className="text-xs"
-        />
-      ),
-    },
-    {
-      title: "Thu Schedule",
-      dataIndex: "thursday",
-      key: "thursday",
-      width: 120,
-      render: (val: string, record: any, idx: number) => (
-        <Input
-          size="small"
-          value={val}
-          onChange={(e) => updateCell(idx, "thursday", e.target.value)}
-          placeholder="09:00 - 17:00"
-          className="text-xs"
-        />
-      ),
-    },
-    {
-      title: "Fri Schedule",
-      dataIndex: "friday",
-      key: "friday",
-      width: 120,
-      render: (val: string, record: any, idx: number) => (
-        <Input
-          size="small"
-          value={val}
-          onChange={(e) => updateCell(idx, "friday", e.target.value)}
-          placeholder="09:00 - 17:00"
-          className="text-xs"
-        />
-      ),
-    },
-    {
-      title: "Sat Schedule",
-      dataIndex: "saturday",
-      key: "saturday",
-      width: 120,
-      render: (val: string, record: any, idx: number) => (
-        <Input
-          size="small"
-          value={val}
-          onChange={(e) => updateCell(idx, "saturday", e.target.value)}
-          placeholder="09:00 - 17:00"
-          className="text-xs"
-        />
-      ),
-    },
-    {
-      title: "Sun Schedule",
-      dataIndex: "sunday",
-      key: "sunday",
-      width: 120,
-      render: (val: string, record: any, idx: number) => (
-        <Input
-          size="small"
-          value={val}
-          onChange={(e) => updateCell(idx, "sunday", e.target.value)}
-          placeholder="09:00 - 17:00"
-          className="text-xs"
-        />
-      ),
-    },
-    {
-      title: "",
-      key: "actions",
-      width: 50,
-      render: (_: any, record: any, idx: number) => (
-        <Popconfirm title="Remove row?" onConfirm={() => removeRow(idx)} okText="Yes" cancelText="No">
-          <Button size="small" type="text" danger icon={<Trash2 size={14} />} />
+      title: "Action",
+      key: "action",
+      width: 60,
+      render: (_: any, __: any, idx: number) => (
+        <Popconfirm title="Remove row?" onConfirm={() => removeRow(idx)}>
+          <Button type="text" danger size="small" icon={<Trash2 size={14} />} />
         </Popconfirm>
       ),
     },
   ];
 
+  const locationColumns = [
+    {
+      title: "#",
+      key: "idx",
+      width: 45,
+      render: (_: any, __: any, idx: number) => <span className="text-xs text-gray-400">{idx + 1}</span>,
+    },
+    {
+      title: "Location / Station Name *",
+      dataIndex: "name",
+      key: "name",
+      width: 190,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          status={!val.trim() ? "error" : ""}
+          onChange={(e) => updateCell(idx, "name", e.target.value)}
+          placeholder="e.g. Metro Center"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Code / Alias",
+      dataIndex: "code",
+      key: "code",
+      width: 110,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "code", e.target.value)}
+          placeholder="MTR-01"
+          className="text-xs font-mono"
+        />
+      ),
+    },
+    {
+      title: "Category / Type",
+      dataIndex: "category",
+      key: "category",
+      width: 145,
+      render: (val: string, record: any, idx: number) => (
+        <Select
+          showSearch
+          optionFilterProp="label"
+          size="small"
+          value={val}
+          onChange={(v) => updateCell(idx, "category", v)}
+          options={LOCATION_CATEGORIES}
+          className="w-full text-xs"
+        />
+      ),
+    },
+    {
+      title: "Address / Formatted Location",
+      dataIndex: "address",
+      key: "address",
+      width: 220,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "address", e.target.value)}
+          placeholder="Street address"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Latitude",
+      dataIndex: "latitude",
+      key: "latitude",
+      width: 110,
+      render: (val: any, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "latitude", e.target.value)}
+          placeholder="41.8816"
+          className="text-xs font-mono"
+        />
+      ),
+    },
+    {
+      title: "Longitude",
+      dataIndex: "longitude",
+      key: "longitude",
+      width: 110,
+      render: (val: any, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "longitude", e.target.value)}
+          placeholder="-87.637"
+          className="text-xs font-mono"
+        />
+      ),
+    },
+    {
+      title: "Zone",
+      dataIndex: "service_zone",
+      key: "service_zone",
+      width: 110,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "service_zone", e.target.value)}
+          placeholder="Zone A"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Action",
+      key: "action",
+      width: 60,
+      render: (_: any, __: any, idx: number) => (
+        <Popconfirm title="Remove row?" onConfirm={() => removeRow(idx)}>
+          <Button type="text" danger size="small" icon={<Trash2 size={14} />} />
+        </Popconfirm>
+      ),
+    },
+  ];
+
+  const columns =
+    entityType === "vehicle"
+      ? vehicleColumns
+      : entityType === "driver"
+      ? driverColumns
+      : locationColumns;
+
   return (
     <div className="flex flex-col h-full space-y-3 py-1">
-      <div className="flex items-center justify-between text-xs text-gray-600">
-        <span className="font-medium">
-          Previewing {records.length} records ({validRecordsCount} ready to import)
-        </span>
-        <span className="text-gray-400">Click any field in table to edit before importing</span>
+      <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-none">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 size={16} className="text-emerald-600" />
+          <span className="text-xs font-medium text-gray-800">
+            Review and edit imported records. {validRecordsCount} valid record(s) ready for import.
+          </span>
+        </div>
+        <Tag color="blue" className="text-xs rounded-none">
+          {records.length} Total Rows
+        </Tag>
       </div>
 
-      <div className="flex-1 min-h-0 border border-gray-200 rounded overflow-hidden">
+      <div className="flex-1 overflow-hidden border border-gray-200">
         <Table
-          columns={entityType === "vehicle" ? vehicleColumns : driverColumns}
-          dataSource={records.map((r, i) => ({ ...r, key: i }))}
+          dataSource={records.map((r, idx) => ({ ...r, key: idx }))}
+          columns={columns}
           pagination={false}
           size="small"
-          scroll={{ x: "max-content", y: "calc(65vh - 200px)" }}
+          scroll={{ y: 340, x: "max-content" }}
+          className="rounded-none"
         />
       </div>
 
-      <div className="flex justify-between items-center pt-2 border-t mt-auto">
-        <Button onClick={onBack} disabled={isSubmitting}>
-          Back to Mapping
+      <div className="flex items-center justify-between pt-2 border-t shrink-0">
+        <Button onClick={onBack} disabled={isSubmitting} className="rounded-none">
+          Back
         </Button>
-        <Button
-          type="primary"
-          loading={isSubmitting}
-          disabled={validRecordsCount === 0}
-          onClick={handleImport}
-          icon={<CheckCircle2 size={16} />}
-        >
-          Import {validRecordsCount} {entityType === "vehicle" ? "Vehicles" : "Drivers"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            type="primary"
+            loading={isSubmitting}
+            onClick={handleImport}
+            disabled={validRecordsCount === 0}
+            className="rounded-none bg-[#003220] hover:bg-[#003220]/90"
+          >
+            Import {validRecordsCount} Record{validRecordsCount !== 1 ? "s" : ""}
+          </Button>
+        </div>
       </div>
     </div>
   );

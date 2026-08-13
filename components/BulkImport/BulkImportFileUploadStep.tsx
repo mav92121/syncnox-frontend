@@ -8,7 +8,7 @@ import { downloadVehicleTemplate } from "@/apis/vehicle.api";
 import { downloadTeamTemplate } from "@/apis/team.api";
 
 interface BulkImportFileUploadStepProps {
-  entityType: "vehicle" | "driver";
+  entityType: "vehicle" | "driver" | "location";
   onFileParsed: (data: { rawHeaders: string[]; rawRows: Record<string, any>[] }) => void;
 }
 
@@ -19,14 +19,35 @@ export default function BulkImportFileUploadStep({
   const [fileList, setFileList] = useState<any[]>([]);
   const [isParsing, setIsParsing] = useState(false);
 
-  const entityTitle = entityType === "vehicle" ? "Vehicles" : "Drivers";
+  const entityTitle =
+    entityType === "vehicle"
+      ? "Vehicles"
+      : entityType === "driver"
+      ? "Drivers"
+      : "Locations & Stations";
 
   const handleDownloadTemplate = async () => {
     try {
       if (entityType === "vehicle") {
         await downloadVehicleTemplate();
-      } else {
+      } else if (entityType === "driver") {
         await downloadTeamTemplate();
+      } else {
+        const csvContent =
+          "Location Name,Station Code,Address,Latitude,Longitude,Category,Service Zone,Operating Hours\n" +
+          'Metro Center Station,MTR-01,"100 S Wacker Dr, Chicago, IL 60606",41.88168,-87.63747,Metro Station,Central,05:00 - 23:30\n' +
+          'North Transit Hub,HUB-N,"1000 W Fulton St, Chicago, IL 60607",41.88682,-87.66220,Transit Hub,North,06:00 - 22:00\n' +
+          'Downtown Logistics Depot,DEP-01,"1 N Franklin St, Chicago, IL 60606",41.88221,-87.63500,Depot,Downtown,24 Hours\n' +
+          'O\'Hare Terminal Waypoint,WAY-03,"Terminal 1, Chicago, IL 60666",41.97563,-87.88236,Waypoint,Airport,06:00 - 24:00\n';
+
+        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "sample-location-mapping.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
       message.success("Sample template downloaded");
     } catch (err) {

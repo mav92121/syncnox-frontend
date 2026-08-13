@@ -120,9 +120,11 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
 
   // Sync selected marker with external selectedMarkerId prop
   useEffect(() => {
-    if (selectedMarkerId !== undefined) {
-      const marker = markers.find((m) => m.id === selectedMarkerId);
+    if (selectedMarkerId !== undefined && selectedMarkerId !== null) {
+      const marker = markers.find((m) => String(m.id) === String(selectedMarkerId));
       setSelectedMarker(marker || null);
+    } else {
+      setSelectedMarker(null);
     }
   }, [selectedMarkerId, markers]);
 
@@ -252,8 +254,15 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
           {InfoWindowModal ? (
             <InfoWindowModal marker={selectedMarker} />
           ) : (
-            <div style={{ padding: "10px" }}>
-              <p>{selectedMarker.description || "No description available."}</p>
+            <div style={{ padding: "4px 8px", maxWidth: "220px" }}>
+              {selectedMarker.title && (
+                <div style={{ fontWeight: "bold", fontSize: "12px", color: "#111827", marginBottom: "2px" }}>
+                  {selectedMarker.title}
+                </div>
+              )}
+              <div style={{ fontSize: "11px", color: "#4b5563" }}>
+                {selectedMarker.description || "No description available."}
+              </div>
             </div>
           )}
         </InfoWindow>

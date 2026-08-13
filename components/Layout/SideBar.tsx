@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useCallback } from "react";
+import { useState, useCallback } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Button, Avatar, Modal, Popover, Typography } from "antd";
@@ -12,6 +12,8 @@ import {
   EnvironmentOutlined,
   SettingOutlined,
   UserOutlined,
+  DownOutlined,
+  RightOutlined,
 } from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/store/index.store";
 import { useOnboardingStore } from "@/store/onboarding.store";
@@ -48,6 +50,8 @@ const SideBar = () => {
   const { vehicles } = useVehicleStore();
   const { depots } = useDepotStore();
 
+  const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
+
   const hasCompanyName = Boolean(onboarding?.company_name?.trim());
   const businessName = onboarding?.company_name || "Admin";
   const initials = hasCompanyName ? getInitials(onboarding?.company_name || "") : "";
@@ -79,19 +83,14 @@ const SideBar = () => {
 
   const handleLogout = useCallback(() => {
     Modal.confirm({
-      title: <Title level={5}>Confirm Logout</Title>,
-      content: "Are you sure you want to logout?",
-      okText: "Logout",
+      title: "Log out",
+      content: "Are you sure you want to log out?",
+      okText: "Log out",
       cancelText: "Cancel",
-      okType: "danger",
-      maskClosable: true,
+      okButtonProps: { danger: true },
       onOk: async () => {
-        try {
-          clearUser();
-          await signOut({ callbackUrl: "/sign-in" });
-        } catch (error) {
-          console.error("Logout error:", error);
-        }
+        clearUser();
+        await signOut({ callbackUrl: "/login" });
       },
     });
   }, [clearUser]);
@@ -114,13 +113,13 @@ const SideBar = () => {
   ];
 
   const userPopoverContent = (
-    <div className="w-[260px] p-3 font-sans">
+    <div className="w-[260px] p-3 font-sans space-y-3">
       {/* Centered Avatar & Identity */}
       <div className="flex flex-col items-center pt-1">
         <Avatar
           size={52}
           style={{ backgroundColor: "#003220", color: "#ffffff" }}
-          className="font-bold text-sm shadow-md border-2 border-white flex items-center justify-center"
+          className="font-bold text-sm shadow-md border-2 border-white flex items-center justify-center rounded-none"
           icon={!hasCompanyName ? <UserOutlined /> : undefined}
         >
           {hasCompanyName ? initials : null}
@@ -142,111 +141,120 @@ const SideBar = () => {
         )}
       </div>
 
-      {/* Resource Metrics Section - Team, Vehicles, Depots */}
-      <div className="my-2.5 p-2 rounded-none border border-emerald-100/80 space-y-1.5">
+      {/* Action List */}
+      <div className="pt-2 border-t border-gray-200 space-y-1.5">
+        {/* Settings Toggle Item */}
         <button
           type="button"
-          onClick={() => {
-            handleNavigation("/team", "team");
-            router.push("/team");
-          }}
-          className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-emerald-100/50 shadow-2xs hover:bg-emerald-50/80 hover:border-emerald-300 transition-all cursor-pointer text-left group"
+          onClick={() => setIsSettingsExpanded(!isSettingsExpanded)}
+          className={`w-full flex items-center justify-between text-xs px-3 py-2 font-semibold transition-all cursor-pointer rounded-none text-left border ${
+            isSettingsExpanded
+              ? "bg-[#003220] text-white border-[#003220]"
+              : "text-gray-800 hover:bg-gray-100 bg-gray-50 border-gray-200"
+          }`}
         >
-          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-              <TeamOutlined />
-            </div>
-            <span>Team Members</span>
+          <div className="flex items-center gap-2">
+            <SettingOutlined className="text-xs" />
+            <span>Settings</span>
           </div>
-          <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
-            {teams.length}
-          </span>
+          {isSettingsExpanded ? (
+            <DownOutlined className="text-[10px]" />
+          ) : (
+            <RightOutlined className="text-[10px] text-gray-400" />
+          )}
         </button>
 
+        {/* Settings Sub-items — shown ONLY when user clicks Settings */}
+        {isSettingsExpanded && (
+          <div className="p-2 border border-t-0 border-gray-200 bg-gray-50/50 space-y-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                handleNavigation("/team", "team");
+                router.push("/team");
+              }}
+              className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
+            >
+              <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+                <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+                  <TeamOutlined />
+                </div>
+                <span>Team Members</span>
+              </div>
+              <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
+                {teams.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleNavigation("/vehicle", "vehicle");
+                router.push("/vehicle");
+              }}
+              className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
+            >
+              <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+                <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+                  <CarOutlined />
+                </div>
+                <span>Vehicles</span>
+              </div>
+              <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
+                {vehicles.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleNavigation("/depot", "depot");
+                router.push("/depot");
+              }}
+              className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
+            >
+              <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+                <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+                  <EnvironmentOutlined />
+                </div>
+                <span>Depots</span>
+              </div>
+              <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
+                {depots.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleNavigation("/location-mapping", "location_mapping");
+                router.push("/location-mapping");
+              }}
+              className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
+            >
+              <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+                <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+                  <EnvironmentOutlined />
+                </div>
+                <span>Location Mappings</span>
+              </div>
+            </button>
+          </div>
+        )}
+
+        {/* Logout */}
         <button
           type="button"
-          onClick={() => {
-            handleNavigation("/vehicle", "vehicle");
-            router.push("/vehicle");
-          }}
-          className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-emerald-100/50 shadow-2xs hover:bg-emerald-50/80 hover:border-emerald-300 transition-all cursor-pointer text-left group"
-        >
-          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-              <CarOutlined />
-            </div>
-            <span>Vehicles</span>
-          </div>
-          <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
-            {vehicles.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            handleNavigation("/depot", "depot");
-            router.push("/depot");
-          }}
-          className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-emerald-100/50 shadow-2xs hover:bg-emerald-50/80 hover:border-emerald-300 transition-all cursor-pointer text-left group"
-        >
-          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-              <EnvironmentOutlined />
-            </div>
-            <span>Depots</span>
-          </div>
-          <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
-            {depots.length}
-          </span>
-        </button>
-      </div>
-
-      {/* Organization Info Box */}
-      {/* <div className="p-2.5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-100 flex flex-col items-center text-center">
-        <p className="text-[9px] font-extrabold text-[#003220]/70 uppercase tracking-widest mb-0.5">
-          Organization
-        </p>
-        <h4
-          className="text-xs font-bold text-gray-900 truncate w-full px-1 mb-1.5"
-          title={businessName}
-        >
-          {businessName}
-        </h4>
-        <div className="flex items-center justify-center gap-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-[#003220] border border-emerald-200 uppercase tracking-wider">
-            Admin
-          </span>
-          <span className="text-gray-300 text-[10px]">•</span>
-          <span className="text-[10px] text-gray-600 font-semibold">
-            Standard Plan
-          </span>
-        </div>
-      </div> */}
-
-      {/* Bottom Action Controls */}
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <button
-          onClick={() => {
-            handleNavigation("/team", "team");
-            router.push("/team");
-          }}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-none transition-colors cursor-pointer"
-        >
-          <SettingOutlined className="text-xs" />
-          Settings
-        </button>
-        <button
           onClick={handleLogout}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-none transition-colors cursor-pointer"
+          className="w-full flex items-center gap-2 text-xs px-3 py-2 font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer rounded-none text-left border border-transparent hover:border-red-100"
         >
           <Image
             src="/logout.svg"
             alt="Logout"
-            width={16}
-            height={16}
+            width={15}
+            height={15}
           />
-          Logout
+          <span>Logout</span>
         </button>
       </div>
     </div>

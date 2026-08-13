@@ -2,12 +2,13 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Button, Spin, Modal, message } from "antd";
-import { Search, MapPin, Map, Plus, Trash2 } from "lucide-react";
+import { Search, MapPin, Map, Plus, Trash2, Upload } from "lucide-react";
 import { useDepotStore } from "@/store/depots.store";
 import { Depot as DepotType } from "@/types/depots.type";
 import DepotForm from "./DepotForm";
 import DepotCard from "./DepotCard";
 import CreateDepotModal from "./CreateDepotModal";
+import BulkImportModal from "@/components/BulkImport/BulkImportModal";
 import { DepotPayload } from "@/apis/depots.api";
 import { Panel, PanelGroup } from "react-resizable-panels";
 import ResizeHandle from "@/components/ResizeHandle";
@@ -21,6 +22,7 @@ const Depot = () => {
     updateDepot,
     createDepot,
     bulkDeleteDepots,
+    fetchDepots,
   } = useDepotStore();
 
   const [selectedDepot, setSelectedDepot] = useState<DepotType | undefined>(
@@ -28,6 +30,7 @@ const Depot = () => {
   );
   const [checkedIds, setCheckedIds] = useState<number[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   // Map state
@@ -46,7 +49,7 @@ const Depot = () => {
     }
   }, [depots]);
 
-  // Keep selection fresh after updates
+  // Keep selection fresh after updates and sync selectedMarkerId
   useEffect(() => {
     if (selectedDepot) {
       const fresh = depots.find((d) => d.id === selectedDepot.id);
@@ -57,8 +60,17 @@ const Depot = () => {
       } else {
         setSelectedDepot(undefined);
       }
+      setSelectedMarkerId(selectedDepot.id);
+      if (selectedDepot.location?.lat && selectedDepot.location?.lng) {
+        setMapCenter({
+          lat: selectedDepot.location.lat,
+          lng: selectedDepot.location.lng,
+        });
+      }
+    } else {
+      setSelectedMarkerId(null);
     }
-  }, [depots]);
+  }, [depots, selectedDepot?.id]);
 
   const handleCreateSubmit = async (values: DepotPayload) => {
     const success = await createDepot(values);
@@ -155,9 +167,11 @@ const Depot = () => {
           <Button
             icon={<Map size={15} />}
             onClick={() => {
-              if (!isMapOpen) {
-                setMapCenter(null);
-                setSelectedMarkerId(null);
+              if (!isMapOpen && selectedDepot) {
+                setSelectedMarkerId(selectedDepot.id);
+                if (selectedDepot.location?.lat && selectedDepot.location?.lng) {
+                  setMapCenter({ lat: selectedDepot.location.lat, lng: selectedDepot.location.lng });
+                }
               }
               setIsMapOpen(!isMapOpen);
             }}
@@ -304,6 +318,7 @@ const Depot = () => {
         isLoading={isSaving}
         existingDepots={depots}
       />
+
     </div>
   );
 

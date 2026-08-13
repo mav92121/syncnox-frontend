@@ -12,7 +12,7 @@ const { Text, Title } = Typography;
 interface BulkImportModalProps {
   open: boolean;
   onClose: () => void;
-  entityType: "vehicle" | "driver";
+  entityType: "vehicle" | "driver" | "location";
   onSuccess?: () => void;
 }
 
@@ -29,7 +29,12 @@ export default function BulkImportModal({
   const [skipFirstRow, setSkipFirstRow] = useState(false);
   const [importedCount, setImportedCount] = useState<number | null>(null);
 
-  const entityTitle = entityType === "vehicle" ? "Vehicles" : "Drivers";
+  const entityTitle =
+    entityType === "vehicle"
+      ? "Vehicles"
+      : entityType === "driver"
+      ? "Drivers"
+      : "Locations & Stations";
 
   const handleReset = () => {
     setCurrentStep(1);

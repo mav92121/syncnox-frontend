@@ -19,7 +19,8 @@ export type TabKey =
   | "optimization"
   | "reports"
   | "api" // /schedule tabs
-  | "depot";
+  | "depot"
+  | "location_mapping";
 
 interface UserState {
   user: User | null;

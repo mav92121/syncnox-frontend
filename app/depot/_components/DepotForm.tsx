@@ -146,7 +146,7 @@ const DepotForm = ({
   const existingMarkers = existingDepots
     .filter((d) => d.location && d.id !== initialValues?.id) // exclude the one being edited
     .map((d) => ({
-      id: `existing-depot-${d.id}`,
+      id: d.id,
       position: { lat: d.location!.lat, lng: d.location!.lng },
       title: d.name,
       description: d.address?.formatted_address || d.name,
@@ -155,11 +155,12 @@ const DepotForm = ({
     }));
 
   // Current depot being created / edited (draggable)
+  const currentMarkerId = initialValues?.id || "depot-current";
   const currentMarker =
     location || initialValues?.location
       ? [
           {
-            id: "depot-current",
+            id: currentMarkerId,
             position: location || initialValues?.location || { lat: 0, lng: 0 },
             title: name || initialValues?.name || "Depot",
             isDepot: true,
@@ -230,6 +231,7 @@ const DepotForm = ({
           zoom={10}
           center={mapCenter}
           markers={allMarkers}
+          selectedMarkerId={currentMarkerId}
           onMarkerDragEnd={(_, newPosition) => {
             setLocation(newPosition);
             triggerAutoSave();

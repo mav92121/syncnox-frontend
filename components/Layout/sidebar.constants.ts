@@ -84,6 +84,12 @@ export const MENU_ITEMS: MenuItem[] = [
         path: "/depot",
         tabKey: "depot",
       },
+      {
+        icon: EnvironmentOutlined,
+        label: "Location Mappings",
+        path: "/location-mapping",
+        tabKey: "location_mapping",
+      },
     ],
   },
 ];
