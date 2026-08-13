@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -13,6 +13,7 @@ import {
   Typography,
   Divider,
   Radio,
+  Menu,
 } from "antd";
 import {
   PlusCircleOutlined,
@@ -93,11 +94,15 @@ function getDefaultUnit(type: ConstraintType): string {
   return units?.[0]?.value ?? "units";
 }
 
+type SectionKey = "basic" | "skillsAndConstraints";
+
 const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const [form] = Form.useForm();
   const { createVehicleAction, updateVehicleAction, isLoading, vehicles } =
     useVehicleStore();
+
+  const [activeSection, setActiveSection] = useState<SectionKey>("basic");
 
   const defaultValues = {
     name: `Vehicle ${
@@ -161,276 +166,316 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
     }
   };
 
+  const menuItems = [
+    { key: "basic", label: "Basic Information" },
+    { key: "skillsAndConstraints", label: "Skills & Constraints" },
+  ];
+
   return (
-    <Flex vertical style={{ height: "100%" }}>
+    <Flex style={{ height: "100%", overflow: "hidden" }}>
       {contextHolder}
 
-      {/* Scrollable Form Area */}
+      {/* Left Sidebar Menu */}
+      <div
+        style={{
+          width: "200px",
+          borderRight: "1px solid #f0f0f0",
+          paddingRight: "8px",
+          paddingTop: "12px",
+        }}
+      >
+        <Menu
+          mode="inline"
+          selectedKeys={[activeSection]}
+          onClick={({ key }) => setActiveSection(key as SectionKey)}
+          items={menuItems}
+          style={{
+            border: "none",
+            fontSize: "14px",
+          }}
+        />
+      </div>
+
+      {/* Right Content Area */}
       <Flex
         vertical
         style={{
           flex: 1,
-          overflowY: "auto",
-          overflowX: "hidden",
-          paddingRight: "8px",
+          overflow: "hidden",
+          paddingLeft: "12px",
         }}
-        className="custom-scrollbar"
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={initialData ? undefined : defaultValues}
+        {/* Scrollable Form Area */}
+        <Flex
+          vertical
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            overflowX: "hidden",
+            paddingRight: "8px",
+          }}
+          className="custom-scrollbar"
         >
-          {/* Row 1: Name, License Plate */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Name"
-                name="name"
-                rules={[
-                  { required: true, message: "Please enter vehicle name" },
-                ]}
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            initialValues={initialData ? undefined : defaultValues}
+          >
+            {/* Section 1: Basic Information */}
+            <div style={{ display: activeSection === "basic" ? "block" : "none" }}>
+              {/* Row 1: Name, License Plate */}
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    label="Name"
+                    name="name"
+                    rules={[
+                      { required: true, message: "Please enter vehicle name" },
+                    ]}
+                  >
+                    <Input placeholder="Enter vehicle name" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="License Plate" name="license_plate">
+                    <Input placeholder="Enter license plate" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {/* Row 2: Make, Model */}
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="Make" name="make">
+                    <Input placeholder="Enter vehicle make" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="Model" name="model">
+                    <Input placeholder="Enter vehicle model" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {/* Row 3: Type */}
+              <Row gutter={16}>
+                <Col span={24}>
+                  <Form.Item label="Type" name="type">
+                    <Select
+                      showSearch
+                      placeholder="Select vehicle type"
+                      options={VEHICLE_TYPES}
+                      allowClear
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+            </div>
+
+            {/* Section 2: Skills & Constraints */}
+            <div style={{ display: activeSection === "skillsAndConstraints" ? "block" : "none" }}>
+              {/* Required Skills & Skill Relation */}
+              <Text
+                strong
+                style={{
+                  display: "block",
+                  letterSpacing: "0.08em",
+                  fontSize: 11,
+                  color: "#8c8c8c",
+                  marginBottom: 4,
+                }}
               >
-                <Input placeholder="Enter vehicle name" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="License Plate" name="license_plate">
-                <Input placeholder="Enter license plate" />
-              </Form.Item>
-            </Col>
-          </Row>
+                REQUIRED SKILLS (OPTIONAL)
+              </Text>
+              <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 12 }}>
+                Drivers assigning to this vehicle must possess the matching required skills.
+              </Text>
 
-          {/* Row 2: Make, Model */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Make" name="make">
-                <Input placeholder="Enter vehicle make" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Model" name="model">
-                <Input placeholder="Enter vehicle model" />
-              </Form.Item>
-            </Col>
-          </Row>
+              <Row gutter={16}>
+                <Col span={24}>
+                  <Form.Item label="Required Skills" name="required_skills">
+                    <Select
+                      mode="tags"
+                      style={{ width: "100%" }}
+                      placeholder="Type a skill and press Enter (e.g., Heavy License, Refrigerated)"
+                      options={[]}
+                      tokenSeparators={[","]}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
 
-          {/* Row 3: Type */}
-          <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item label="Type" name="type">
-                <Select
-                  showSearch
-                  placeholder="Select vehicle type"
-                  options={VEHICLE_TYPES}
-                  allowClear
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+              <Row gutter={16}>
+                <Col span={24}>
+                  <Form.Item label="Skill Logic Requirement (Relation)" name="relation">
+                    <Radio.Group optionType="button" buttonStyle="solid">
+                      <Radio.Button value="and">All Required (AND)</Radio.Button>
+                      <Radio.Button value="or">At Least One Required (OR)</Radio.Button>
+                    </Radio.Group>
+                  </Form.Item>
+                </Col>
+              </Row>
 
-          <Divider style={{ marginTop: 4, marginBottom: 16 }} />
+              <Divider style={{ marginTop: 8, marginBottom: 16 }} />
 
-          {/* Required Skills & Skill Relation */}
-          <Text
-            strong
-            style={{
-              display: "block",
-              letterSpacing: "0.08em",
-              fontSize: 11,
-              color: "#8c8c8c",
-              marginBottom: 4,
-            }}
-          >
-            REQUIRED SKILLS (OPTIONAL)
-          </Text>
-          <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 12 }}>
-            Drivers assigning to this vehicle must possess the matching required skills.
-          </Text>
+              {/* Dynamic Load Constraints */}
+              <Text
+                strong
+                style={{
+                  display: "block",
+                  letterSpacing: "0.08em",
+                  fontSize: 11,
+                  color: "#8c8c8c",
+                  marginBottom: 4,
+                }}
+              >
+                LOAD CONSTRAINTS
+              </Text>
+              <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 12 }}>
+                Add one or more constraints. Orders exceeding any constraint will not be assigned to this vehicle.
+              </Text>
 
-          <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item label="Required Skills" name="required_skills">
-                <Select
-                  mode="tags"
-                  style={{ width: "100%" }}
-                  placeholder="Type a skill and press Enter (e.g., Heavy License, Refrigerated)"
-                  options={[]}
-                  tokenSeparators={[","]}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+              <Form.List name="load_constraints">
+                {(fields, { add, remove }) => (
+                  <>
+                    {/* Table header */}
+                    {fields.length > 0 && (
+                      <Row gutter={8} style={{ marginBottom: 4 }}>
+                        <Col flex="160px">
+                          <Text type="secondary" style={{ fontSize: 12 }}>Constraint type</Text>
+                        </Col>
+                        <Col flex="1">
+                          <Text type="secondary" style={{ fontSize: 12 }}>Max value</Text>
+                        </Col>
+                        <Col flex="100px">
+                          <Text type="secondary" style={{ fontSize: 12 }}>Unit</Text>
+                        </Col>
+                        <Col flex="32px" />
+                      </Row>
+                    )}
 
-          <Row gutter={16}>
-            <Col span={24}>
-              <Form.Item label="Skill Logic Requirement (Relation)" name="relation">
-                <Radio.Group optionType="button" buttonStyle="solid">
-                  <Radio.Button value="and">All Required (AND)</Radio.Button>
-                  <Radio.Button value="or">At Least One Required (OR)</Radio.Button>
-                </Radio.Group>
-              </Form.Item>
-            </Col>
-          </Row>
+                    {fields.map(({ key, name, ...restField }) => (
+                      <Row key={key} gutter={8} align="middle" style={{ marginBottom: 8 }}>
+                        {/* Constraint type */}
+                        <Col flex="160px">
+                          <Form.Item
+                            {...restField}
+                            name={[name, "constraint_type"]}
+                            style={{ margin: 0 }}
+                            rules={[{ required: true, message: "Required" }]}
+                          >
+                            <Select
+                              options={CONSTRAINT_TYPES}
+                              placeholder="Type"
+                              onChange={(val: ConstraintType) => {
+                                // Reset unit to the first option for the new type
+                                const constraints = form.getFieldValue("load_constraints");
+                                constraints[name].unit = getDefaultUnit(val);
+                                form.setFieldsValue({ load_constraints: constraints });
+                              }}
+                            />
+                          </Form.Item>
+                        </Col>
 
-          <Divider style={{ marginTop: 4, marginBottom: 16 }} />
+                        {/* Max value */}
+                        <Col flex="1">
+                          <Form.Item
+                            {...restField}
+                            name={[name, "max_value"]}
+                            style={{ margin: 0 }}
+                            rules={[{ required: true, message: "Required" }]}
+                          >
+                            <InputNumber
+                              placeholder="0"
+                              min={0}
+                              style={{ width: "100%" }}
+                            />
+                          </Form.Item>
+                        </Col>
 
-          {/* Dynamic Load Constraints */}
-          <Text
-            strong
-            style={{
-              display: "block",
-              letterSpacing: "0.08em",
-              fontSize: 11,
-              color: "#8c8c8c",
-              marginBottom: 4,
-            }}
-          >
-            LOAD CONSTRAINTS
-          </Text>
-          <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 12 }}>
-            Add one or more constraints. Orders exceeding any constraint will not be assigned to this vehicle.
-          </Text>
+                        {/* Unit */}
+                        <Col flex="100px">
+                          <Form.Item
+                            noStyle
+                            shouldUpdate={(prev, cur) =>
+                              prev.load_constraints?.[name]?.constraint_type !==
+                              cur.load_constraints?.[name]?.constraint_type
+                            }
+                          >
+                            {() => {
+                              const constraintType: ConstraintType =
+                                form.getFieldValue(["load_constraints", name, "constraint_type"]);
+                              const unitOptions = constraintType
+                                ? CONSTRAINT_UNITS[constraintType]
+                                : [{ value: "units", label: "units" }];
 
-          <Form.List name="load_constraints">
-            {(fields, { add, remove }) => (
-              <>
-                {/* Table header */}
-                {fields.length > 0 && (
-                  <Row gutter={8} style={{ marginBottom: 4 }}>
-                    <Col flex="160px">
-                      <Text type="secondary" style={{ fontSize: 12 }}>Constraint type</Text>
-                    </Col>
-                    <Col flex="1">
-                      <Text type="secondary" style={{ fontSize: 12 }}>Max value</Text>
-                    </Col>
-                    <Col flex="100px">
-                      <Text type="secondary" style={{ fontSize: 12 }}>Unit</Text>
-                    </Col>
-                    <Col flex="32px" />
-                  </Row>
+                              return (
+                                <Form.Item
+                                  {...restField}
+                                  name={[name, "unit"]}
+                                  style={{ margin: 0 }}
+                                  rules={[{ required: true, message: "Required" }]}
+                                >
+                                  <Select options={unitOptions} placeholder="Unit" />
+                                </Form.Item>
+                              );
+                            }}
+                          </Form.Item>
+                        </Col>
+
+                        {/* Delete button */}
+                        <Col flex="32px">
+                          <Button
+                            type="text"
+                            danger
+                            icon={<DeleteOutlined />}
+                            onClick={() => remove(name)}
+                            style={{ padding: 0, width: 32 }}
+                          />
+                        </Col>
+                      </Row>
+                    ))}
+
+                    {/* Add constraint row */}
+                    <Button
+                      type="dashed"
+                      onClick={() =>
+                        add({ constraint_type: "weight", max_value: 0, unit: "kg" })
+                      }
+                      icon={<PlusOutlined />}
+                      block
+                      style={{ marginTop: 4 }}
+                    >
+                      Add constraint
+                    </Button>
+                  </>
                 )}
+              </Form.List>
 
-                {fields.map(({ key, name, ...restField }) => (
-                  <Row key={key} gutter={8} align="middle" style={{ marginBottom: 8 }}>
-                    {/* Constraint type */}
-                    <Col flex="160px">
-                      <Form.Item
-                        {...restField}
-                        name={[name, "constraint_type"]}
-                        style={{ margin: 0 }}
-                        rules={[{ required: true, message: "Required" }]}
-                      >
-                        <Select
-                          options={CONSTRAINT_TYPES}
-                          placeholder="Type"
-                          onChange={(val: ConstraintType) => {
-                            // Reset unit to the first option for the new type
-                            const constraints = form.getFieldValue("load_constraints");
-                            constraints[name].unit = getDefaultUnit(val);
-                            form.setFieldsValue({ load_constraints: constraints });
-                          }}
-                        />
-                      </Form.Item>
-                    </Col>
+              <Text
+                type="secondary"
+                style={{ fontSize: 11, display: "block", marginTop: 8 }}
+              >
+                Leave a field empty to skip that constraint.
+              </Text>
+            </div>
+          </Form>
+        </Flex>
 
-                    {/* Max value */}
-                    <Col flex="1">
-                      <Form.Item
-                        {...restField}
-                        name={[name, "max_value"]}
-                        style={{ margin: 0 }}
-                        rules={[{ required: true, message: "Required" }]}
-                      >
-                        <InputNumber
-                          placeholder="0"
-                          min={0}
-                          style={{ width: "100%" }}
-                        />
-                      </Form.Item>
-                    </Col>
-
-                    {/* Unit */}
-                    <Col flex="100px">
-                      <Form.Item
-                        noStyle
-                        shouldUpdate={(prev, cur) =>
-                          prev.load_constraints?.[name]?.constraint_type !==
-                          cur.load_constraints?.[name]?.constraint_type
-                        }
-                      >
-                        {() => {
-                          const constraintType: ConstraintType =
-                            form.getFieldValue(["load_constraints", name, "constraint_type"]);
-                          const unitOptions = constraintType
-                            ? CONSTRAINT_UNITS[constraintType]
-                            : [{ value: "units", label: "units" }];
-
-                          return (
-                            <Form.Item
-                              {...restField}
-                              name={[name, "unit"]}
-                              style={{ margin: 0 }}
-                              rules={[{ required: true, message: "Required" }]}
-                            >
-                              <Select options={unitOptions} placeholder="Unit" />
-                            </Form.Item>
-                          );
-                        }}
-                      </Form.Item>
-                    </Col>
-
-                    {/* Delete button */}
-                    <Col flex="32px">
-                      <Button
-                        type="text"
-                        danger
-                        icon={<DeleteOutlined />}
-                        onClick={() => remove(name)}
-                        style={{ padding: 0, width: 32 }}
-                      />
-                    </Col>
-                  </Row>
-                ))}
-
-                {/* Add constraint row */}
-                <Button
-                  type="dashed"
-                  onClick={() =>
-                    add({ constraint_type: "weight", max_value: 0, unit: "kg" })
-                  }
-                  icon={<PlusOutlined />}
-                  block
-                  style={{ marginTop: 4 }}
-                >
-                  Add constraint
-                </Button>
-              </>
-            )}
-          </Form.List>
-
-          <Text
-            type="secondary"
-            style={{ fontSize: 11, display: "block", marginTop: 8 }}
+        {/* Fixed Button at Bottom */}
+        <Flex style={{ paddingTop: 16 }}>
+          <Button
+            loading={isLoading}
+            type="primary"
+            htmlType="submit"
+            block
+            icon={<PlusCircleOutlined />}
+            onClick={() => form.submit()}
           >
-            Leave a field empty to skip that constraint.
-          </Text>
-        </Form>
-      </Flex>
-
-      {/* Fixed Button at Bottom */}
-      <Flex style={{ paddingTop: 16 }}>
-        <Button
-          loading={isLoading}
-          type="primary"
-          htmlType="submit"
-          block
-          icon={<PlusCircleOutlined />}
-          onClick={() => form.submit()}
-        >
-          {initialData ? "Update vehicle" : "Add Vehicle"}
-        </Button>
+            {initialData ? "Update vehicle" : "Add Vehicle"}
+          </Button>
+        </Flex>
       </Flex>
     </Flex>
   );

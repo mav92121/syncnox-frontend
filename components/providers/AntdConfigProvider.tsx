@@ -1,7 +1,23 @@
 "use client";
 
-import { App, ConfigProvider } from "antd";
+import { App, ConfigProvider, TimePicker, DatePicker } from "antd";
 import theme from "@/config/theme.config";
+
+// Global override: make all TimePicker and DatePicker instances auto-save on time click without requiring OK button
+if (typeof window !== "undefined") {
+  if (TimePicker) {
+    (TimePicker as any).defaultProps = {
+      ...(TimePicker as any).defaultProps,
+      needConfirm: false,
+    };
+  }
+  if (DatePicker) {
+    (DatePicker as any).defaultProps = {
+      ...(DatePicker as any).defaultProps,
+      needConfirm: false,
+    };
+  }
+}
 
 interface AntdConfigProviderProps {
   children: React.ReactNode;

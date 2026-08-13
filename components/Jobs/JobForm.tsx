@@ -356,6 +356,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
                 rules={[validateTimeWindowStart(form)]}
               >
                 <TimePicker
+                  needConfirm={false}
                   className="w-full"
                   format="HH:mm"
                   onChange={() => {
@@ -372,6 +373,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
                 rules={[validateTimeWindowEnd(form)]}
               >
                 <TimePicker
+                  needConfirm={false}
                   className="w-full"
                   format="HH:mm"
                   onChange={() => {

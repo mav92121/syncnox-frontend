@@ -394,6 +394,7 @@ const BasicInformation = ({
                                 noStyle
                               >
                                 <TimePicker
+                                  needConfirm={false}
                                   size="small"
                                   format="HH:mm"
                                   placeholder="Start"
@@ -410,6 +411,7 @@ const BasicInformation = ({
                                 noStyle
                               >
                                 <TimePicker
+                                  needConfirm={false}
                                   size="small"
                                   format="HH:mm"
                                   placeholder="End"
@@ -466,6 +468,7 @@ const BasicInformation = ({
                     ]}
                   >
                     <TimePicker
+                      needConfirm={false}
                       className="w-full"
                       format="HH:mm"
                       placeholder="Select time"
@@ -489,6 +492,7 @@ const BasicInformation = ({
                     ]}
                   >
                     <TimePicker
+                      needConfirm={false}
                       className="w-full"
                       format="HH:mm"
                       placeholder="Select time"
