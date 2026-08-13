@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Form,
   Input,
@@ -96,13 +96,47 @@ function getDefaultUnit(type: ConstraintType): string {
 
 type SectionKey = "basic" | "skillsAndConstraints";
 
-const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
+const VehicleForm = ({
+  initialData = null,
+  onSubmit,
+  isInline = false,
+  form: externalForm,
+}: VehicleFormProps & { isInline?: boolean; form?: any }) => {
   const [messageApi, contextHolder] = message.useMessage();
-  const [form] = Form.useForm();
+  const [internalForm] = Form.useForm();
+  const form = externalForm || internalForm;
   const { createVehicleAction, updateVehicleAction, isLoading, vehicles } =
     useVehicleStore();
 
   const [activeSection, setActiveSection] = useState<SectionKey>("basic");
+
+  // Auto-save ref
+  const isPrefillingRef = useRef<boolean>(true);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerAutoSave = () => {
+    if (!initialData?.id || isPrefillingRef.current) return;
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      form
+        .validateFields()
+        .then(() => {
+          form.submit();
+        })
+        .catch(() => {});
+    }, 1000);
+  };
+
+  // Cleanup auto-save timer on unmount or initialData change
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [initialData?.id]);
 
   const defaultValues = {
     name: `Vehicle ${
@@ -117,6 +151,7 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
   // prefill form
   useEffect(() => {
     if (initialData) {
+      isPrefillingRef.current = true;
       form.setFieldsValue({
         name: initialData.name,
         license_plate: initialData.license_plate,
@@ -127,12 +162,19 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
         required_skills: initialData.required_skills ?? [],
         relation: initialData.relation ?? "and",
       });
+      setTimeout(() => {
+        isPrefillingRef.current = false;
+      }, 200);
     } else {
       form.resetFields();
     }
   }, [initialData, form]);
 
   const onFinish = async (values: any) => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
     try {
       const payload = {
         ...values,
@@ -153,12 +195,12 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
           ...initialData,
           ...payload,
         });
-        messageApi.success("Vehicle updated successfully");
+        messageApi.success("Vehicle saved successfully");
       } else {
         await createVehicleAction(payload);
         messageApi.success("Vehicle created successfully");
+        form.resetFields();
       }
-      form.resetFields();
       onSubmit?.();
     } catch (e: any) {
       console.error(e?.detail);
@@ -172,7 +214,7 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
   ];
 
   return (
-    <Flex style={{ height: "100%", overflow: "hidden" }}>
+    <Flex style={{ height: isInline ? "auto" : "100%", overflow: isInline ? "visible" : "hidden" }}>
       {contextHolder}
 
       {/* Left Sidebar Menu */}
@@ -201,7 +243,7 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
         vertical
         style={{
           flex: 1,
-          overflow: "hidden",
+          overflow: isInline ? "visible" : "hidden",
           paddingLeft: "12px",
         }}
       >
@@ -210,7 +252,7 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
           vertical
           style={{
             flex: 1,
-            overflowY: "auto",
+            overflowY: isInline ? "visible" : "auto",
             overflowX: "hidden",
             paddingRight: "8px",
           }}
@@ -220,6 +262,7 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
             form={form}
             layout="vertical"
             onFinish={onFinish}
+            onValuesChange={() => triggerAutoSave()}
             initialValues={initialData ? undefined : defaultValues}
           >
             {/* Section 1: Basic Information */}
@@ -289,33 +332,31 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
                 REQUIRED SKILLS (OPTIONAL)
               </Text>
               <Text type="secondary" style={{ fontSize: 12, display: "block", marginBottom: 12 }}>
-                Drivers assigning to this vehicle must possess the matching required skills.
+                Drivers assigned to this vehicle must possess the matching required skills.
               </Text>
 
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item label="Required Skills" name="required_skills">
-                    <Select
-                      mode="tags"
-                      style={{ width: "100%" }}
-                      placeholder="Type a skill and press Enter (e.g., Heavy License, Refrigerated)"
-                      options={[]}
-                      tokenSeparators={[","]}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item label="Skill Logic Requirement (Relation)" name="relation">
-                    <Radio.Group optionType="button" buttonStyle="solid">
-                      <Radio.Button value="and">All Required (AND)</Radio.Button>
-                      <Radio.Button value="or">At Least One Required (OR)</Radio.Button>
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-semibold text-gray-700">Required Skills</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] text-gray-500 font-medium">Match Logic:</span>
+                  <Form.Item name="relation" noStyle>
+                    <Radio.Group size="small" buttonStyle="solid" className="shrink-0">
+                      <Radio.Button value="and">All (AND)</Radio.Button>
+                      <Radio.Button value="or">Any (OR)</Radio.Button>
                     </Radio.Group>
                   </Form.Item>
-                </Col>
-              </Row>
+                </div>
+              </div>
+
+              <Form.Item name="required_skills" style={{ marginBottom: 16 }}>
+                <Select
+                  mode="tags"
+                  style={{ width: "100%" }}
+                  placeholder="Type a skill and press Enter (e.g., Heavy License, Refrigerated)"
+                  options={[]}
+                  tokenSeparators={[","]}
+                />
+              </Form.Item>
 
               <Divider style={{ marginTop: 8, marginBottom: 16 }} />
 
@@ -373,6 +414,7 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
                                 const constraints = form.getFieldValue("load_constraints");
                                 constraints[name].unit = getDefaultUnit(val);
                                 form.setFieldsValue({ load_constraints: constraints });
+                                triggerAutoSave();
                               }}
                             />
                           </Form.Item>
@@ -430,7 +472,10 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
                             type="text"
                             danger
                             icon={<DeleteOutlined />}
-                            onClick={() => remove(name)}
+                            onClick={() => {
+                              remove(name);
+                              triggerAutoSave();
+                            }}
                             style={{ padding: 0, width: 32 }}
                           />
                         </Col>
@@ -440,9 +485,10 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
                     {/* Add constraint row */}
                     <Button
                       type="dashed"
-                      onClick={() =>
-                        add({ constraint_type: "weight", max_value: 0, unit: "kg" })
-                      }
+                      onClick={() => {
+                        add({ constraint_type: "weight", max_value: 0, unit: "kg" });
+                        triggerAutoSave();
+                      }}
                       icon={<PlusOutlined />}
                       block
                       style={{ marginTop: 4 }}
@@ -463,19 +509,21 @@ const VehicleForm = ({ initialData = null, onSubmit }: VehicleFormProps) => {
           </Form>
         </Flex>
 
-        {/* Fixed Button at Bottom */}
-        <Flex style={{ paddingTop: 16 }}>
-          <Button
-            loading={isLoading}
-            type="primary"
-            htmlType="submit"
-            block
-            icon={<PlusCircleOutlined />}
-            onClick={() => form.submit()}
-          >
-            {initialData ? "Update vehicle" : "Add Vehicle"}
-          </Button>
-        </Flex>
+        {/* Fixed Button at Bottom (hidden when inline, as save button is in top header) */}
+        {!isInline && (
+          <Flex style={{ paddingTop: 16 }}>
+            <Button
+              loading={isLoading}
+              type="primary"
+              htmlType="submit"
+              block
+              icon={<PlusCircleOutlined />}
+              onClick={() => form.submit()}
+            >
+              {initialData ? "Save" : "Add Vehicle"}
+            </Button>
+          </Flex>
+        )}
       </Flex>
     </Flex>
   );

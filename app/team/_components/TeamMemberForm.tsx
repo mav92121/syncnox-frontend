@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Form, Button, Flex, Menu, message } from "antd";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import { Team } from "@/types/team.type";
@@ -8,6 +8,7 @@ import {
   MenuKey,
   TeamMemberFormProps,
 } from "./teamMemberForm.types";
+
 import { transformFormToApi, transformApiToForm } from "./teamMemberForm.utils";
 import { useTeamStore } from "@/store/team.store";
 import { useDepotStore } from "@/store/depots.store";
@@ -20,11 +21,15 @@ import ServiceZonesSection from "./ServiceZonesSection";
 const TeamMemberForm = ({
   initialData = null,
   onSubmit,
-}: TeamMemberFormProps) => {
+  isInline = false,
+  form: externalForm,
+}: TeamMemberFormProps & { isInline?: boolean; form?: any }) => {
   const [messageApi, contextHolder] = message.useMessage();
   const { createTeamAction, updateTeamAction, isLoading } = useTeamStore();
   const { depots } = useDepotStore();
-  const [form] = Form.useForm();
+  const [internalForm] = Form.useForm();
+  const form = externalForm || internalForm;
+
   const [activeSection, setActiveSection] = useState<MenuKey>("basic");
   const [zones, setZones] = useState<any[]>([]);
   const [skills, setSkills] = useState<string[]>([]);
@@ -39,6 +44,36 @@ const TeamMemberForm = ({
     undefined
   );
   const [endDepotId, setEndDepotId] = useState<number | undefined>(undefined);
+
+  // Auto-save ref
+  const isPrefillingRef = useRef<boolean>(true);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerAutoSave = () => {
+    if (!initialData?.id || isPrefillingRef.current) return;
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+    autoSaveTimerRef.current = setTimeout(() => {
+      form
+        .validateFields()
+        .then(() => {
+          form.submit();
+        })
+        .catch(() => {
+          // Ignore validation errors during intermediate typing
+        });
+    }, 1000);
+  };
+
+  // Cleanup auto-save timer on unmount or initialData change
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [initialData?.id]);
 
   // Initialize depot IDs when depots are loaded
   useEffect(() => {
@@ -57,9 +92,14 @@ const TeamMemberForm = ({
         setActiveSection("basic");
       }
     }
+    triggerAutoSave();
   };
 
   const onFinish = async (values: any) => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
     const startDepot = depots.find((d) => d.id === startDepotId);
     const endDepot = depots.find((d) => d.id === endDepotId);
 
@@ -87,8 +127,7 @@ const TeamMemberForm = ({
             messageApi.error("Failed to save service zones");
           }
         }
-        messageApi.success("Team member updated successfully");
-        form.resetFields();
+        messageApi.success("Team member saved successfully");
         onSubmit?.();
       } else {
         await createTeamAction(transformedValues);
@@ -105,7 +144,13 @@ const TeamMemberForm = ({
 
   // Prefill form when initialData changes (for editing)
   useEffect(() => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+
     if (initialData) {
+      isPrefillingRef.current = true;
       const formValues = transformApiToForm(initialData);
 
       // Set role type
@@ -168,6 +213,9 @@ const TeamMemberForm = ({
       }
 
       form.setFieldsValue(formValues);
+      setTimeout(() => {
+        isPrefillingRef.current = false;
+      }, 500);
     }
   }, [initialData, form, depots]);
 
@@ -175,21 +223,22 @@ const TeamMemberForm = ({
     if (skillInput.trim() && !skills.includes(skillInput.trim())) {
       setSkills([...skills, skillInput.trim()]);
       setSkillInput("");
+      triggerAutoSave();
     }
   };
 
   const handleRemoveSkill = (skillToRemove: string) => {
     setSkills(skills.filter((skill) => skill !== skillToRemove));
+    triggerAutoSave();
   };
 
   const isDriver = roleType === "driver";
 
-  // Filter menu items based on role - only show Basic Information for non-drivers, and show Mobile App section only in edit mode
   const menuItems = [
     { key: "basic", label: "Basic Information" },
     { key: "skillsAndCost", label: "Costs & Skills (Optional)" },
-    ...(initialData ? [{ key: "serviceZones", label: "Service Areas" }] : []),
-    ...(initialData ? [{ key: "mobileApp", label: "Mobile App" }] : []),
+    { key: "serviceZones", label: "Service Areas" },
+    { key: "mobileApp", label: "Mobile App" },
   ];
 
   const filteredMenuItems = isDriver
@@ -197,7 +246,7 @@ const TeamMemberForm = ({
     : menuItems.filter((item) => item.key === "basic");
 
   return (
-    <Flex style={{ height: "100%", overflow: "hidden" }}>
+    <Flex style={{ height: isInline ? "auto" : "100%", overflow: isInline ? "visible" : "hidden" }}>
       {contextHolder}
 
       {/* Left Sidebar Menu - always show but filter items based on role */}
@@ -226,7 +275,7 @@ const TeamMemberForm = ({
         vertical
         style={{
           flex: 1,
-          overflow: "hidden",
+          overflow: isInline ? "visible" : "hidden",
           paddingLeft: "12px",
         }}
       >
@@ -235,7 +284,7 @@ const TeamMemberForm = ({
           vertical
           style={{
             flex: 1,
-            overflowY: "auto",
+            overflowY: isInline ? "visible" : "auto",
             overflowX: "hidden",
             paddingRight: "8px",
           }}
@@ -259,18 +308,31 @@ const TeamMemberForm = ({
                   <BasicInformation
                     form={form}
                     scheduleBreak={scheduleBreak}
-                    onScheduleBreakChange={setScheduleBreak}
+                    onScheduleBreakChange={(val) => {
+                      setScheduleBreak(val);
+                      triggerAutoSave();
+                    }}
                     isDriver={isDriver}
                     startLocationSameAsDepot={startLocationSameAsDepot}
-                    onStartLocationSameAsDepotChange={
-                      setStartLocationSameAsDepot
-                    }
+                    onStartLocationSameAsDepotChange={(val) => {
+                      setStartLocationSameAsDepot(val);
+                      triggerAutoSave();
+                    }}
                     endLocationSameAsDepot={endLocationSameAsDepot}
-                    onEndLocationSameAsDepotChange={setEndLocationSameAsDepot}
+                    onEndLocationSameAsDepotChange={(val) => {
+                      setEndLocationSameAsDepot(val);
+                      triggerAutoSave();
+                    }}
                     startDepotId={startDepotId}
-                    setStartDepotId={setStartDepotId}
+                    setStartDepotId={(val) => {
+                      setStartDepotId(val);
+                      triggerAutoSave();
+                    }}
                     endDepotId={endDepotId}
-                    setEndDepotId={setEndDepotId}
+                    setEndDepotId={(val) => {
+                      setEndDepotId(val);
+                      triggerAutoSave();
+                    }}
                   />
                 </div>
 
@@ -289,68 +351,86 @@ const TeamMemberForm = ({
                   />
                 </div>
 
-                {initialData && (
-                  <div
-                    style={{
-                      display:
-                        activeSection === "serviceZones" ? "block" : "none",
+                <div
+                  style={{
+                    display:
+                      activeSection === "serviceZones" ? "block" : "none",
+                  }}
+                >
+                  <ServiceZonesSection
+                    driverId={initialData?.id}
+                    zones={zones}
+                    onZonesChange={(newZones, isUserEdit = true) => {
+                      setZones(newZones);
+                      if (isUserEdit) {
+                        triggerAutoSave();
+                      }
                     }}
-                  >
-                    <ServiceZonesSection
-                      driverId={initialData.id}
-                      zones={zones}
-                      onZonesChange={setZones}
-                    />
-                  </div>
-                )}
+                  />
+                </div>
 
-                {initialData && (
-                  <div
-                    style={{
-                      display:
-                        activeSection === "mobileApp" ? "block" : "none",
-                    }}
-                  >
-                    <MobileAppSection
-                      driverId={initialData.id}
-                      initialActivationCode={initialData.activation_code}
-                    />
-                  </div>
-                )}
+                <div
+                  style={{
+                    display:
+                      activeSection === "mobileApp" ? "block" : "none",
+                  }}
+                >
+                  <MobileAppSection
+                    driverId={initialData?.id}
+                    initialActivationCode={initialData?.activation_code}
+                  />
+                </div>
               </>
             ) : (
               // For non-driver roles, show only basic information (first 5 fields)
               <BasicInformation
                 form={form}
                 scheduleBreak={scheduleBreak}
-                onScheduleBreakChange={setScheduleBreak}
+                onScheduleBreakChange={(val) => {
+                  setScheduleBreak(val);
+                  triggerAutoSave();
+                }}
                 isDriver={isDriver}
                 startLocationSameAsDepot={startLocationSameAsDepot}
-                onStartLocationSameAsDepotChange={setStartLocationSameAsDepot}
+                onStartLocationSameAsDepotChange={(val) => {
+                  setStartLocationSameAsDepot(val);
+                  triggerAutoSave();
+                }}
                 endLocationSameAsDepot={endLocationSameAsDepot}
-                onEndLocationSameAsDepotChange={setEndLocationSameAsDepot}
+                onEndLocationSameAsDepotChange={(val) => {
+                  setEndLocationSameAsDepot(val);
+                  triggerAutoSave();
+                }}
                 startDepotId={startDepotId}
-                setStartDepotId={setStartDepotId}
+                setStartDepotId={(val) => {
+                  setStartDepotId(val);
+                  triggerAutoSave();
+                }}
                 endDepotId={endDepotId}
-                setEndDepotId={setEndDepotId}
+                setEndDepotId={(val) => {
+                  setEndDepotId(val);
+                  triggerAutoSave();
+                }}
               />
             )}
           </Form>
         </Flex>
 
-        {/* Fixed Button at Bottom */}
-        <Flex style={{ paddingTop: "12px" }}>
-          <Button
-            loading={isLoading}
-            type="primary"
-            htmlType="submit"
-            block
-            icon={<PlusCircleOutlined />}
-            onClick={() => form.submit()}
-          >
-            {initialData ? "Update" : "Add"}
-          </Button>
-        </Flex>
+        {/* Fixed Button at Bottom (hidden when inline, as save button is in top header) */}
+        {!isInline && (
+          <Flex style={{ paddingTop: "12px" }}>
+            <Button
+              loading={isLoading}
+              type="primary"
+              htmlType="submit"
+              block
+              icon={<PlusCircleOutlined />}
+              onClick={() => form.submit()}
+            >
+              {initialData ? "Save" : "Add"}
+            </Button>
+          </Flex>
+        )}
       </Flex>
     </Flex>
   );

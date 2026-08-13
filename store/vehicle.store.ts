@@ -7,6 +7,7 @@ import {
   createVehicle,
   updateVehicle,
   deleteVehicle as deleteVehicleApi,
+  bulkDeleteVehicles,
   bulkImportVehicles,
   batchCreateVehicles,
 } from "@/apis/vehicle.api";
@@ -21,6 +22,7 @@ interface VehicleStore {
   createVehicleAction: (vehicle: Partial<Vehicle>) => Promise<Vehicle>;
   updateVehicleAction: (vehicle: Vehicle) => Promise<Vehicle>;
   deleteVehicleAction: (vehicleId: number) => Promise<void>;
+  bulkDeleteVehiclesAction: (ids: number[]) => Promise<void>;
   bulkImportVehiclesAction: (file: File) => Promise<Vehicle[]>;
   batchCreateVehiclesAction: (vehicles: Partial<Vehicle>[]) => Promise<Vehicle[]>;
   getVehiclesMap: () => Record<number, string>;
@@ -131,6 +133,28 @@ export const useVehicleStore = create(
               error instanceof Error
                 ? error.message
                 : "Failed to delete vehicle";
+          });
+          throw error;
+        }
+      },
+
+      bulkDeleteVehiclesAction: async (ids: number[]) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          await bulkDeleteVehicles(ids);
+          set((state) => {
+            state.vehicles = state.vehicles.filter((v) => !ids.includes(v.id));
+            state.isLoading = false;
+          });
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to delete vehicles";
           });
           throw error;
         }

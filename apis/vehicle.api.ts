@@ -27,6 +27,10 @@ export const deleteVehicle = async (vehicleId: number): Promise<void> => {
   await apiClient.delete(`${url}/${vehicleId}`);
 };
 
+export const bulkDeleteVehicles = async (ids: number[]): Promise<void> => {
+  await apiClient.post(`${url}/bulk-delete`, ids);
+};
+
 export const bulkImportVehicles = async (file: File): Promise<Vehicle[]> => {
   const formData = new FormData();
   formData.append("file", file);

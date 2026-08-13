@@ -73,6 +73,7 @@ export default function BulkImportModal({
     <Modal
       open={open}
       onCancel={handleClose}
+      maskClosable={false}
       footer={null}
       title={
         <Flex align="center" gap={8}>

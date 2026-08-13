@@ -146,7 +146,6 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker, onRemoveJob }
           </div>
           {onRemoveJob && (
             <Button
-              type="primary"
               danger
               size="small"
               style={{ width: "100%" }}

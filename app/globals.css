@@ -222,3 +222,65 @@ body {
 .ant-menu-inline .ant-menu-item:hover:not(.ant-menu-item-selected) {
   background-color: var(--secondary) !important;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Global Sharp Edges — Zero Border Radius (90 Degrees Sharp)
+   Applies to every UI element across the entire SyncNox application
+═══════════════════════════════════════════════════════════ */
+/* *,
+*::before,
+*::after,
+.ant-btn,
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-select-dropdown,
+.ant-modal,
+.ant-modal-content,
+.ant-modal-header,
+.ant-modal-footer,
+.ant-drawer-content,
+.ant-card,
+.ant-avatar,
+.ant-badge,
+.ant-tag,
+.ant-menu-item,
+.ant-checkbox-inner,
+.ant-radio-button-wrapper,
+.ant-picker,
+.ant-tooltip-inner,
+.ant-popover-inner,
+.ant-dropdown-menu {
+  border-radius: 0 !important;
+} */
+/* ═══════════════════════════════════════════════════════════
+   Ant Design Success Message Toast Consistency
+═══════════════════════════════════════════════════════════ */
+.ant-message-custom-content.ant-message-success .anticon,
+.ant-message-success .anticon-check-circle,
+.ant-message-success svg {
+  color: #003220 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Ant Design Steps Styling — Completed Step Icon & Colors
+═══════════════════════════════════════════════════════════ */
+.ant-steps-item-finish .ant-steps-item-icon {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+}
+.ant-steps-item-finish .ant-steps-item-icon .ant-steps-icon {
+  color: #059669 !important;
+}
+.ant-steps-item-finish > .ant-steps-item-container > .ant-steps-item-tail::after {
+  background-color: #10b981 !important;
+}
+.ant-steps-item-process .ant-steps-item-icon {
+  background-color: #003220 !important;
+  border-color: #003220 !important;
+}
+.ant-steps-item-process .ant-steps-item-icon .ant-steps-icon {
+  color: #ffffff !important;
+}
+
+

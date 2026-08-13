@@ -25,6 +25,10 @@ export const deleteTeam = async (teamId: number): Promise<void> => {
   await apiClient.delete(`${url}/${teamId}`);
 };
 
+export const bulkDeleteTeams = async (ids: number[]): Promise<void> => {
+  await apiClient.post(`${url}/bulk-delete`, ids);
+};
+
 export const activateDriver = async (driverId: number): Promise<{ activation_code: string }> => {
   const response = await apiClient.post<{ activation_code: string }>(`/driver/${driverId}/activate`);
   return response.data;

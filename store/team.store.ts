@@ -7,6 +7,7 @@ import {
   createTeam,
   updateTeam,
   deleteTeam as deleteTeamApi,
+  bulkDeleteTeams,
   bulkImportTeams,
   batchCreateTeams,
 } from "@/apis/team.api";
@@ -21,6 +22,7 @@ interface TeamStore {
   createTeamAction: (team: Team) => Promise<Team>; // Create team with API call + state update
   updateTeamAction: (team: Team) => Promise<Team>; // Update team with API call + state update
   deleteTeamAction: (teamId: number) => Promise<void>; // Delete team with API call + state update
+  bulkDeleteTeamsAction: (ids: number[]) => Promise<void>;
   bulkImportTeamsAction: (file: File) => Promise<Team[]>;
   batchCreateTeamsAction: (teams: Partial<Team>[]) => Promise<Team[]>;
   hasFetched: boolean;
@@ -129,6 +131,28 @@ export const useTeamStore = create(
               error instanceof Error ? error.message : "Failed to delete team";
           });
           throw error; // Re-throw so component can handle the error
+        }
+      },
+
+      bulkDeleteTeamsAction: async (ids: number[]) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          await bulkDeleteTeams(ids);
+          set((state) => {
+            state.teams = state.teams.filter((team) => !ids.includes(team.id));
+            state.isLoading = false;
+          });
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to delete team members";
+          });
+          throw error;
         }
       },
 

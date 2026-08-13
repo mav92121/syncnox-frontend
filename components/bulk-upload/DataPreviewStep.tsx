@@ -21,6 +21,7 @@ import AddressCellEditor from "./AddressCellEditor";
 
 interface DataPreviewStepProps {
   onFinish: () => void;
+  onBack?: () => void;
 }
 
 // Row status types for clarity
@@ -45,7 +46,7 @@ interface ProcessedRow {
   [key: string]: any;
 }
 
-const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
+const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
   const gridRef = useRef<AgGridReact>(null);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -419,10 +420,10 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
       style={{ height: "calc(70vh - 100px)" }}
     >
       {/* Interactive Filter Bar */}
-      <div className="flex flex-wrap items-center gap-2 mb-3 p-2.5 bg-gray-50/80 border border-gray-200 rounded-lg shadow-2xs">
-        <div className="flex items-center gap-1.5 px-2 text-gray-500 border-r border-gray-200 pr-3 mr-1">
-          <FilterOutlined className="text-sm text-gray-500" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+      <div className="flex flex-wrap items-center gap-2 mb-2 p-1.5 bg-gray-50/80 border border-gray-200 rounded-none shadow-2xs">
+        <div className="flex items-center gap-1.5 px-2 text-gray-500 border-r border-gray-200 pr-2.5 mr-0.5">
+          <FilterOutlined className="text-xs text-gray-500" />
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
             Filter:
           </span>
         </div>
@@ -432,16 +433,16 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
           <button
             type="button"
             onClick={() => handleFilterClick("all")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ${
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-none cursor-pointer text-xs font-medium transition-all border ${
               activeFilter === "all"
-                ? "bg-white border-gray-300 shadow-sm text-gray-900 ring-2 ring-gray-400/20"
-                : "bg-white/60 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300 hover:shadow-2xs"
+                ? "bg-white border-gray-400 shadow-2xs text-gray-900 font-semibold"
+                : "bg-white/60 border-gray-200 text-gray-600 hover:bg-white hover:border-gray-300"
             }`}
           >
             <InfoCircleOutlined className={activeFilter === "all" ? "text-gray-700" : "text-gray-400"} />
             <span>All Rows</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+              className={`px-1.5 py-0 rounded-none text-[11px] font-bold ${
                 activeFilter === "all"
                   ? "bg-gray-900 text-white"
                   : "bg-gray-100 text-gray-700 border border-gray-200"
@@ -458,16 +459,16 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
             <button
               type="button"
               onClick={() => handleFilterClick("geocoding_error")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ${
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-none cursor-pointer text-xs font-medium transition-all border ${
                 activeFilter === "geocoding_error"
-                  ? "bg-red-50 border-red-400 ring-2 ring-red-400/30 text-red-900 shadow-sm font-semibold"
-                  : "bg-white/60 border-red-200 text-red-600 hover:bg-red-50/80 hover:border-red-300 hover:shadow-2xs"
+                  ? "bg-red-50 border-red-500 text-red-900 font-semibold"
+                  : "bg-white/60 border-red-200 text-red-600 hover:bg-red-50/80 hover:border-red-300"
               }`}
             >
               <CloseCircleOutlined style={{ color: "#ff4d4f" }} />
               <span>Geocoding Errors</span>
               <span
-                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                className={`px-1.5 py-0 rounded-none text-[11px] font-bold ${
                   activeFilter === "geocoding_error"
                     ? "bg-red-600 text-white"
                     : "bg-red-100 text-red-700 border border-red-200"
@@ -485,16 +486,16 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
             <button
               type="button"
               onClick={() => handleFilterClick("validation_error")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ${
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-none cursor-pointer text-xs font-medium transition-all border ${
                 activeFilter === "validation_error"
-                  ? "bg-orange-50 border-orange-400 ring-2 ring-orange-400/30 text-orange-900 shadow-sm font-semibold"
-                  : "bg-white/60 border-orange-200 text-orange-600 hover:bg-orange-50/80 hover:border-orange-300 hover:shadow-2xs"
+                  ? "bg-orange-50 border-orange-500 text-orange-900 font-semibold"
+                  : "bg-white/60 border-orange-200 text-orange-600 hover:bg-orange-50/80 hover:border-orange-300"
               }`}
             >
               <ExclamationCircleOutlined style={{ color: "#fa8c16" }} />
               <span>Validation Errors</span>
               <span
-                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                className={`px-1.5 py-0 rounded-none text-[11px] font-bold ${
                   activeFilter === "validation_error"
                     ? "bg-orange-500 text-white"
                     : "bg-orange-100 text-orange-700 border border-orange-200"
@@ -512,16 +513,16 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
             <button
               type="button"
               onClick={() => handleFilterClick("duplicate")}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ${
+              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-none cursor-pointer text-xs font-medium transition-all border ${
                 activeFilter === "duplicate"
-                  ? "bg-blue-50 border-blue-400 ring-2 ring-blue-400/30 text-blue-900 shadow-sm font-semibold"
-                  : "bg-white/60 border-blue-200 text-blue-600 hover:bg-blue-50/80 hover:border-blue-300 hover:shadow-2xs"
+                  ? "bg-blue-50 border-blue-500 text-blue-900 font-semibold"
+                  : "bg-white/60 border-blue-200 text-blue-600 hover:bg-blue-50/80 hover:border-blue-300"
               }`}
             >
               <WarningOutlined style={{ color: "#1890ff" }} />
               <span>Duplicates</span>
               <span
-                className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                className={`px-1.5 py-0 rounded-none text-[11px] font-bold ${
                   activeFilter === "duplicate"
                     ? "bg-blue-600 text-white"
                     : "bg-blue-100 text-blue-700 border border-blue-200"
@@ -538,16 +539,16 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
           <button
             type="button"
             onClick={() => handleFilterClick("ready")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full cursor-pointer text-xs font-medium transition-all border ml-auto ${
+            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-none cursor-pointer text-xs font-medium transition-all border ml-auto ${
               activeFilter === "ready"
-                ? "bg-green-50 border-green-500 ring-2 ring-green-400/30 text-green-900 shadow-sm font-semibold"
-                : "bg-white/60 border-green-200 text-green-700 hover:bg-green-50/80 hover:border-green-300 hover:shadow-2xs"
+                ? "bg-green-50 border-green-600 text-green-900 font-semibold"
+                : "bg-white/60 border-green-200 text-green-700 hover:bg-green-50/80 hover:border-green-300"
             }`}
           >
             <CheckCircleOutlined style={{ color: "#52c41a" }} />
             <span>Ready to Import</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+              className={`px-1.5 py-0 rounded-none text-[11px] font-bold ${
                 activeFilter === "ready"
                   ? "bg-green-600 text-white"
                   : "bg-green-100 text-green-800 border border-green-200"
@@ -624,12 +625,20 @@ const DataPreviewStep = ({ onFinish }: DataPreviewStepProps) => {
         </span>
 
         <div className="flex gap-2">
-          <Button onClick={onFinish}>Cancel</Button>
+          {onBack && (
+            <Button onClick={onBack} className="rounded-none">
+              Back
+            </Button>
+          )}
+          <Button onClick={onFinish} className="rounded-none">
+            Cancel
+          </Button>
           <Button
             type="primary"
             onClick={handleImport}
             loading={isImporting}
             disabled={stats.readyToImport === 0}
+            className="rounded-none"
           >
             Import{" "}
             {stats.readyToImport > 0 ? `${stats.readyToImport} Jobs` : ""}

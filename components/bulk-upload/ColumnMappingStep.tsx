@@ -20,6 +20,7 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
     setGeocodedData,
     setIsGeocoding,
     defaultScheduledDate,
+    setCurrentStep,
   } = useBulkUploadStore();
 
   const [localMapping, setLocalMapping] = useState<Record<string, string>>({});
@@ -139,6 +140,11 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
     title: (
       <div className="flex flex-col gap-2 min-w-[200px] mb-2">
         <Select
+          showSearch
+          optionFilterProp="label"
+          filterOption={(input, option) =>
+            (option?.label ?? "").toString().toLowerCase().includes(input.toLowerCase())
+          }
           value={getJobFieldForExcelColumn(excelCol)}
           onChange={(val) => handleMappingChange(excelCol, val)}
           options={jobFieldOptions}
@@ -185,7 +191,7 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
           description="There has to be at least one column defining location (address)"
           type="warning"
           showIcon
-          className="mb-4"
+          className="mb-4 rounded-none"
         />
       )}
 
@@ -213,15 +219,20 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
           Save this mapping as my default mapping
         </Checkbox>
 
-        <Button
-          type="primary"
-          onClick={handleContinue}
-          disabled={!hasLocationColumn}
-          loading={isProcessing}
-          className="rounded-none"
-        >
-          Continue
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setCurrentStep(1)} className="rounded-none">
+            Back
+          </Button>
+          <Button
+            type="primary"
+            onClick={handleContinue}
+            disabled={!hasLocationColumn}
+            loading={isProcessing}
+            className="rounded-none"
+          >
+            Continue
+          </Button>
+        </div>
       </div>
     </div>
   );
