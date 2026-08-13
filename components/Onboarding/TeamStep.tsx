@@ -16,6 +16,7 @@ const TeamStep = ({ onNext }: TeamStepProps) => {
       items={teams}
       itemLabelSingular="driver"
       itemLabelPlural="Drivers"
+      entityType="driver"
       Icon={User}
       FormComponent={TeamMemberForm}
       getItemDisplay={(m) => ({ name: m.name, secondary: m.role_type })}
@@ -25,5 +26,6 @@ const TeamStep = ({ onNext }: TeamStepProps) => {
     />
   );
 };
+
 
 export default TeamStep;

@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { ArrowRight } from "lucide-react";
 import GoogleMaps from "@/components/GoogleMaps";
 import { Button, message, Input } from "antd";
@@ -28,14 +28,84 @@ const DepotForm = ({
   isOnboarding = false,
   existingDepots = [],
 }: DepotFormProps) => {
+  const [messageApi, contextHolder] = message.useMessage();
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     null,
   );
 
+  const isPrefillingRef = useRef<boolean>(true);
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Keep ref of latest state to prevent stale closure in debounced auto-save
+  const latestValuesRef = useRef({ name, address, location });
+  useEffect(() => {
+    latestValuesRef.current = { name, address, location };
+  }, [name, address, location]);
+
+  const handleSave = async () => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    const { name: currentName, address: currentAddress, location: currentLocation } =
+      latestValuesRef.current;
+
+    if (!currentName.trim()) {
+      messageApi.error("Please enter a depot name");
+      return;
+    }
+    if (!currentLocation) {
+      messageApi.error("Please select a location");
+      return;
+    }
+
+    const success = await onSubmit({
+      name: currentName.trim(),
+      address: {
+        formatted_address: currentAddress,
+      },
+      location: currentLocation,
+    });
+
+    if (success) {
+      messageApi.success(
+        initialValues
+          ? "Depot saved successfully"
+          : "Depot created successfully",
+      );
+      if (!initialValues) {
+        onCancel(); // Close form on new creation success
+      }
+    } else {
+      messageApi.error("Failed to save depot");
+    }
+  };
+
+  const triggerAutoSave = () => {
+    if (!initialValues?.id || isPrefillingRef.current) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      const { name: currentName, location: currentLocation } =
+        latestValuesRef.current;
+      if (currentName.trim() && currentLocation) {
+        handleSave();
+      }
+    }, 1000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+      }
+    };
+  }, [initialValues?.id]);
+
   useEffect(() => {
     if (initialValues) {
+      isPrefillingRef.current = true;
       setName(initialValues.name || "");
       setAddress(initialValues.address?.formatted_address || "");
       if (initialValues.location) {
@@ -44,6 +114,9 @@ const DepotForm = ({
           lng: initialValues.location.lng,
         });
       }
+      setTimeout(() => {
+        isPrefillingRef.current = false;
+      }, 200);
     } else {
       // Reset form
       setName("");
@@ -67,36 +140,6 @@ const DepotForm = ({
       location?.lng !== originalLng
     );
   }, [initialValues, name, address, location]);
-
-  const handleSave = async () => {
-    if (!name.trim()) {
-      message.error("Please enter a depot name");
-      return;
-    }
-    if (!location) {
-      message.error("Please select a location");
-      return;
-    }
-
-    const success = await onSubmit({
-      name: name,
-      address: {
-        formatted_address: address,
-      },
-      location: location,
-    });
-
-    if (success) {
-      message.success(
-        initialValues
-          ? "Depot updated successfully"
-          : "Depot created successfully",
-      );
-      onCancel(); // Close form on success
-    } else {
-      message.error("Failed to save depot");
-    }
-  };
 
   // ─── Map markers ────────────────────────────────────────────────────────────
   // All existing depots as non-draggable read-only markers
@@ -152,11 +195,15 @@ const DepotForm = ({
 
   return (
     <div className="flex flex-col h-full">
+      {contextHolder}
       <div className="flex gap-2 w-full mb-2">
         <div className="w-1/3">
           <Input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => {
+              setName(e.target.value);
+              triggerAutoSave();
+            }}
             placeholder="Enter depot name"
           />
         </div>
@@ -170,6 +217,7 @@ const DepotForm = ({
             onSelect={(addressData: AddressData) => {
               setAddress(addressData.address_formatted);
               setLocation(addressData.location);
+              triggerAutoSave();
             }}
           />
         </div>
@@ -184,6 +232,7 @@ const DepotForm = ({
           markers={allMarkers}
           onMarkerDragEnd={(_, newPosition) => {
             setLocation(newPosition);
+            triggerAutoSave();
           }}
         />
       </div>
@@ -198,7 +247,7 @@ const DepotForm = ({
           icon={isOnboarding ? <ArrowRight size={14} /> : undefined}
           iconPosition="end"
         >
-          {submitLabel || (initialValues ? "Update" : "Create")}
+          {submitLabel || (initialValues ? "Save" : "Create")}
         </Button>
       </div>
     </div>

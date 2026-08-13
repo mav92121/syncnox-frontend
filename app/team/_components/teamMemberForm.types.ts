@@ -15,11 +15,20 @@ export const MENU_ITEMS = [
   { key: "skillsAndCost", label: "Costs & Skills (Optional)" },
 ];
 
+export const DEFAULT_DAY_SCHEDULES = {
+  monday: { enabled: true, start_time: dayjs("08:00", "HH:mm"), end_time: dayjs("16:00", "HH:mm") },
+  tuesday: { enabled: true, start_time: dayjs("08:00", "HH:mm"), end_time: dayjs("16:00", "HH:mm") },
+  wednesday: { enabled: true, start_time: dayjs("08:00", "HH:mm"), end_time: dayjs("16:00", "HH:mm") },
+  thursday: { enabled: true, start_time: dayjs("08:00", "HH:mm"), end_time: dayjs("16:00", "HH:mm") },
+  friday: { enabled: true, start_time: dayjs("08:00", "HH:mm"), end_time: dayjs("16:00", "HH:mm") },
+  saturday: { enabled: false, start_time: dayjs("08:00", "HH:mm"), end_time: dayjs("16:00", "HH:mm") },
+  sunday: { enabled: false, start_time: dayjs("08:00", "HH:mm"), end_time: dayjs("16:00", "HH:mm") },
+};
+
 export const INITIAL_FORM_VALUES = {
   role_type: "driver",
   navigation_link_format: "default",
-  vehicle: "car",
-  allowed_overtime: false,
+  allowed_overtime: true,
   max_distance: 200,
   fixed_cost_for_driver: 0,
   cost_per_km: 1,
@@ -29,4 +38,5 @@ export const INITIAL_FORM_VALUES = {
   end_address: "",
   work_start_time: dayjs("08:00", "HH:mm"),
   work_end_time: dayjs("16:00", "HH:mm"),
+  day_schedules: DEFAULT_DAY_SCHEDULES,
 };

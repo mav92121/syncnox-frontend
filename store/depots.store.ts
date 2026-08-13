@@ -7,6 +7,7 @@ import {
   updateDepot,
   createDepot,
   deleteDepot,
+  bulkDeleteDepots,
   DepotPayload,
 } from "@/apis/depots.api";
 
@@ -23,6 +24,7 @@ interface DepotStore {
   createDepot: (payload: DepotPayload) => Promise<boolean>;
   updateDepot: (id: number, payload: DepotPayload) => Promise<boolean>;
   deleteDepot: (id: number) => Promise<boolean>;
+  bulkDeleteDepots: (ids: number[]) => Promise<boolean>;
 }
 
 export const useDepotStore = create(
@@ -93,6 +95,22 @@ export const useDepotStore = create(
           await deleteDepot(id);
           set((state) => {
             state.depots = state.depots.filter((d) => d.id !== id);
+          });
+          return true;
+        } catch (error) {
+          set({ error: (error as Error).message });
+          return false;
+        } finally {
+          set({ isSaving: false });
+        }
+      },
+
+      bulkDeleteDepots: async (ids: number[]) => {
+        set({ isSaving: true, error: null });
+        try {
+          await bulkDeleteDepots(ids);
+          set((state) => {
+            state.depots = state.depots.filter((d) => !ids.includes(d.id));
           });
           return true;
         } catch (error) {

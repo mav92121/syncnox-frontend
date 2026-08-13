@@ -15,9 +15,9 @@ const ZONE_COLOR_NAMES: Record<string, string> = {
 };
 
 interface ServiceZonesSectionProps {
-  driverId: number;
+  driverId?: number;
   zones: ZonePolygon[];
-  onZonesChange: (zones: ZonePolygon[]) => void;
+  onZonesChange: (zones: ZonePolygon[], isUserEdit?: boolean) => void;
 }
 
 const ServiceZonesSection: React.FC<ServiceZonesSectionProps> = ({
@@ -25,29 +25,36 @@ const ServiceZonesSection: React.FC<ServiceZonesSectionProps> = ({
   zones,
   onZonesChange,
 }) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(!!driverId);
 
   // Load existing zones
   useEffect(() => {
-    const load = async () => {
-      setIsLoading(true);
+    if (!driverId) {
+      setIsLoading(false);
+      return;
+    }
+    let isMounted = true;
+    const loadZones = async () => {
       try {
+        setIsLoading(true);
         const data = await fetchDriverZones(driverId);
-        if (data && data.length > 0) {
-          onZonesChange(data);
+        if (isMounted && data) {
+          onZonesChange(data, false); // false = initial load, NOT user edit
         }
-      } catch {
-        // No zones yet – that's fine
+      } catch (err) {
+        console.error("Failed to load driver zones:", err);
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    loadZones();
+    return () => {
+      isMounted = false;
+    };
   }, [driverId]);
 
   const handleClearAll = () => {
-    onZonesChange([]);
+    onZonesChange([], true); // true = user edit
   };
 
   return (
@@ -66,11 +73,14 @@ const ServiceZonesSection: React.FC<ServiceZonesSectionProps> = ({
 
       {/* Map */}
       {isLoading ? (
-        <div className="h-[400px] flex items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
+        <div className="h-[400px] flex items-center justify-center bg-gray-50 border border-gray-200">
           <Spin size="large" />
         </div>
       ) : (
-        <ServiceZoneMap zones={zones} onZonesChange={onZonesChange} />
+        <ServiceZoneMap
+          zones={zones}
+          onZonesChange={(newZones) => onZonesChange(newZones, true)}
+        />
       )}
 
       {/* Zones summary list */}

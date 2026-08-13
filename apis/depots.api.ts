@@ -26,6 +26,10 @@ export const deleteDepot = async (id: number): Promise<void> => {
   await apiClient.delete(`/depots/${id}`);
 };
 
+export const bulkDeleteDepots = async (ids: number[]): Promise<void> => {
+  await apiClient.post("/depots/bulk-delete", ids);
+};
+
 export const updateDepot = async (
   id: number,
   payload: DepotPayload

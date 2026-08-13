@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Button, Flex, Spin, message, Modal } from "antd";
+import { Button, Flex, Spin, message, Modal, Alert } from "antd";
 import { MobileOutlined, SafetyCertificateOutlined } from "@ant-design/icons";
 import { activateDriver, deactivateDriver } from "@/apis/team.api";
 import { useTeamStore } from "@/store/team.store";
 
 interface MobileAppSectionProps {
-  driverId: number;
+  driverId?: number;
   initialActivationCode?: string | null;
 }
 
@@ -18,6 +18,19 @@ const MobileAppSection = ({
   >(initialActivationCode);
   const [loading, setLoading] = useState(false);
   const { fetchTeams } = useTeamStore();
+
+  if (!driverId) {
+    return (
+      <div className="p-4 border border-gray-200 bg-gray-50/50">
+        <Alert
+          type="info"
+          showIcon
+          message="Mobile App Access"
+          description="Once you save this team member, you will be able to generate their 12-digit mobile app activation code here."
+        />
+      </div>
+    );
+  }
 
   const handleActivate = async () => {
     setLoading(true);

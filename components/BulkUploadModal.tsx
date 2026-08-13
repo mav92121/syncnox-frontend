@@ -34,6 +34,7 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
       title={<span className="text-xl font-semibold">Bulk Upload Jobs</span>}
       open={open}
       onCancel={handleClose}
+      maskClosable={false}
       footer={null}
       width="90vw"
       centered
@@ -43,7 +44,6 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
         header: { borderRadius: 0, paddingBottom: '16px' },
         mask: { backdropFilter: 'blur(4px)' }
       }}
-      destroyOnHidden
     >
       <div>
         <Steps
@@ -59,7 +59,12 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
           {currentStep === 2 && (
             <ColumnMappingStep onNext={() => setCurrentStep(3)} />
           )}
-          {currentStep === 3 && <DataPreviewStep onFinish={handleFinish} />}
+          {currentStep === 3 && (
+            <DataPreviewStep
+              onFinish={handleFinish}
+              onBack={() => setCurrentStep(2)}
+            />
+          )}
         </div>
       </div>
     </Modal>

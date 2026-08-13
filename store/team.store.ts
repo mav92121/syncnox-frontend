@@ -7,6 +7,9 @@ import {
   createTeam,
   updateTeam,
   deleteTeam as deleteTeamApi,
+  bulkDeleteTeams,
+  bulkImportTeams,
+  batchCreateTeams,
 } from "@/apis/team.api";
 
 interface TeamStore {
@@ -19,6 +22,9 @@ interface TeamStore {
   createTeamAction: (team: Team) => Promise<Team>; // Create team with API call + state update
   updateTeamAction: (team: Team) => Promise<Team>; // Update team with API call + state update
   deleteTeamAction: (teamId: number) => Promise<void>; // Delete team with API call + state update
+  bulkDeleteTeamsAction: (ids: number[]) => Promise<void>;
+  bulkImportTeamsAction: (file: File) => Promise<Team[]>;
+  batchCreateTeamsAction: (teams: Partial<Team>[]) => Promise<Team[]>;
   hasFetched: boolean;
   getTeamsMap: () => Record<number, string>;
 }
@@ -128,10 +134,78 @@ export const useTeamStore = create(
         }
       },
 
+      bulkDeleteTeamsAction: async (ids: number[]) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          await bulkDeleteTeams(ids);
+          set((state) => {
+            state.teams = state.teams.filter((team) => !ids.includes(team.id));
+            state.isLoading = false;
+          });
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to delete team members";
+          });
+          throw error;
+        }
+      },
+
       initializeTeams: async () => {
         const { hasFetched, isLoading } = get();
         if (hasFetched || isLoading) return;
         await get().fetchTeams();
+      },
+
+      bulkImportTeamsAction: async (file: File) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          const imported = await bulkImportTeams(file);
+          set((state) => {
+            state.teams.push(...imported);
+            state.isLoading = false;
+          });
+          return imported;
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to import drivers";
+          });
+          throw error;
+        }
+      },
+
+      batchCreateTeamsAction: async (teams: Partial<Team>[]) => {
+        set((state) => {
+          state.isLoading = true;
+          state.error = null;
+        });
+
+        try {
+          const created = await batchCreateTeams(teams);
+          set((state) => {
+            state.teams.unshift(...created);
+            state.isLoading = false;
+          });
+          return created;
+        } catch (error) {
+          set((state) => {
+            state.isLoading = false;
+            state.error =
+              error instanceof Error ? error.message : "Failed to create drivers";
+          });
+          throw error;
+        }
       },
 
       getTeamsMap: () => {

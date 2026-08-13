@@ -1,5 +1,19 @@
-import { Form, Input, Select, TimePicker, Row, Col, Checkbox } from "antd";
+import {
+  Form,
+  Input,
+  Select,
+  TimePicker,
+  Row,
+  Col,
+  Checkbox,
+  Switch,
+  Button,
+  Typography,
+  Space,
+  Flex,
+} from "antd";
 import { FormInstance } from "antd/es/form";
+import { CopyOutlined } from "@ant-design/icons";
 import { COUNTRY_CODES } from "@/constants/country";
 import {
   phoneNumberPattern,
@@ -8,10 +22,21 @@ import {
 } from "@/utils/form.validation";
 import { ROLE_TYPE_OPTIONS } from "./teamForm.constants";
 import { useDepotStore } from "@/store/depots.store";
-import { useVehicleStore } from "@/store/vehicle.store";
 import AddressAutocomplete, {
   AddressData,
 } from "@/components/AddressAutocomplete";
+
+const { Text } = Typography;
+
+const DAYS = [
+  { key: "monday", label: "Monday" },
+  { key: "tuesday", label: "Tuesday" },
+  { key: "wednesday", label: "Wednesday" },
+  { key: "thursday", label: "Thursday" },
+  { key: "friday", label: "Friday" },
+  { key: "saturday", label: "Saturday" },
+  { key: "sunday", label: "Sunday" },
+];
 
 interface BasicInformationProps {
   form: FormInstance;
@@ -43,23 +68,26 @@ const BasicInformation = ({
   setEndDepotId,
 }: BasicInformationProps) => {
   const { depots } = useDepotStore();
-  const { vehicles } = useVehicleStore();
-
-  const vehicleOptions = vehicles.map((vehicle) => ({
-    value: vehicle.id,
-    label: vehicle.name,
-  }));
 
   const depotOptions = depots.map((depot) => ({
     value: depot.id,
     label: depot.name,
   }));
 
-  // Get the first depot's address (fallback)
-  const defaultDepot = depots?.[0];
-  const depotAddress =
-    defaultDepot?.address?.formatted_address ||
-    "No depot configured. Please add a depot first";
+  const copyMondayToAllDays = () => {
+    const currentSchedules = form.getFieldValue("day_schedules") || {};
+    const mon = currentSchedules.monday;
+    if (!mon) return;
+    const updated = { ...currentSchedules };
+    ["tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].forEach((day) => {
+      updated[day] = {
+        enabled: mon.enabled,
+        start_time: mon.start_time,
+        end_time: mon.end_time,
+      };
+    });
+    form.setFieldsValue({ day_schedules: updated });
+  };
 
   return (
     <>
@@ -103,12 +131,8 @@ const BasicInformation = ({
         </Col>
       </Row>
 
-      {/* Phone Number */}
-      <Form.Item
-        label="Phone Number"
-        required
-        rules={[{ required: true, message: "Phone number is required" }]}
-      >
+      {/* Phone Number (Optional) */}
+      <Form.Item label="Phone Number (Optional)">
         <Row gutter={8}>
           <Col span={8}>
             <Form.Item
@@ -132,12 +156,9 @@ const BasicInformation = ({
             <Form.Item
               name={["phone", "number"]}
               noStyle
-              rules={[
-                { required: true, message: "Phone number is required" },
-                phoneNumberPattern,
-              ]}
+              rules={[phoneNumberPattern]}
             >
-              <Input type="number" placeholder="Phone Number" maxLength={15} />
+              <Input type="number" placeholder="Phone Number (Optional)" maxLength={15} />
             </Form.Item>
           </Col>
         </Row>
@@ -280,28 +301,8 @@ const BasicInformation = ({
       {/* Driver-specific fields - only show for drivers */}
       {isDriver && (
         <>
-          {/* Navigation Link Format and Default Vehicles */}
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                rules={[{ required: true, message: "Vehicle is required" }]}
-                label="Vehicle"
-                name="vehicle_id"
-              >
-                <Select
-                  placeholder="Select vehicle"
-                  options={vehicleOptions}
-                  allowClear
-                  showSearch
-                  filterOption={(input, option) =>
-                    (option?.label ?? "")
-                      .toLowerCase()
-                      .includes(input.toLowerCase())
-                  }
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
+            <Col span={24}>
               {/* Distance Limit */}
               <Form.Item label="Distance limit (km)" name="max_distance">
                 <Input
@@ -315,57 +316,122 @@ const BasicInformation = ({
             </Col>
           </Row>
 
-          {/* Work Time From and To */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Work Time"
-                name="work_start_time"
-                rules={[
-                  createTimeWindowStartValidator(
-                    form,
-                    "work_end_time",
-                    "Work start time",
-                    "Work end time"
-                  ),
-                ]}
+          {/* Day-Wise Working Hours Schedule (Monday - Sunday) */}
+          <div
+            style={{
+              marginTop: 8,
+              marginBottom: 16,
+              border: "1px solid #f0f0f0",
+              borderRadius: 8,
+              padding: "12px 16px",
+              backgroundColor: "#fafafa",
+            }}
+          >
+            <Flex justify="space-between" align="center" style={{ marginBottom: 12 }}>
+              <div>
+                <Text strong style={{ fontSize: 12, letterSpacing: "0.05em", display: "block" }}>
+                  DAY-WISE WORKING HOURS (MON - SUN)
+                </Text>
+                <Text type="secondary" style={{ fontSize: 11 }}>
+                  Configure shift start and end times for each day.
+                </Text>
+              </div>
+              <Button
+                type="link"
+                size="small"
+                icon={<CopyOutlined />}
+                onClick={copyMondayToAllDays}
+                style={{ padding: 0, fontSize: 12 }}
               >
-                <TimePicker
-                  className="w-full"
-                  format="HH:mm"
-                  placeholder="Select time"
-                  onChange={() => {
-                    // Trigger validation on end time when start time changes
-                    form.validateFields(["work_end_time"]);
-                  }}
-                />
+                Copy Mon to All Days
+              </Button>
+            </Flex>
+
+            {DAYS.map((day) => (
+              <Form.Item noStyle key={day.key} shouldUpdate>
+                {() => {
+                  const schedule = form.getFieldValue(["day_schedules", day.key]) || {};
+                  const isEnabled = schedule.enabled !== false;
+
+                  return (
+                    <Row gutter={12} align="middle" style={{ marginBottom: 8 }}>
+                      <Col span={8}>
+                        <Space size="small">
+                          <Switch
+                            size="small"
+                            checked={isEnabled}
+                            onChange={(checked) => {
+                              const current = form.getFieldValue("day_schedules") || {};
+                              form.setFieldsValue({
+                                day_schedules: {
+                                  ...current,
+                                  [day.key]: {
+                                    ...current[day.key],
+                                    enabled: checked,
+                                  },
+                                },
+                              });
+                            }}
+                          />
+                          <Text
+                            style={{
+                              fontSize: 13,
+                              fontWeight: isEnabled ? 500 : 400,
+                              color: isEnabled ? undefined : "#8c8c8c",
+                            }}
+                          >
+                            {day.label}
+                          </Text>
+                        </Space>
+                      </Col>
+
+                      <Col span={16}>
+                        {isEnabled ? (
+                          <Row gutter={8} align="middle">
+                            <Col span={11}>
+                              <Form.Item
+                                name={["day_schedules", day.key, "start_time"]}
+                                noStyle
+                              >
+                                <TimePicker
+                                  needConfirm={false}
+                                  size="small"
+                                  format="HH:mm"
+                                  placeholder="Start"
+                                  style={{ width: "100%" }}
+                                />
+                              </Form.Item>
+                            </Col>
+                            <Col span={2} style={{ textAlign: "center" }}>
+                              <Text type="secondary" style={{ fontSize: 11 }}>-</Text>
+                            </Col>
+                            <Col span={11}>
+                              <Form.Item
+                                name={["day_schedules", day.key, "end_time"]}
+                                noStyle
+                              >
+                                <TimePicker
+                                  needConfirm={false}
+                                  size="small"
+                                  format="HH:mm"
+                                  placeholder="End"
+                                  style={{ width: "100%" }}
+                                />
+                              </Form.Item>
+                            </Col>
+                          </Row>
+                        ) : (
+                          <Text type="secondary" style={{ fontSize: 12, fontStyle: "italic" }}>
+                            Off / Non-working
+                          </Text>
+                        )}
+                      </Col>
+                    </Row>
+                  );
+                }}
               </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="To"
-                name="work_end_time"
-                rules={[
-                  createTimeWindowEndValidator(
-                    form,
-                    "work_start_time",
-                    "Work start time",
-                    "Work end time"
-                  ),
-                ]}
-              >
-                <TimePicker
-                  className="w-full"
-                  format="HH:mm"
-                  placeholder="Select time"
-                  onChange={() => {
-                    // Trigger validation on start time when end time changes
-                    form.validateFields(["work_start_time"]);
-                  }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+            ))}
+          </div>
 
           <Row>
             {/* Allowed Overtime */}
@@ -402,11 +468,11 @@ const BasicInformation = ({
                     ]}
                   >
                     <TimePicker
+                      needConfirm={false}
                       className="w-full"
                       format="HH:mm"
                       placeholder="Select time"
                       onChange={() => {
-                        // Trigger validation on end time when start time changes
                         form.validateFields(["break_time_end"]);
                       }}
                     />
@@ -426,11 +492,11 @@ const BasicInformation = ({
                     ]}
                   >
                     <TimePicker
+                      needConfirm={false}
                       className="w-full"
                       format="HH:mm"
                       placeholder="Select time"
                       onChange={() => {
-                        // Trigger validation on start time when end time changes
                         form.validateFields(["break_time_start"]);
                       }}
                     />

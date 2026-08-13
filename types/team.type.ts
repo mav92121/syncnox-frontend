@@ -5,32 +5,42 @@ export interface ServiceZone {
   paths: { lat: number; lng: number }[];
   color: string;
 }
+export interface DayScheduleItem {
+  enabled: boolean;
+  start_time: string | null;
+  end_time: string | null;
+}
+
 export type TeamStatusType = "active" | "inactive" | "online" | "offline";
 
 export interface Team {
   id: number;
-  vehicle_id: number;
+  vehicle_id?: number | null;
   status: TeamStatusType;
   role_type: TeamRoleType;
-  external_identifier: string;
+  external_identifier?: string | null;
   name: string;
-  email: string;
-  phone_number: string;
+  email?: string | null;
+  phone_number?: string | null;
   navigation_link_format: string;
-  vehicle: string;
-  work_start_time: string;
-  work_end_time: string;
+  vehicle?: string | null;
+  work_start_time?: string | null;
+  work_end_time?: string | null;
+  day_schedules?: Record<string, DayScheduleItem> | null;
   allowed_overtime: boolean;
-  max_distance: number;
-  break_time_start: string;
-  break_time_end: string;
+  max_distance?: number | null;
+  break_time_start?: string | null;
+  break_time_end?: string | null;
   skills: string[];
-  fixed_cost_for_driver: number;
-  cost_per_km: number;
-  cost_per_hr: number;
-  cost_per_hr_overtime: number;
+  fixed_cost_for_driver?: number | null;
+  cost_per_km?: number | null;
+  cost_per_hr?: number | null;
+  cost_per_hr_overtime?: number | null;
   tenant_id: number;
   service_zones?: ServiceZone[];
+  start_address?: string | null;
+  end_address?: string | null;
+  activation_code?: string | null;
   created_at: string;
   updated_at: string;
 }
