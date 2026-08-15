@@ -87,13 +87,16 @@ const SideBar = () => {
       content: "Are you sure you want to log out?",
       okText: "Log out",
       cancelText: "Cancel",
-      okButtonProps: { danger: true },
+      okButtonProps: { danger: true, type: "primary" },
+      icon: <LogoutOutlined className="text-red-500 text-lg" />,
+      centered: true,
       onOk: async () => {
         clearUser();
-        await signOut({ callbackUrl: "/login" });
+        await signOut({ callbackUrl: "/sign-in" });
       },
     });
   }, [clearUser]);
+
 
   const bottomMenuItems: BottomMenuItem[] = [
     {

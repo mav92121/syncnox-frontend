@@ -310,6 +310,7 @@ const VehicleForm = ({
                       placeholder="Select vehicle type"
                       options={VEHICLE_TYPES}
                       allowClear
+                      getPopupContainer={() => document.body}
                     />
                   </Form.Item>
                 </Col>
@@ -355,6 +356,7 @@ const VehicleForm = ({
                   placeholder="Type a skill and press Enter (e.g., Heavy License, Refrigerated)"
                   options={[]}
                   tokenSeparators={[","]}
+                  getPopupContainer={() => document.body}
                 />
               </Form.Item>
 
@@ -409,6 +411,7 @@ const VehicleForm = ({
                             <Select
                               options={CONSTRAINT_TYPES}
                               placeholder="Type"
+                              getPopupContainer={() => document.body}
                               onChange={(val: ConstraintType) => {
                                 // Reset unit to the first option for the new type
                                 const constraints = form.getFieldValue("load_constraints");
@@ -459,7 +462,7 @@ const VehicleForm = ({
                                   style={{ margin: 0 }}
                                   rules={[{ required: true, message: "Required" }]}
                                 >
-                                  <Select options={unitOptions} placeholder="Unit" />
+                                  <Select options={unitOptions} placeholder="Unit" getPopupContainer={() => document.body} />
                                 </Form.Item>
                               );
                             }}

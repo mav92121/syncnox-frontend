@@ -93,7 +93,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             { input: searchText.slice(-1) },
             handlePredictions
           );
-        }, 500);
+        }, 200);
       } else {
         setOptions([]);
       }
@@ -113,13 +113,14 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       return;
     }
 
-    // Set new debounce timer (500ms delay)
+    // Set new debounce timer (200ms delay)
     debounceTimer.current = setTimeout(() => {
       autocompleteService.current!.getPlacePredictions(
         { input: searchText },
         handlePredictions
       );
-    }, 500);
+    }, 200);
+
   };
 
   const handlePredictions = (
@@ -204,6 +205,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       placeholder={isLoaded ? placeholder : "Loading Google Maps..."}
       disabled={!!error}
       notFoundContent={isLoaded ? "No addresses found" : "Loading..."}
+      getPopupContainer={() => document.body}
     />
   );
 };

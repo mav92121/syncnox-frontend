@@ -490,6 +490,97 @@ export default function BulkImportDataPreviewStep({
       ),
     },
     {
+      title: "Tuesday",
+      dataIndex: "tuesday",
+      key: "tuesday",
+      width: 110,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "tuesday", e.target.value)}
+          placeholder="08:00 - 16:00"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Wednesday",
+      dataIndex: "wednesday",
+      key: "wednesday",
+      width: 110,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "wednesday", e.target.value)}
+          placeholder="08:00 - 16:00"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Thursday",
+      dataIndex: "thursday",
+      key: "thursday",
+      width: 110,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "thursday", e.target.value)}
+          placeholder="08:00 - 16:00"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Friday",
+      dataIndex: "friday",
+      key: "friday",
+      width: 110,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "friday", e.target.value)}
+          placeholder="08:00 - 16:00"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Saturday",
+      dataIndex: "saturday",
+      key: "saturday",
+      width: 110,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "saturday", e.target.value)}
+          placeholder="08:00 - 16:00"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Sunday",
+      dataIndex: "sunday",
+      key: "sunday",
+      width: 110,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "sunday", e.target.value)}
+          placeholder="08:00 - 16:00"
+          className="text-xs"
+        />
+      ),
+    },
+
+    {
       title: "Action",
       key: "action",
       width: 60,

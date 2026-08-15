@@ -10,8 +10,10 @@ declare module "next-auth" {
       id: string;
       email: string;
       tenant_id: number;
+      onboarding?: any;
     };
     access_token: string;
+    onboarding?: any;
   }
 
   interface User {
@@ -19,6 +21,7 @@ declare module "next-auth" {
     email: string;
     tenant_id: number;
     access_token: string;
+    onboarding?: any;
   }
 }
 
@@ -28,6 +31,7 @@ declare module "next-auth/jwt" {
     email: string;
     tenant_id: number;
     access_token: string;
+    onboarding?: any;
   }
 }
 
@@ -60,12 +64,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
           const data = await response.json();
 
-          // ✅ Store backend's access_token directly
+          // ✅ Store backend's access_token and onboarding status directly
           return {
             id: data.user.id,
             email: data.user.email,
             tenant_id: data.user.tenant_id,
-            access_token: data.access_token, // Get from backend
+            access_token: data.access_token,
+            onboarding: data.onboarding || null,
           };
         } catch (error) {
           console.error("❌ [AUTH] Authorization error:", error);
@@ -92,6 +97,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.email = user.email;
         token.tenant_id = user.tenant_id;
         token.access_token = user.access_token;
+        token.onboarding = user.onboarding;
       }
       return token;
     },
@@ -99,7 +105,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.id = token.id;
       session.user.email = token.email;
       session.user.tenant_id = token.tenant_id;
+      session.user.onboarding = token.onboarding;
       session.access_token = token.access_token;
+      session.onboarding = token.onboarding;
 
       return session;
     },
@@ -108,3 +116,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
   basePath: "/api/auth",
 });
+

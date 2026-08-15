@@ -35,6 +35,7 @@ import DraftJobsDatePicker from "@/components/Jobs/DraftJobsDatePicker";
 import { useIndexStore } from "@/store/index.store";
 import AddJobsModal from "@/app/plan/AddJobsModal";
 import BulkUploadModal from "@/components/BulkUploadModal";
+import TransportImportModal from "@/components/TransportImportModal";
 
 const { Title } = Typography;
 
@@ -62,6 +63,7 @@ export default function JobsList() {
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [showTransportImportModal, setShowTransportImportModal] = useState(false);
 
   // Map state
   const [isMapOpen, setIsMapOpen] = useState(false);
@@ -189,8 +191,13 @@ export default function JobsList() {
     },
     {
       key: "bulk",
-      label: "Bulk Upload Jobs",
+      label: "Bulk Upload Standard Jobs",
       onClick: () => setShowBulkUploadModal(true),
+    },
+    {
+      key: "transport",
+      label: "Import Transport Jobs",
+      onClick: () => setShowTransportImportModal(true),
     },
   ];
 
@@ -382,6 +389,14 @@ export default function JobsList() {
         open={showBulkUploadModal}
         onClose={() => {
           setShowBulkUploadModal(false);
+          if (selectedJobTab === "all") fetchAllJobs();
+          else fetchJobsByStatus(selectedJobTab as JobStatus);
+        }}
+      />
+      <TransportImportModal
+        open={showTransportImportModal}
+        onClose={() => setShowTransportImportModal(false)}
+        onSuccess={() => {
           if (selectedJobTab === "all") fetchAllJobs();
           else fetchJobsByStatus(selectedJobTab as JobStatus);
         }}

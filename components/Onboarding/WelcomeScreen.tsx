@@ -1,8 +1,7 @@
 "use client";
-import { Button, Typography } from "antd";
-import { Rocket } from "lucide-react";
+import { Tooltip } from "antd";
+import { Sparkles, Building2, MapPin, Truck, Rocket, ArrowRight, Info } from "lucide-react";
 
-const { Title, Text } = Typography;
 
 interface WelcomeScreenProps {
   onStart: () => void;
@@ -10,81 +9,77 @@ interface WelcomeScreenProps {
 
 const WelcomeScreen = ({ onStart }: WelcomeScreenProps) => {
   return (
-    <div className="h-full flex bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg overflow-hidden">
-      {/* Left side - Content */}
-      <div className="flex-1 flex flex-col justify-center p-12 bg-white">
-        <Text className="text-blue-500 font-semibold text-sm mb-3 uppercase tracking-wider">
-          Getting Started
-        </Text>
+    <div className="flex flex-col h-screen p-6 md:p-10 w-full mx-auto overflow-hidden bg-white animate-fadeIn justify-between">
+      {/* Scrollable body */}
+      <div className="flex-1 overflow-y-auto pr-1 flex flex-col justify-center max-w-[840px]">
+        <div className="text-[11px] font-bold tracking-widest uppercase text-[#003220] mb-2 flex items-center gap-1.5">
+          <Sparkles size={13} className="text-[#003220]" /> GET STARTED
+        </div>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-5 flex items-center gap-2">
+          <span>Let&apos;s set up your workspace.</span>
+          <Tooltip title="Four quick steps to configure your fleet and depots — about 2 minutes. You can skip anything and finish later." placement="right" getPopupContainer={() => document.body}>
+            <Info size={16} className="text-gray-400 hover:text-[#003220] cursor-pointer shrink-0 transition-colors" />
+          </Tooltip>
+        </h1>
 
-        <Title level={2} className="!m-0 !mb-4 !text-3xl">
-          Welcome to Syncnox 🎉
-        </Title>
 
-        <Text className="text-base text-gray-500 leading-relaxed mb-2">
-          We&apos;ll get you the most accurate, most efficient routes for all
-          your drivers at once.
-        </Text>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 my-2 w-full">
+          <div className="flex items-center gap-3 p-3.5 border border-gray-200 rounded-none bg-white hover:border-[#003220] transition-colors">
+            <div className="w-8 h-8 bg-[#ecfdf5] text-[#003220] border border-[#a7f3d0] flex items-center justify-center font-bold text-xs shrink-0 rounded-none">
+              <Building2 size={16} />
+            </div>
+            <div>
+              <b className="block text-xs font-semibold text-gray-900">Tell us about your business</b>
+              <span className="text-[11px] text-gray-500">Personalize your setup</span>
+            </div>
+          </div>
 
-        <Text className="text-base text-gray-500 leading-relaxed mb-8">
-          Just a few steps to set up your account.
-        </Text>
+          <div className="flex items-center gap-3 p-3.5 border border-gray-200 rounded-none bg-white hover:border-[#003220] transition-colors">
+            <div className="w-8 h-8 bg-[#ecfdf5] text-[#003220] border border-[#a7f3d0] flex items-center justify-center font-bold text-xs shrink-0 rounded-none">
+              <MapPin size={16} />
+            </div>
+            <div>
+              <b className="block text-xs font-semibold text-gray-900">Add your depot(s)</b>
+              <span className="text-[11px] text-gray-500">Where routes start &amp; end</span>
+            </div>
+          </div>
 
-        <Button
-          type="primary"
-          size="large"
-          onClick={onStart}
-          className="w-fit h-12 px-8 text-base font-medium"
-        >
-          Let&apos;s go
-        </Button>
+          <div className="flex items-center gap-3 p-3.5 border border-gray-200 rounded-none bg-white hover:border-[#003220] transition-colors">
+            <div className="w-8 h-8 bg-[#ecfdf5] text-[#003220] border border-[#a7f3d0] flex items-center justify-center font-bold text-xs shrink-0 rounded-none">
+              <Truck size={16} />
+            </div>
+            <div>
+              <b className="block text-xs font-semibold text-gray-900">Add vehicles &amp; drivers</b>
+              <span className="text-[11px] text-gray-500">Your fleet and team</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 p-3.5 border border-gray-200 rounded-none bg-white hover:border-[#003220] transition-colors">
+            <div className="w-8 h-8 bg-[#ecfdf5] text-[#003220] border border-[#a7f3d0] flex items-center justify-center font-bold text-xs shrink-0 rounded-none">
+              <Rocket size={16} />
+            </div>
+            <div>
+              <b className="block text-xs font-semibold text-gray-900">Start optimizing</b>
+              <span className="text-[11px] text-gray-500">Plan and dispatch routes instantly</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Right side - Illustration */}
-      <div className="flex-1 bg-gradient-to-br from-slate-900 to-slate-800 relative overflow-hidden flex items-center justify-center">
-        {/* Abstract route visualization */}
-        <div className="absolute inset-0 opacity-30">
-          <svg viewBox="0 0 400 400" className="w-full h-full">
-            {/* Route lines */}
-            <path
-              d="M50,200 Q100,100 200,150 T350,100"
-              stroke="#4f9eff"
-              strokeWidth="3"
-              fill="none"
-              strokeDasharray="10,5"
-            />
-            <path
-              d="M50,250 Q150,200 250,250 T350,200"
-              stroke="#ff6b6b"
-              strokeWidth="3"
-              fill="none"
-              strokeDasharray="10,5"
-            />
-            <path
-              d="M50,300 Q200,350 300,280 T350,320"
-              stroke="#4ecdc4"
-              strokeWidth="3"
-              fill="none"
-              strokeDasharray="10,5"
-            />
-            {/* Location markers */}
-            <circle cx="50" cy="200" r="8" fill="#4f9eff" />
-            <circle cx="200" cy="150" r="8" fill="#4f9eff" />
-            <circle cx="350" cy="100" r="8" fill="#4f9eff" />
-            <circle cx="150" cy="250" r="8" fill="#ff6b6b" />
-            <circle cx="300" cy="200" r="8" fill="#ff6b6b" />
-            <circle cx="100" cy="300" r="8" fill="#4ecdc4" />
-            <circle cx="280" cy="320" r="8" fill="#4ecdc4" />
-          </svg>
-        </div>
-
-        {/* Central icon */}
-        <div className="w-30 h-30 rounded-full bg-white/10 backdrop-blur-md border-2 border-white/20 flex items-center justify-center">
-          <Rocket size={48} color="white" />
-        </div>
+      {/* Action bar */}
+      <div className="flex items-center gap-3 py-3 border-t border-gray-200 mt-3 bg-white shrink-0 rounded-none">
+        <button
+          className="px-5 py-2.5 bg-[#003220] text-white border border-[#003220] rounded-none font-semibold text-xs hover:bg-[#002a00] transition-colors cursor-pointer flex items-center gap-2"
+          onClick={onStart}
+          id="ob-welcome-start"
+        >
+          Let&apos;s go <ArrowRight size={14} />
+        </button>
       </div>
     </div>
   );
 };
+
+
 
 export default WelcomeScreen;

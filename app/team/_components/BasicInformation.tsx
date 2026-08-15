@@ -108,7 +108,7 @@ const BasicInformation = ({
             name="role_type"
             rules={[{ required: true, message: "Role type is required" }]}
           >
-            <Select placeholder="Select role" options={ROLE_TYPE_OPTIONS} />
+            <Select placeholder="Select role" options={ROLE_TYPE_OPTIONS} getPopupContainer={() => document.body} />
           </Form.Item>
         </Col>
       </Row>
@@ -140,7 +140,7 @@ const BasicInformation = ({
               noStyle
               initialValue={`🇺🇸 +1`}
             >
-              <Select showSearch optionFilterProp="children" className="w-full">
+              <Select showSearch optionFilterProp="children" className="w-full" getPopupContainer={() => document.body}>
                 {COUNTRY_CODES.map((item) => (
                   <Select.Option
                     key={item.code}
@@ -191,6 +191,7 @@ const BasicInformation = ({
                   value={startDepotId}
                   onChange={(value) => setStartDepotId?.(value)}
                   disabled={!setStartDepotId}
+                  getPopupContainer={() => document.body}
                 />
               ) : (
                 <Form.Item
@@ -247,6 +248,7 @@ const BasicInformation = ({
                   value={endDepotId}
                   onChange={(value) => setEndDepotId?.(value)}
                   disabled={!setEndDepotId}
+                  getPopupContainer={() => document.body}
                 />
               ) : (
                 <Form.Item
@@ -399,6 +401,7 @@ const BasicInformation = ({
                                   format="HH:mm"
                                   placeholder="Start"
                                   style={{ width: "100%" }}
+                                  getPopupContainer={() => document.body}
                                 />
                               </Form.Item>
                             </Col>
@@ -416,6 +419,7 @@ const BasicInformation = ({
                                   format="HH:mm"
                                   placeholder="End"
                                   style={{ width: "100%" }}
+                                  getPopupContainer={() => document.body}
                                 />
                               </Form.Item>
                             </Col>
@@ -472,6 +476,7 @@ const BasicInformation = ({
                       className="w-full"
                       format="HH:mm"
                       placeholder="Select time"
+                      getPopupContainer={() => document.body}
                       onChange={() => {
                         form.validateFields(["break_time_end"]);
                       }}
@@ -496,6 +501,7 @@ const BasicInformation = ({
                       className="w-full"
                       format="HH:mm"
                       placeholder="Select time"
+                      getPopupContainer={() => document.body}
                       onChange={() => {
                         form.validateFields(["break_time_start"]);
                       }}

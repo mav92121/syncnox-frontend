@@ -150,20 +150,40 @@ body {
 }
 
 /* Danger Button Styling - Global */
-.ant-btn-color-danger:not(:disabled):not([disabled]),
-.ant-btn-dangerous:not(:disabled):not([disabled]),
-.ant-btn-status-danger:not(:disabled):not([disabled]) {
-  border-color: #ff4d4f !important;
-  color: #ff4d4f !important;
+/* Default / Outline Danger Buttons */
+.ant-btn-color-danger:not(.ant-btn-primary):not(:disabled):not([disabled]),
+.ant-btn-dangerous:not(.ant-btn-primary):not(:disabled):not([disabled]),
+.ant-btn-status-danger:not(.ant-btn-primary):not(:disabled):not([disabled]) {
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+  background-color: #ffffff !important;
   border-radius: 0 !important;
 }
 
-.ant-btn-color-danger:not(:disabled):not([disabled]):hover,
-.ant-btn-dangerous:not(:disabled):not([disabled]):hover,
-.ant-btn-status-danger:not(:disabled):not([disabled]):hover {
-  border-color: #ff7875 !important;
-  color: #ff7875 !important;
-  background-color: #fff2f0 !important;
+.ant-btn-color-danger:not(.ant-btn-primary):not(:disabled):not([disabled]):hover,
+.ant-btn-dangerous:not(.ant-btn-primary):not(:disabled):not([disabled]):hover,
+.ant-btn-status-danger:not(.ant-btn-primary):not(:disabled):not([disabled]):hover {
+  border-color: #b91c1c !important;
+  color: #b91c1c !important;
+  background-color: #fef2f2 !important;
+}
+
+/* Primary Danger Buttons (e.g. Confirm OK action in modals) */
+.ant-btn-primary.ant-btn-color-danger:not(:disabled):not([disabled]),
+.ant-btn-primary.ant-btn-dangerous:not(:disabled):not([disabled]),
+.ant-btn-primary.ant-btn-status-danger:not(:disabled):not([disabled]) {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #ffffff !important;
+  border-radius: 0 !important;
+}
+
+.ant-btn-primary.ant-btn-color-danger:not(:disabled):not([disabled]):hover,
+.ant-btn-primary.ant-btn-dangerous:not(:disabled):not([disabled]):hover,
+.ant-btn-primary.ant-btn-status-danger:not(:disabled):not([disabled]):hover {
+  background-color: #b91c1c !important;
+  border-color: #b91c1c !important;
+  color: #ffffff !important;
 }
 
 .ant-btn-color-danger:not(:disabled):not([disabled]) .anticon,
@@ -174,6 +194,7 @@ body {
 .ant-btn-status-danger:not(:disabled):not([disabled]) svg {
   color: inherit !important;
 }
+
 
 /* Radio Button Styling - Global */
 .ant-radio-button-wrapper:not(.ant-radio-button-wrapper-checked) {
@@ -283,4 +304,13 @@ body {
   color: #ffffff !important;
 }
 
-
+/* ═══════════════════════════════════════════════════════════
+   Ant Design Dropdown / Popup Portal z-index fix for Modals
+═══════════════════════════════════════════════════════════ */
+.ant-select-dropdown,
+.ant-picker-dropdown,
+.ant-auto-complete .ant-select-dropdown,
+.ant-dropdown,
+.ant-tooltip {
+  z-index: 10000 !important;
+}

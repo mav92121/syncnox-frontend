@@ -14,6 +14,7 @@ interface OnboardingStore {
   showCompletion: boolean;
 
   // Actions
+  setOnboarding: (onboarding: Onboarding | null) => void;
   fetchOnboardingStatus: () => Promise<Onboarding>;
   saveBasicInfoAction: (payload: BasicInfoPayload) => Promise<void>;
   advanceStepAction: (step: number) => Promise<void>;
@@ -29,6 +30,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
   showCompletion: false,
 
   setShowCompletion: (show: boolean) => set({ showCompletion: show }),
+  setOnboarding: (onboarding: Onboarding | null) => set({ onboarding, isLoading: false }),
+
 
   fetchOnboardingStatus: async () => {
     set({ isLoading: true, error: null });
@@ -75,6 +78,8 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
       throw new Error(errorMessage);
     }
   },
+
+
 
   completeOnboardingAction: async () => {
     set({ isLoading: true, error: null });
