@@ -25,7 +25,7 @@ import {
   ShopOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
-import type { Job } from "@/types/job.type";
+import type { Job, JobStatus } from "@/types/job.type";
 import { STATUS_COLORS } from "@/utils/jobs.utils";
 import { updateJobStatus } from "@/apis/jobs.api";
 import { useJobsStore } from "@/store/jobs.store";
@@ -131,8 +131,8 @@ const JobDetailsDrawer: React.FC<JobDetailsDrawerProps> = ({
               {stopData?.stop_type === "depot" ? "Depot Station" : `Job #${jobId || "--"}`}
             </Text>
             {stopData?.stop_type !== "depot" && (
-              <Tag color={STATUS_COLORS[status] || "blue"} className="capitalize font-semibold border-none text-[11px] px-2 py-0">
-                {status.replace("_", " ")}
+              <Tag color={STATUS_COLORS[status as JobStatus] || "blue"} className="capitalize font-semibold border-none text-[11px] px-2 py-0">
+                {(status || "assigned").replace("_", " ")}
               </Tag>
             )}
           </div>

@@ -2,7 +2,7 @@
 import BaseTable from "@/components/Table/BaseTable";
 import { AllRoutes } from "@/types/routes.type";
 import { useRouteStore } from "@/store/routes.store";
-import { Typography, Progress, Button, Select, Flex, Radio } from "antd";
+import { Typography, Progress, Button, Select, Flex } from "antd";
 import { ColDef } from "ag-grid-community";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/Jobs/StatusBanner";
@@ -193,16 +193,29 @@ export default function RoutesView() {
         <Title level={4} className="m-0 pt-2">
           Routes
         </Title>
-        <Radio.Group
-          buttonStyle="solid"
-          value={selectedStatus}
-          onChange={(e) => setSelectedStatus(e.target.value)}
-        >
-          <Radio.Button value="scheduled">Scheduled</Radio.Button>
-          <Radio.Button value="in_transit">In Transit</Radio.Button>
-          <Radio.Button value="completed">Completed</Radio.Button>
-          <Radio.Button value="all">All</Radio.Button>
-        </Radio.Group>
+        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-none">
+          {([
+            { value: "scheduled", label: "Scheduled", dot: "bg-amber-400" },
+            { value: "in_transit", label: "In Transit", dot: "bg-blue-500" },
+            { value: "completed", label: "Completed", dot: "bg-emerald-500" },
+            { value: "all", label: "All", dot: "" },
+          ] as const).map(({ value, label, dot }) => (
+            <button
+              key={value}
+              onClick={() => setSelectedStatus(value)}
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-none text-sm font-medium transition-all duration-150 select-none cursor-pointer border-none outline-none ${
+                selectedStatus === value
+                  ? "bg-white text-gray-900 shadow-sm ring-1 ring-gray-200"
+                  : "text-gray-500 hover:text-gray-700 bg-transparent"
+              }`}
+            >
+              {dot && (
+                <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${dot}`} />
+              )}
+              {label}
+            </button>
+          ))}
+        </div>
         <Flex gap={8}>
           <Link href="/plan" onClick={() => setCurrentTab("jobs")}>
             <Button >Create New Route</Button>

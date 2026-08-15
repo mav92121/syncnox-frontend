@@ -222,16 +222,29 @@ export default function JobsList() {
           />
         </Flex>
 
-        <Radio.Group
-          buttonStyle="solid"
-          onChange={handleJobStatusChange}
-          value={selectedJobTab}
-        >
-          <Radio.Button value="draft">Draft</Radio.Button>
-          <Radio.Button value="assigned">Assigned</Radio.Button>
-          <Radio.Button value="completed">Completed</Radio.Button>
-          <Radio.Button value="all">All</Radio.Button>
-        </Radio.Group>
+        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-none">
+          {([
+            { value: "draft", label: "Draft", dot: "bg-gray-400" },
+            { value: "assigned", label: "Assigned", dot: "bg-blue-500" },
+            { value: "completed", label: "Completed", dot: "bg-emerald-500" },
+            { value: "all", label: "All", dot: "" },
+          ] as const).map(({ value, label, dot }) => (
+            <button
+              key={value}
+              onClick={() => handleJobStatusChange({ target: { value } })}
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-none text-sm font-medium transition-all duration-150 select-none cursor-pointer border-none outline-none ${
+                selectedJobTab === value
+                  ? "bg-white text-gray-900 shadow-sm ring-1 ring-gray-200"
+                  : "text-gray-500 hover:text-gray-700 bg-transparent"
+              }`}
+            >
+              {dot && (
+                <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${dot}`} />
+              )}
+              {label}
+            </button>
+          ))}
+        </div>
 
         <Flex
           gap={8}

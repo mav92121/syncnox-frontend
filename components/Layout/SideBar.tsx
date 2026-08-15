@@ -3,17 +3,14 @@ import Link from "next/link";
 import { useState, useCallback } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Button, Avatar, Modal, Popover, Typography } from "antd";
+import { Avatar, Modal, Popover, Typography } from "antd";
 import {
   LogoutOutlined,
   MailOutlined,
   TeamOutlined,
   CarOutlined,
   EnvironmentOutlined,
-  SettingOutlined,
   UserOutlined,
-  DownOutlined,
-  RightOutlined,
 } from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/store/index.store";
 import { useOnboardingStore } from "@/store/onboarding.store";
@@ -50,8 +47,6 @@ const SideBar = () => {
   const { vehicles } = useVehicleStore();
   const { depots } = useDepotStore();
 
-  const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
-
   const hasCompanyName = Boolean(onboarding?.company_name?.trim());
   const businessName = onboarding?.company_name || "Admin";
   const initials = hasCompanyName ? getInitials(onboarding?.company_name || "") : "";
@@ -62,7 +57,6 @@ const SideBar = () => {
     [pathname]
   );
 
-  // Check if any sub-item is active
   const hasActiveSubItem = useCallback(
     (subItems?: { path: string }[]) => {
       return subItems?.some((sub) => pathname === sub.path) ?? false;
@@ -97,24 +91,6 @@ const SideBar = () => {
     });
   }, [clearUser]);
 
-
-  const bottomMenuItems: BottomMenuItem[] = [
-    {
-      icon: (props) => (
-        <Image
-          src="/logout.svg"
-          alt="Logout"
-          width={20}
-          height={20}
-          {...props}
-        />
-      ),
-      label: "Log out",
-      action: handleLogout,
-      isDanger: true,
-    },
-  ];
-
   const userPopoverContent = (
     <div className="w-[260px] p-3 font-sans space-y-3">
       {/* Centered Avatar & Identity */}
@@ -144,120 +120,63 @@ const SideBar = () => {
         )}
       </div>
 
-      {/* Action List */}
+      {/* 3 Stats Direct List */}
       <div className="pt-2 border-t border-gray-200 space-y-1.5">
-        {/* Settings Toggle Item */}
         <button
           type="button"
-          onClick={() => setIsSettingsExpanded(!isSettingsExpanded)}
-          className={`w-full flex items-center justify-between text-xs px-3 py-2 font-semibold transition-all cursor-pointer rounded-none text-left border ${
-            isSettingsExpanded
-              ? "bg-[#003220] text-white border-[#003220]"
-              : "text-gray-800 hover:bg-gray-100 bg-gray-50 border-gray-200"
-          }`}
+          onClick={() => {
+            handleNavigation("/team", "team");
+            router.push("/team");
+          }}
+          className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
         >
-          <div className="flex items-center gap-2">
-            <SettingOutlined className="text-xs" />
-            <span>Settings</span>
+          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+              <TeamOutlined />
+            </div>
+            <span>Team Members</span>
           </div>
-          {isSettingsExpanded ? (
-            <DownOutlined className="text-[10px]" />
-          ) : (
-            <RightOutlined className="text-[10px] text-gray-400" />
-          )}
+          <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
+            {teams.length}
+          </span>
         </button>
 
-        {/* Settings Sub-items — shown ONLY when user clicks Settings */}
-        {isSettingsExpanded && (
-          <div className="p-2 border border-t-0 border-gray-200 bg-gray-50/50 space-y-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                handleNavigation("/team", "team");
-                router.push("/team");
-              }}
-              className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
-            >
-              <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-                <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-                  <TeamOutlined />
-                </div>
-                <span>Team Members</span>
-              </div>
-              <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
-                {teams.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                handleNavigation("/vehicle", "vehicle");
-                router.push("/vehicle");
-              }}
-              className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
-            >
-              <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-                <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-                  <CarOutlined />
-                </div>
-                <span>Vehicles</span>
-              </div>
-              <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
-                {vehicles.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                handleNavigation("/depot", "depot");
-                router.push("/depot");
-              }}
-              className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
-            >
-              <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-                <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-                  <EnvironmentOutlined />
-                </div>
-                <span>Depots</span>
-              </div>
-              <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
-                {depots.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                handleNavigation("/location-mapping", "location_mapping");
-                router.push("/location-mapping");
-              }}
-              className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
-            >
-              <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-                <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-                  <EnvironmentOutlined />
-                </div>
-                <span>Location Mappings</span>
-              </div>
-            </button>
-          </div>
-        )}
-
-        {/* Logout */}
         <button
           type="button"
-          onClick={handleLogout}
-          className="w-full flex items-center gap-2 text-xs px-3 py-2 font-semibold text-red-600 hover:bg-red-50 transition-colors cursor-pointer rounded-none text-left border border-transparent hover:border-red-100"
+          onClick={() => {
+            handleNavigation("/vehicle", "vehicle");
+            router.push("/vehicle");
+          }}
+          className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
         >
-          <Image
-            src="/logout.svg"
-            alt="Logout"
-            width={15}
-            height={15}
-          />
-          <span>Logout</span>
+          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+              <CarOutlined />
+            </div>
+            <span>Vehicles</span>
+          </div>
+          <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
+            {vehicles.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            handleNavigation("/depot", "depot");
+            router.push("/depot");
+          }}
+          className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
+        >
+          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+              <EnvironmentOutlined />
+            </div>
+            <span>Depots</span>
+          </div>
+          <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
+            {depots.length}
+          </span>
         </button>
       </div>
     </div>
@@ -387,8 +306,8 @@ const SideBar = () => {
         })}
       </nav>
 
-      {/* Bottom Section - User Profile & Actions */}
-      <footer className="border-t pt-2.5 pb-3 px-2">
+      {/* Bottom Section - User Profile & Logout */}
+      <footer className="border-t pt-2.5 pb-3 px-2 flex flex-col gap-1">
         {/* User Profile */}
         <Popover
           content={userPopoverContent}
@@ -398,7 +317,7 @@ const SideBar = () => {
           arrow={false}
           styles={{ container: { padding: 2, borderRadius: 10, marginLeft: 30 } }}
         >
-          <div className="flex items-center px-1 py-1.5 mb-1.5 cursor-pointer rounded hover:bg-emerald-50 transition-colors group">
+          <div className="flex items-center px-1 py-1.5 cursor-pointer rounded hover:bg-emerald-50 transition-colors group">
             <Avatar
               size={34}
               style={{ backgroundColor: "#003220", color: "#ffffff" }}
@@ -418,30 +337,20 @@ const SideBar = () => {
           </div>
         </Popover>
 
-        {/* Bottom Menu Items */}
-        {bottomMenuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.label}
-              onClick={item.action}
-              className={`w-full flex items-center px-2.5 py-1.5 rounded-none transition-all duration-200 cursor-pointer ${
-                item.isDanger
-                  ? "text-red-600 hover:bg-red-50"
-                  : "text-gray-700 hover:bg-emerald-50"
-              }`}
-            >
-              <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                <Icon
-                  className={`text-base ${item.isDanger ? "text-red-600" : ""}`}
-                />
-              </div>
-              <span className="ml-2.5 text-xs font-medium whitespace-nowrap overflow-hidden">
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+        {/* Logout Button */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-none text-red-600 hover:bg-red-50 transition-all duration-200 cursor-pointer text-xs font-semibold"
+        >
+          <Image
+            src="/logout.svg"
+            alt="Logout"
+            width={16}
+            height={16}
+          />
+          <span>Log out</span>
+        </button>
       </footer>
     </aside>
   );
