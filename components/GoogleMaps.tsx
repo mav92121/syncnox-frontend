@@ -240,7 +240,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
         );
       })}
 
-      {selectedMarker && (
+      {selectedMarker && InfoWindowModal && (
         <InfoWindow
           position={selectedMarker.position}
           onCloseClick={() => {
@@ -251,20 +251,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
             pixelOffset: new window.google.maps.Size(0, -30),
           }}
         >
-          {InfoWindowModal ? (
-            <InfoWindowModal marker={selectedMarker} />
-          ) : (
-            <div style={{ padding: "4px 8px", maxWidth: "220px" }}>
-              {selectedMarker.title && (
-                <div style={{ fontWeight: "bold", fontSize: "12px", color: "#111827", marginBottom: "2px" }}>
-                  {selectedMarker.title}
-                </div>
-              )}
-              <div style={{ fontSize: "11px", color: "#4b5563" }}>
-                {selectedMarker.description || "No description available."}
-              </div>
-            </div>
-          )}
+          <InfoWindowModal marker={selectedMarker} />
         </InfoWindow>
       )}
     </GoogleMap>
