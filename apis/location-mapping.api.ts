@@ -24,6 +24,17 @@ export interface LocationMappingCreate {
   is_active?: boolean;
 }
 
+export interface LocationMappingUpdate {
+  name?: string;
+  aliases?: string[];
+  address?: string;
+  city?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+  is_active?: boolean;
+}
+
 
 export const fetchLocationMappings = async (): Promise<LocationMapping[]> => {
   try {
@@ -37,6 +48,14 @@ export const fetchLocationMappings = async (): Promise<LocationMapping[]> => {
 
 export const createLocationMapping = async (payload: LocationMappingCreate): Promise<LocationMapping> => {
   const response = await apiClient.post("/transport/metro-stations", payload);
+  return response.data;
+};
+
+export const updateLocationMapping = async (
+  id: number,
+  payload: LocationMappingUpdate
+): Promise<LocationMapping> => {
+  const response = await apiClient.put(`/transport/metro-stations/${id}`, payload);
   return response.data;
 };
 

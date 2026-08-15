@@ -289,7 +289,7 @@ export default function JobsList() {
             menu={{ items: addJobsMenu }}
             placement="bottomRight"
           >
-            <Button>
+            <Button type="primary">
               Add Jobs <DownOutlined />
             </Button>
           </Dropdown>
