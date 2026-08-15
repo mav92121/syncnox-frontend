@@ -8,6 +8,8 @@ export interface LocationMapping {
   address?: string | null;
   city?: string | null;
   country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   is_active: boolean;
 }
 
@@ -17,8 +19,11 @@ export interface LocationMappingCreate {
   address?: string;
   city?: string;
   country?: string;
+  latitude?: number;
+  longitude?: number;
   is_active?: boolean;
 }
+
 
 export const fetchLocationMappings = async (): Promise<LocationMapping[]> => {
   try {
@@ -35,10 +40,20 @@ export const createLocationMapping = async (payload: LocationMappingCreate): Pro
   return response.data;
 };
 
-export const batchCreateLocationMappings = async (stations: LocationMappingCreate[]): Promise<LocationMapping[]> => {
+export const batchCreateLocationMappings = async (stations: LocationMappingCreate[]): Promise<number> => {
   const response = await apiClient.post("/transport/metro-stations/batch", { stations });
-  return response.data.items || response.data || [];
+  if (typeof response.data?.upserted === "number") {
+    return response.data.upserted;
+  }
+  if (Array.isArray(response.data?.items)) {
+    return response.data.items.length;
+  }
+  if (Array.isArray(response.data)) {
+    return response.data.length;
+  }
+  return 0;
 };
+
 
 export const deleteLocationMapping = async (id: number): Promise<void> => {
   await apiClient.delete(`/transport/metro-stations/${id}`);

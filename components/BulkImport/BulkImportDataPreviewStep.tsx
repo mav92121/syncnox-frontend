@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Table, Input, Select, Button, Tag, Popconfirm, message } from "antd";
 import { Trash2, AlertCircle, CheckCircle2 } from "lucide-react";
 import { useVehicleStore } from "@/store/vehicle.store";
@@ -35,6 +35,32 @@ const LOCATION_CATEGORIES = [
   { value: "Waypoint", label: "Waypoint" },
   { value: "Landmark", label: "Custom Landmark" },
 ];
+
+const geocodeAddress = (query: string): Promise<{ lat: number; lng: number; formatted_address?: string } | null> => {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || !(window as any).google?.maps?.Geocoder) {
+      resolve(null);
+      return;
+    }
+    try {
+      const geocoder = new (window as any).google.maps.Geocoder();
+      geocoder.geocode({ address: query }, (results: any, status: any) => {
+        if (status === "OK" && results && results[0]) {
+          const loc = results[0].geometry.location;
+          resolve({
+            lat: loc.lat(),
+            lng: loc.lng(),
+            formatted_address: results[0].formatted_address,
+          });
+        } else {
+          resolve(null);
+        }
+      });
+    } catch {
+      resolve(null);
+    }
+  });
+};
 
 interface BulkImportDataPreviewStepProps {
   entityType: "vehicle" | "driver" | "location";
@@ -130,25 +156,56 @@ export default function BulkImportDataPreviewStep({
         };
       } else {
         const rawName = getVal("name");
-        const rawCategory = getVal("category");
-        const category = rawCategory || "Metro Station";
+        const rawAddress = getVal("address");
 
         return {
           _key: idx,
-          name: rawName,
-          code: getVal("code"),
-          address: getVal("address"),
+          name: rawName || rawAddress,
+          address: rawAddress || rawName,
           latitude: getVal("latitude"),
           longitude: getVal("longitude"),
-          category: category,
-          service_zone: getVal("service_zone"),
-          operating_hours: getVal("operating_hours"),
         };
       }
     });
   });
 
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Auto-geocode addresses for location imports if coordinates are missing
+  useEffect(() => {
+    if (entityType !== "location") return;
+
+    let isMounted = true;
+    const runGeocoding = async () => {
+      for (let i = 0; i < records.length; i++) {
+        const r = records[i];
+        if ((!r.latitude || !r.longitude) && (r.address || r.name)) {
+          const query = r.address || r.name;
+          const res = await geocodeAddress(query);
+          if (res && isMounted) {
+            setRecords((prev) => {
+              const copy = [...prev];
+              copy[i] = {
+                ...copy[i],
+                latitude: res.lat.toFixed(6),
+                longitude: res.lng.toFixed(6),
+                address: copy[i].address || res.formatted_address || query,
+              };
+              return copy;
+            });
+          }
+        }
+      }
+    };
+
+    runGeocoding();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [entityType]);
+
 
   const updateCell = (index: number, field: string, value: any) => {
     setRecords((prev) => {
@@ -237,6 +294,8 @@ export default function BulkImportDataPreviewStep({
           const stationName = r.name ? r.name.trim() : "";
           const addressStr = r.address ? r.address.trim() : "";
           const stationCode = r.code ? r.code.trim() : "";
+          const latNum = r.latitude && !isNaN(Number(r.latitude)) ? Number(r.latitude) : undefined;
+          const lngNum = r.longitude && !isNaN(Number(r.longitude)) ? Number(r.longitude) : undefined;
 
           const aliases = stationCode ? [stationCode] : [];
 
@@ -244,9 +303,12 @@ export default function BulkImportDataPreviewStep({
             name: stationName || addressStr,
             address: addressStr || stationName,
             aliases: aliases.length > 0 ? aliases : undefined,
+            latitude: latNum,
+            longitude: lngNum,
             is_active: true,
           };
         });
+
 
         const count = await batchCreateLocationMappingsAction(payloads);
         message.success(`Successfully imported ${count} location reference mapping(s)!`);
@@ -616,42 +678,10 @@ export default function BulkImportDataPreviewStep({
       ),
     },
     {
-      title: "Code / Alias",
-      dataIndex: "code",
-      key: "code",
-      width: 110,
-      render: (val: string, record: any, idx: number) => (
-        <Input
-          size="small"
-          value={val}
-          onChange={(e) => updateCell(idx, "code", e.target.value)}
-          placeholder="MTR-01"
-          className="text-xs font-mono"
-        />
-      ),
-    },
-    {
-      title: "Category / Type",
-      dataIndex: "category",
-      key: "category",
-      width: 145,
-      render: (val: string, record: any, idx: number) => (
-        <Select
-          showSearch
-          optionFilterProp="label"
-          size="small"
-          value={val}
-          onChange={(v) => updateCell(idx, "category", v)}
-          options={LOCATION_CATEGORIES}
-          className="w-full text-xs"
-        />
-      ),
-    },
-    {
       title: "Address / Formatted Location",
       dataIndex: "address",
       key: "address",
-      width: 220,
+      width: 280,
       render: (val: string, record: any, idx: number) => (
         <Input
           size="small"
@@ -662,17 +692,18 @@ export default function BulkImportDataPreviewStep({
         />
       ),
     },
+
     {
       title: "Latitude",
       dataIndex: "latitude",
       key: "latitude",
-      width: 110,
+      width: 120,
       render: (val: any, record: any, idx: number) => (
         <Input
           size="small"
           value={val}
           onChange={(e) => updateCell(idx, "latitude", e.target.value)}
-          placeholder="41.8816"
+          placeholder="Auto-resolved"
           className="text-xs font-mono"
         />
       ),
@@ -681,32 +712,18 @@ export default function BulkImportDataPreviewStep({
       title: "Longitude",
       dataIndex: "longitude",
       key: "longitude",
-      width: 110,
+      width: 120,
       render: (val: any, record: any, idx: number) => (
         <Input
           size="small"
           value={val}
           onChange={(e) => updateCell(idx, "longitude", e.target.value)}
-          placeholder="-87.637"
+          placeholder="Auto-resolved"
           className="text-xs font-mono"
         />
       ),
     },
-    {
-      title: "Zone",
-      dataIndex: "service_zone",
-      key: "service_zone",
-      width: 110,
-      render: (val: string, record: any, idx: number) => (
-        <Input
-          size="small"
-          value={val}
-          onChange={(e) => updateCell(idx, "service_zone", e.target.value)}
-          placeholder="Zone A"
-          className="text-xs"
-        />
-      ),
-    },
+
     {
       title: "Action",
       key: "action",

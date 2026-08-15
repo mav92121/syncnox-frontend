@@ -45,8 +45,8 @@ const OnboardingModal = () => {
   } = useOnboardingStore();
 
 
-  const [currentStep, setCurrentStep] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(onboarding?.current_step ?? 0);
+  const [isOpen, setIsOpen] = useState(true);
   const isAdvancingRef = useRef(false);
   useEffect(() => {
     if (onboarding && !onboarding.is_completed) {
@@ -54,6 +54,7 @@ const OnboardingModal = () => {
       setCurrentStep(onboarding.current_step);
     }
   }, [onboarding?.current_step, onboarding?.is_completed]);
+
 
 
   const handleStart = useCallback(async () => {

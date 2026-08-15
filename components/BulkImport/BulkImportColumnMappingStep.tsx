@@ -41,13 +41,11 @@ const DRIVER_FIELDS: SystemFieldDefinition[] = [
 const LOCATION_FIELDS: SystemFieldDefinition[] = [
   { key: "name", label: "Station Name / Title", required: true },
   { key: "address", label: "Location Address / Formatted Address" },
-  { key: "code", label: "Station Code / ID / Alias" },
   { key: "latitude", label: "Latitude (Lat)" },
   { key: "longitude", label: "Longitude (Lng)" },
-  { key: "category", label: "Category / Type (e.g. Metro Station, Depot, Hub)" },
-  { key: "service_zone", label: "Service Zone / Area" },
-  { key: "operating_hours", label: "Operating Hours" },
 ];
+
+
 
 function autoMatchField(header: string, entityType: "vehicle" | "driver" | "location"): string | undefined {
   const clean = header.trim().toLowerCase();
@@ -78,15 +76,16 @@ function autoMatchField(header: string, entityType: "vehicle" | "driver" | "loca
     if (["saturday", "sat"].includes(clean)) return "saturday";
     if (["sunday", "sun"].includes(clean)) return "sunday";
   } else {
-    if (clean.includes("address") || clean.includes("street") || clean.includes("formatted") || clean.includes("location address")) return "address";
+    if (clean === "location" || clean === "addr" || clean.includes("address") || clean.includes("street") || clean.includes("formatted") || clean.includes("location address") || clean.includes("full address")) return "address";
     if (clean.includes("code") || clean.includes("alias") || clean.includes("stn") || clean.includes("station id") || clean === "id") return "code";
     if (clean === "lat" || clean.includes("latitude")) return "latitude";
     if (clean === "lng" || clean === "lon" || clean.includes("longitude")) return "longitude";
     if (clean.includes("category") || clean.includes("type") || clean.includes("kind")) return "category";
     if (clean.includes("zone") || clean.includes("area") || clean.includes("region")) return "service_zone";
     if (clean.includes("hours") || clean.includes("operating") || clean.includes("schedule")) return "operating_hours";
-    if (["station", "station name", "name", "metro", "depot", "hub", "point", "title", "location name", "location"].includes(clean)) return "name";
+    if (["station", "station name", "name", "metro", "depot", "hub", "point", "title", "location name", "place name", "site name"].includes(clean)) return "name";
   }
+
   return undefined;
 }
 

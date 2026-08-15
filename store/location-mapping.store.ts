@@ -71,11 +71,9 @@ export const useLocationMappingStore = create(
       batchCreateLocationMappingsAction: async (payloads: LocationMappingCreate[]) => {
         set({ isSaving: true, error: null });
         try {
-          const created = await batchCreateLocationMappings(payloads);
-          set((state) => {
-            state.locationMappings.push(...created);
-          });
-          return created.length;
+          const count = await batchCreateLocationMappings(payloads);
+          await get().fetchLocationMappings();
+          return count;
         } catch (error) {
           set({ error: (error as Error).message });
           return 0;
@@ -83,6 +81,7 @@ export const useLocationMappingStore = create(
           set({ isSaving: false });
         }
       },
+
 
       deleteLocationMapping: async (id: number) => {
         set({ isSaving: true, error: null });

@@ -85,24 +85,24 @@ export default function LocationMappingList() {
         </span>
       ),
     },
-    {
-      title: "Aliases / Station Codes",
-      dataIndex: "aliases",
-      key: "aliases",
-      render: (aliases: string[]) => (
-        <div className="flex flex-wrap gap-1">
-          {aliases && aliases.length > 0 ? (
-            aliases.map((alias, idx) => (
-              <Tag key={idx} className="text-[11px] font-mono rounded-none bg-slate-100 text-slate-700 border-slate-200">
-                {alias}
-              </Tag>
-            ))
-          ) : (
-            <span className="text-xs text-gray-400">—</span>
-          )}
-        </div>
-      ),
-    },
+    // {
+    //   title: "Aliases / Station Codes",
+    //   dataIndex: "aliases",
+    //   key: "aliases",
+    //   render: (aliases: string[]) => (
+    //     <div className="flex flex-wrap gap-1">
+    //       {aliases && aliases.length > 0 ? (
+    //         aliases.map((alias, idx) => (
+    //           <Tag key={idx} className="text-[11px] font-mono rounded-none bg-slate-100 text-slate-700 border-slate-200">
+    //             {alias}
+    //           </Tag>
+    //         ))
+    //       ) : (
+    //         <span className="text-xs text-gray-400">—</span>
+    //       )}
+    //     </div>
+    //   ),
+    // },
     {
       title: "Action",
       key: "action",

@@ -47,6 +47,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         email: session.user.email,
         tenant_id: session.user.tenant_id.toString(),
       });
+      // Immediately populate store from sign-in response onboarding payload if available
+      if (session.user.onboarding && !onboarding) {
+        setOnboarding(session.user.onboarding);
+      }
       // Fetch latest onboarding status from backend DB once on mount / page refresh
       if (!hasFetchedOnboardingRef.current) {
         hasFetchedOnboardingRef.current = true;
@@ -56,7 +60,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       // Session expired or user logged out
       clearUser();
     }
-  }, [session, isSignInPage, setUser, clearUser, fetchOnboardingStatus]);
+  }, [session, isSignInPage, setUser, clearUser, setOnboarding, fetchOnboardingStatus, onboarding]);
+
 
 
 
@@ -81,6 +86,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
     return <>{children}</>;
   }
 
+  const currentOnboarding = onboarding || session?.user?.onboarding;
+
   return (
     <div className="flex h-screen overflow-hidden">
       <SideBar />
@@ -91,9 +98,10 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         <main className="flex-1 overflow-y-auto p-2 px-4 pb-4 relative">{children}</main>
       </div>
       {/* Onboarding overlay — full-page, includes completion screen at step 5 */}
-      {onboarding && !onboarding.is_completed && <OnboardingModal />}
+      {currentOnboarding && !currentOnboarding.is_completed && <OnboardingModal />}
     </div>
   );
 };
+
 
 export default AppLayout;
