@@ -1,16 +1,15 @@
 "use client";
 import Link from "next/link";
-import { useCallback } from "react";
+import { useState, useCallback } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Button, Avatar, Modal, Popover, Typography } from "antd";
+import { Avatar, Modal, Popover, Typography } from "antd";
 import {
   LogoutOutlined,
   MailOutlined,
   TeamOutlined,
   CarOutlined,
   EnvironmentOutlined,
-  SettingOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/store/index.store";
@@ -58,7 +57,6 @@ const SideBar = () => {
     [pathname]
   );
 
-  // Check if any sub-item is active
   const hasActiveSubItem = useCallback(
     (subItems?: { path: string }[]) => {
       return subItems?.some((sub) => pathname === sub.path) ?? false;
@@ -79,48 +77,28 @@ const SideBar = () => {
 
   const handleLogout = useCallback(() => {
     Modal.confirm({
-      title: <Title level={5}>Confirm Logout</Title>,
-      content: "Are you sure you want to logout?",
-      okText: "Logout",
+      title: "Log out",
+      content: "Are you sure you want to log out?",
+      okText: "Log out",
       cancelText: "Cancel",
-      okType: "danger",
-      maskClosable: true,
+      okButtonProps: { danger: true, type: "primary" },
+      icon: <LogoutOutlined className="text-red-500 text-lg" />,
+      centered: true,
       onOk: async () => {
-        try {
-          clearUser();
-          await signOut({ callbackUrl: "/sign-in" });
-        } catch (error) {
-          console.error("Logout error:", error);
-        }
+        clearUser();
+        await signOut({ callbackUrl: "/sign-in" });
       },
     });
   }, [clearUser]);
 
-  const bottomMenuItems: BottomMenuItem[] = [
-    {
-      icon: (props) => (
-        <Image
-          src="/logout.svg"
-          alt="Logout"
-          width={20}
-          height={20}
-          {...props}
-        />
-      ),
-      label: "Log out",
-      action: handleLogout,
-      isDanger: true,
-    },
-  ];
-
   const userPopoverContent = (
-    <div className="w-[260px] p-3 font-sans">
+    <div className="w-[260px] p-3 font-sans space-y-3">
       {/* Centered Avatar & Identity */}
       <div className="flex flex-col items-center pt-1">
         <Avatar
           size={52}
           style={{ backgroundColor: "#003220", color: "#ffffff" }}
-          className="font-bold text-sm shadow-md border-2 border-white flex items-center justify-center"
+          className="font-bold text-sm shadow-md border-2 border-white flex items-center justify-center rounded-none"
           icon={!hasCompanyName ? <UserOutlined /> : undefined}
         >
           {hasCompanyName ? initials : null}
@@ -142,15 +120,15 @@ const SideBar = () => {
         )}
       </div>
 
-      {/* Resource Metrics Section - Team, Vehicles, Depots */}
-      <div className="my-2.5 p-2 rounded-none border border-emerald-100/80 space-y-1.5">
+      {/* 3 Stats Direct List */}
+      <div className="pt-2 border-t border-gray-200 space-y-1.5">
         <button
           type="button"
           onClick={() => {
             handleNavigation("/team", "team");
             router.push("/team");
           }}
-          className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-emerald-100/50 shadow-2xs hover:bg-emerald-50/80 hover:border-emerald-300 transition-all cursor-pointer text-left group"
+          className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
         >
           <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
             <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
@@ -158,7 +136,7 @@ const SideBar = () => {
             </div>
             <span>Team Members</span>
           </div>
-          <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
+          <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
             {teams.length}
           </span>
         </button>
@@ -169,7 +147,7 @@ const SideBar = () => {
             handleNavigation("/vehicle", "vehicle");
             router.push("/vehicle");
           }}
-          className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-emerald-100/50 shadow-2xs hover:bg-emerald-50/80 hover:border-emerald-300 transition-all cursor-pointer text-left group"
+          className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
         >
           <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
             <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
@@ -177,7 +155,7 @@ const SideBar = () => {
             </div>
             <span>Vehicles</span>
           </div>
-          <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
+          <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
             {vehicles.length}
           </span>
         </button>
@@ -188,7 +166,7 @@ const SideBar = () => {
             handleNavigation("/depot", "depot");
             router.push("/depot");
           }}
-          className="w-full flex items-center justify-between text-xs px-2 py-1.5 bg-white rounded-none border border-emerald-100/50 shadow-2xs hover:bg-emerald-50/80 hover:border-emerald-300 transition-all cursor-pointer text-left group"
+          className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
         >
           <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
             <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
@@ -196,57 +174,9 @@ const SideBar = () => {
             </div>
             <span>Depots</span>
           </div>
-          <span className="bg-emerald-50 px-2 py-0.5 rounded-full text-[11px] font-bold text-[#003220] border border-emerald-200">
+          <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
             {depots.length}
           </span>
-        </button>
-      </div>
-
-      {/* Organization Info Box */}
-      {/* <div className="p-2.5 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-100 flex flex-col items-center text-center">
-        <p className="text-[9px] font-extrabold text-[#003220]/70 uppercase tracking-widest mb-0.5">
-          Organization
-        </p>
-        <h4
-          className="text-xs font-bold text-gray-900 truncate w-full px-1 mb-1.5"
-          title={businessName}
-        >
-          {businessName}
-        </h4>
-        <div className="flex items-center justify-center gap-2">
-          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-[#003220] border border-emerald-200 uppercase tracking-wider">
-            Admin
-          </span>
-          <span className="text-gray-300 text-[10px]">•</span>
-          <span className="text-[10px] text-gray-600 font-semibold">
-            Standard Plan
-          </span>
-        </div>
-      </div> */}
-
-      {/* Bottom Action Controls */}
-      <div className="mt-3 flex items-center justify-between gap-2">
-        <button
-          onClick={() => {
-            handleNavigation("/team", "team");
-            router.push("/team");
-          }}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-none transition-colors cursor-pointer"
-        >
-          <SettingOutlined className="text-xs" />
-          Settings
-        </button>
-        <button
-          onClick={handleLogout}
-          className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-none transition-colors cursor-pointer"
-        >
-          <Image
-            src="/logout.svg"
-            alt="Logout"
-            width={16}
-            height={16}
-          />
-          Logout
         </button>
       </div>
     </div>
@@ -376,8 +306,8 @@ const SideBar = () => {
         })}
       </nav>
 
-      {/* Bottom Section - User Profile & Actions */}
-      <footer className="border-t pt-2.5 pb-3 px-2">
+      {/* Bottom Section - User Profile & Logout */}
+      <footer className="border-t pt-2.5 pb-3 px-2 flex flex-col gap-1">
         {/* User Profile */}
         <Popover
           content={userPopoverContent}
@@ -387,7 +317,7 @@ const SideBar = () => {
           arrow={false}
           styles={{ container: { padding: 2, borderRadius: 10, marginLeft: 30 } }}
         >
-          <div className="flex items-center px-1 py-1.5 mb-1.5 cursor-pointer rounded hover:bg-emerald-50 transition-colors group">
+          <div className="flex items-center px-1 py-1.5 cursor-pointer rounded hover:bg-emerald-50 transition-colors group">
             <Avatar
               size={34}
               style={{ backgroundColor: "#003220", color: "#ffffff" }}
@@ -407,30 +337,20 @@ const SideBar = () => {
           </div>
         </Popover>
 
-        {/* Bottom Menu Items */}
-        {bottomMenuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.label}
-              onClick={item.action}
-              className={`w-full flex items-center px-2.5 py-1.5 rounded-none transition-all duration-200 cursor-pointer ${
-                item.isDanger
-                  ? "text-red-600 hover:bg-red-50"
-                  : "text-gray-700 hover:bg-emerald-50"
-              }`}
-            >
-              <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                <Icon
-                  className={`text-base ${item.isDanger ? "text-red-600" : ""}`}
-                />
-              </div>
-              <span className="ml-2.5 text-xs font-medium whitespace-nowrap overflow-hidden">
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+        {/* Logout Button */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-none text-red-600 hover:bg-red-50 transition-all duration-200 cursor-pointer text-xs font-semibold"
+        >
+          <Image
+            src="/logout.svg"
+            alt="Logout"
+            width={16}
+            height={16}
+          />
+          <span>Log out</span>
+        </button>
       </footer>
     </aside>
   );

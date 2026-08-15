@@ -11,8 +11,21 @@ import {
   Divider,
   Space,
   DatePicker,
+  Flex,
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
+import {
+  Sparkles,
+  Cpu,
+  MapPin,
+  Layers,
+  Users,
+  CheckCircle2,
+  RefreshCw,
+  AlertTriangle,
+  AlertCircle,
+  Route
+} from "lucide-react";
 import { useDepotStore } from "@/store/depots.store";
 import { useTeamStore } from "@/store/team.store";
 import {
@@ -46,7 +59,7 @@ const CreateRouteModal = ({
   const router = useRouter();
   const { depots, createDepot, isSaving: isDepotSaving } = useDepotStore();
   const { teams } = useTeamStore();
-  const { fetchRoutes, setSelectedStatus } = useRouteStore();
+  const { routes, initializeRoutes, fetchRoutes, setSelectedStatus } = useRouteStore();
   const { refreshDraftJobs } = useJobsStore();
   const {
     startOptimization,
@@ -63,15 +76,29 @@ const CreateRouteModal = ({
 
   useOptimizationCleanup();
 
+  // Prefill route name when modal opens: "route - {total_routes_for_that_tenant + 1}"
+  useEffect(() => {
+    if (open) {
+      initializeRoutes();
+      const currentRoutesCount = routes.length;
+      const defaultRouteName = `route - ${currentRoutesCount + 1}`;
+      form.setFieldsValue({
+        route_name: defaultRouteName,
+        optimization_logic: "minimum_time",
+        ...(hasMixedDates ? { scheduled_date: dayjs() } : {}),
+      });
+    }
+  }, [open, routes.length, initializeRoutes, form, hasMixedDates]);
+
   // Get status message based on optimization status
   const getStatusMessage = () => {
     if (!currentOptimization) return "";
 
     switch (currentOptimization.status) {
       case "queued":
-        return "Your optimization request is queued...";
+        return "Preparing route optimization...";
       case "processing":
-        return "Optimizing routes... This may take a minute.";
+        return "Generating optimal routes for your team...";
       case "completed":
       case "success":
         return "Optimization completed! Redirecting...";
@@ -160,63 +187,106 @@ const CreateRouteModal = ({
     setIsSubmitting(false);
   };
 
+  const isCompleted =
+    currentOptimization?.status === "completed" || currentOptimization?.status === "success";
+  const isFailed = currentOptimization?.status === "failed" || Boolean(error);
+
   return (
     <Modal
       centered
       footer={null}
-      title="Create New Route"
+      title={<span className="text-base font-bold text-gray-900">Create New Route</span>}
       open={open}
       onCancel={handleCancel}
       width={600}
       closable={true}
       maskClosable={false}
+      className="create-route-modal"
+      styles={{
+        body: { borderRadius: 0 },
+        mask: { backdropFilter: "blur(4px)" },
+      }}
     >
-      {isSubmitting || isPolling ? (
-        <div className="py-8">
-          <div className="text-center mb-4">
-            <p className="text-lg font-medium">{getStatusMessage()}</p>
+      {isFailed ? (
+        <div className="py-8 px-4 flex flex-col items-center justify-center text-center">
+          {/* Error Icon Badge */}
+          <div className="w-14 h-14 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mb-4 shrink-0">
+            <AlertCircle size={28} />
           </div>
 
-          <Progress
-            percent={
-              currentOptimization?.status === "completed" ||
-              currentOptimization?.status === "success"
-                ? 100
-                : currentOptimization?.status === "processing"
-                  ? 60
-                  : 30
-            }
-            status={
-              currentOptimization?.status === "failed"
-                ? "exception"
-                : currentOptimization?.status === "completed" ||
-                    currentOptimization?.status === "success"
-                  ? "success"
-                  : "active"
-            }
-          />
+          {/* Title & Description */}
+          <h3 className="text-base font-bold text-gray-900 mb-1.5">
+            Unable to Generate Routes
+          </h3>
+          <p className="text-xs text-gray-600 max-w-md mb-5 leading-relaxed">
+            {error || "Could not find a feasible route solution for the selected jobs."}
+          </p>
 
-          {error && (
-            <div className="mt-4">
-              <Alert
-                message="Error"
-                description={error}
-                type="error"
-                showIcon
-              />
-              <Button
-                type="primary"
-                block
-                className="mt-4"
-                onClick={handleRetry}
-              >
-                Try Again
-              </Button>
+          {/* Suggestions Card */}
+          <div className="w-full max-w-md bg-amber-50/70 border border-amber-200/80 p-3.5 text-left mb-6 rounded-none">
+            <div className="text-xs font-bold text-amber-950 mb-1.5">
+              Suggested Adjustments:
             </div>
-          )}
+            <ul className="text-[11px] text-amber-900 space-y-1 list-disc list-inside leading-normal">
+              <li>Assign additional team members / drivers to distribute the stop load.</li>
+              <li>Check vehicle capacity limits and driver shift hours in Settings.</li>
+            </ul>
+          </div>
+
+          {/* Action Buttons */}
+          <Flex gap={10} className="w-full max-w-md">
+            <Button onClick={handleCancel} className="w-1/3 rounded-none">
+              Cancel
+            </Button>
+            <Button
+              type="primary"
+              onClick={handleRetry}
+              className="w-2/3 rounded-none bg-[#003220] hover:bg-[#002417] font-semibold"
+            >
+              Modify Parameters & Retry
+            </Button>
+          </Flex>
+        </div>
+      ) : isSubmitting || isPolling ? (
+        <div className="py-10 px-4 flex flex-col items-center justify-center text-center">
+          {/* Animated Visualizer Aura */}
+          <div className="relative mb-6 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 border-2 border-dashed border-emerald-600/50 animate-spin flex items-center justify-center" />
+            <div className="absolute w-11 h-11 rounded-full bg-[#003220] text-white flex items-center justify-center shadow-md">
+              <Route size={20} className="animate-pulse text-white" />
+            </div>
+          </div>
+
+          {/* Title & Subtitle */}
+          <h3 className="text-base font-bold text-gray-900 mb-1.5">
+            {isCompleted ? "Routes Optimized Successfully!" : "Optimizing Routes"}
+          </h3>
+          <p className="text-xs text-gray-500 max-w-sm mb-6 leading-relaxed">
+            {isCompleted
+              ? "Your optimal routes have been generated. Redirecting now..."
+              : "Generating optimal route sequences and driver assignments. This may take a moment."}
+          </p>
+
+          {/* Simple Clean Progress Line */}
+          <div className="w-full max-w-xs">
+            <Progress
+              percent={isCompleted ? 100 : 70}
+              status={isCompleted ? "success" : "active"}
+              showInfo={false}
+              strokeColor={{
+                "0%": "#059669",
+                "100%": "#003220",
+              }}
+              size={["100%", 6]}
+              className="m-0"
+            />
+          </div>
         </div>
       ) : (
+
+
         <>
+
           {error && (
             <Alert
               className="mb-4"

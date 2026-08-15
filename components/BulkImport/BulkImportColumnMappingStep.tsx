@@ -38,7 +38,16 @@ const DRIVER_FIELDS: SystemFieldDefinition[] = [
   { key: "sunday", label: "Sunday Schedule" },
 ];
 
-function autoMatchField(header: string, entityType: "vehicle" | "driver"): string | undefined {
+const LOCATION_FIELDS: SystemFieldDefinition[] = [
+  { key: "name", label: "Station Name / Title", required: true },
+  { key: "address", label: "Location Address / Formatted Address" },
+  { key: "latitude", label: "Latitude (Lat)" },
+  { key: "longitude", label: "Longitude (Lng)" },
+];
+
+
+
+function autoMatchField(header: string, entityType: "vehicle" | "driver" | "location"): string | undefined {
   const clean = header.trim().toLowerCase();
 
   if (entityType === "vehicle") {
@@ -53,7 +62,7 @@ function autoMatchField(header: string, entityType: "vehicle" | "driver"): strin
     if (clean.includes("type")) return "type";
     if (clean.includes("make") || clean.includes("brand")) return "make";
     if (clean.includes("model")) return "model";
-  } else {
+  } else if (entityType === "driver") {
     if (["name", "driver", "driver name", "full name", "team member"].includes(clean)) return "name";
     if (clean.includes("email")) return "email";
     if (clean.includes("phone") || clean.includes("mobile") || clean.includes("contact")) return "phone_number";
@@ -66,12 +75,22 @@ function autoMatchField(header: string, entityType: "vehicle" | "driver"): strin
     if (["friday", "fri"].includes(clean)) return "friday";
     if (["saturday", "sat"].includes(clean)) return "saturday";
     if (["sunday", "sun"].includes(clean)) return "sunday";
+  } else {
+    if (clean === "location" || clean === "addr" || clean.includes("address") || clean.includes("street") || clean.includes("formatted") || clean.includes("location address") || clean.includes("full address")) return "address";
+    if (clean.includes("code") || clean.includes("alias") || clean.includes("stn") || clean.includes("station id") || clean === "id") return "code";
+    if (clean === "lat" || clean.includes("latitude")) return "latitude";
+    if (clean === "lng" || clean === "lon" || clean.includes("longitude")) return "longitude";
+    if (clean.includes("category") || clean.includes("type") || clean.includes("kind")) return "category";
+    if (clean.includes("zone") || clean.includes("area") || clean.includes("region")) return "service_zone";
+    if (clean.includes("hours") || clean.includes("operating") || clean.includes("schedule")) return "operating_hours";
+    if (["station", "station name", "name", "metro", "depot", "hub", "point", "title", "location name", "place name", "site name"].includes(clean)) return "name";
   }
+
   return undefined;
 }
 
 interface BulkImportColumnMappingStepProps {
-  entityType: "vehicle" | "driver";
+  entityType: "vehicle" | "driver" | "location";
   rawHeaders: string[];
   rawRows: Record<string, any>[];
   initialMapping?: Record<string, string>;
@@ -105,7 +124,12 @@ export default function BulkImportColumnMappingStep({
     });
     return initial;
   });
-  const systemFields = entityType === "vehicle" ? VEHICLE_FIELDS : DRIVER_FIELDS;
+  const systemFields =
+    entityType === "vehicle"
+      ? VEHICLE_FIELDS
+      : entityType === "driver"
+      ? DRIVER_FIELDS
+      : LOCATION_FIELDS;
 
   const handleSelectField = (header: string, systemKey: string | undefined) => {
     setMapping((prev) => {

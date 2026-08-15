@@ -52,6 +52,8 @@ import {
   type ShareRouteResponse,
 } from "@/apis/routes.api";
 
+import JobDetailsCard from "./JobDetailsCard";
+
 const { Title, Text } = Typography;
 
 interface OptimizationViewProps {
@@ -96,6 +98,15 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     null,
   );
 
+  // Job Details Floating Card state
+  const [selectedDrawerJob, setSelectedDrawerJob] = useState<{
+    stopData: any;
+    job: Job | null;
+    driverName?: string;
+    routeIndex?: number;
+    stopIndex?: number;
+  } | null>(null);
+
   // Route operations modal state
   const [addStopRouteIndex, setAddStopRouteIndex] = useState<number | null>(
     null,
@@ -107,12 +118,6 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   useEffect(() => {
     setTempRouteName(route.route_name);
   }, [route.route_name]);
-
-  // useEffect(() => {
-  //   return () => {
-  //     clearOptimization();
-  //   };
-  // }, [clearOptimization]);
 
   const handleNameClick = () => {
     setIsEditingName(true);
@@ -198,10 +203,59 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
       const markerId = `${routeIndex}-${stopIndex}`;
       setSelectedMarkerId(markerId);
     }
+
+    // Find corresponding job object
+    const jobId = stop.job_id || stop.id;
+    const matchedJob = jobs.find((j) => j.id === jobId) || stop.job || null;
+    const driverName = route.result?.routes?.[routeIndex]?.team_member_name || `Driver ${routeIndex + 1}`;
+
+    setSelectedDrawerJob({
+      stopData: stop,
+      job: matchedJob,
+      driverName,
+      routeIndex,
+      stopIndex,
+    });
   };
 
   const handleMarkerSelect = (markerId: string | number | null) => {
     setSelectedMarkerId(markerId);
+    if (!markerId) {
+      setSelectedDrawerJob(null);
+      return;
+    }
+
+    const foundMarker = markers.find((m) => String(m.id) === String(markerId));
+    if (foundMarker && foundMarker.jobData && route.result?.routes) {
+      const jobId = (foundMarker.jobData as any).id || (foundMarker.jobData as any).job_id;
+      const matchedJob = jobs.find((j) => j.id === jobId) || (foundMarker.jobData as Job) || null;
+
+      let routeIndex = -1;
+      let stopIndex = 0;
+      let driverName = "Driver";
+
+      routeIndex = route.result.routes.findIndex((r) =>
+        r.stops?.some((s) => s.job_id === jobId)
+      );
+      if (routeIndex >= 0) {
+        driverName =
+          route.result.routes[routeIndex].team_member_name ||
+          `Driver ${routeIndex + 1}`;
+        const sIdx = route.result.routes[routeIndex].stops?.findIndex(
+          (s) => s.job_id === jobId);
+        if (sIdx !== undefined && sIdx >= 0) {
+          stopIndex = sIdx;
+        }
+      }
+
+      setSelectedDrawerJob({
+        stopData: foundMarker.jobData,
+        job: matchedJob,
+        driverName,
+        routeIndex,
+        stopIndex,
+      });
+    }
   };
 
   const handleExportRoutes = () => {
@@ -210,16 +264,10 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
 
   // ── Route Operations handlers ──
 
-  /**
-   * Start polling after an async route operation.
-   * The backend sets status='processing', and the existing polling infra
-   * in optimization.store.ts will detect the 'completed' transition.
-   */
   const startOperationPolling = useCallback(() => {
     pollOptimizationStatus(route.id);
   }, [pollOptimizationStatus, route.id]);
 
-  /** Handle Add Stop (2-step): after job is created, add it to the route */
   const handleJobCreatedForRoute = useCallback(
     async (job: Job) => {
       if (addStopRouteIndex === null) return;
@@ -240,7 +288,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     (routeIndex: number, jobId: number, driverName: string) => {
       Modal.confirm({
         title: "Remove Job",
-        content: `Remove job #${jobId} from ${driverName}'s route? It will be moved back to Unassigned.`,
+        content: `Remove job from ${driverName}'s route? It will be moved back to Unassigned.`,
         okText: "Remove",
         okButtonProps: {
           style: { backgroundColor: "#dc2626", borderColor: "#dc2626" },
@@ -277,7 +325,6 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             const res = await reverseRoute(route.id, routeIndex);
             if (res.success) {
               message.success(res.message);
-              // Sync op — just refresh data
               await fetchOptimization(route.id);
             }
           } catch (error: any) {
@@ -318,16 +365,13 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     [route.id, route.result?.routes, startOperationPolling],
   );
 
-  /** Swap driver success → backend queued RQ → start polling */
   const handleSwapSuccess = useCallback(() => {
     startOperationPolling();
   }, [startOperationPolling]);
 
-  // Get the selected route data for modals
   const getRouteData = (index: number | null) =>
     index !== null ? route.result?.routes?.[index] : null;
 
-  // Calculate route statistics
   const totalStops =
     route.result?.routes?.reduce((acc, r) => acc + (r.stops?.length || 0), 0) ||
     0;
@@ -340,7 +384,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
 
   return (
     <div className="flex flex-col h-full absolute inset-0">
-      {/* Full-screen loading overlay — shown during async route operations */}
+      {/* Full-screen loading overlay */}
       {isPolling && (
         <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
@@ -375,7 +419,6 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
               onClick={handleBackToPlanRoutes}
             />
 
-            {/* Fixed width container for name to prevent layout shift */}
             <div style={{ width: "200px" }}>
               {isEditingName ? (
                 <Input
@@ -456,46 +499,12 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
         <PanelGroup direction="vertical">
           {/* Map Panel */}
           <Panel defaultSize={60} minSize={30}>
-            <div className="h-full w-full">
+            <div className="h-full w-full relative">
               <GoogleMaps
                 polylines={routePolylines}
                 markers={markers}
                 center={center}
                 zoom={12}
-                InfoWindowModal={({ marker }) => {
-                  // Find the routeIndex for this job so we can pass it to handleRemoveJob
-                  let routeIndex = -1;
-                  let driverName = "Driver";
-                  if (marker.jobData && route.result?.routes) {
-                    const jobId = (marker.jobData as Job).id;
-                    routeIndex = route.result.routes.findIndex((r) =>
-                      r.stops?.some((s) => s.job_id === jobId),
-                    );
-                    if (routeIndex >= 0) {
-                      driverName =
-                        route.result.routes[routeIndex].team_member_name ||
-                        "Driver";
-                    }
-                  }
-
-                  return (
-                    <RouteInfoWindow
-                      marker={marker}
-                      onRemoveJob={
-                        routeIndex >= 0 &&
-                        marker.jobData &&
-                        "id" in marker.jobData
-                          ? () =>
-                              handleRemoveJob(
-                                routeIndex,
-                                (marker.jobData as Job).id,
-                                driverName,
-                              )
-                          : undefined
-                      }
-                    />
-                  );
-                }}
                 selectedMarkerId={selectedMarkerId}
                 onMarkerSelect={handleMarkerSelect}
                 showDirectionArrows={true}
@@ -506,8 +515,8 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
           <ResizeHandle />
 
           <Panel defaultSize={40} minSize={20}>
-            <div className="flex flex-col h-full bg-gray-50 mt-2 overflow-hidden isolate">
-              <div className="flex-1 overflow-hidden">
+            <div className="flex flex-col h-full bg-gray-50 min-h-0 min-w-0">
+              <div className="flex-1 min-h-0 min-w-0">
                 <TimelineView
                   routes={route.result?.routes || []}
                   jobs={jobs}
@@ -521,6 +530,29 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             </div>
           </Panel>
         </PanelGroup>
+
+        {/* Upper-styled Floating Job Details Card Overlay (Over Map AND Timeline View!) */}
+        {selectedDrawerJob && (
+          <JobDetailsCard
+            stopData={selectedDrawerJob.stopData}
+            job={selectedDrawerJob.job}
+            stopIndex={selectedDrawerJob.stopIndex}
+            driverName={selectedDrawerJob.driverName}
+            onClose={() => setSelectedDrawerJob(null)}
+            onRemoveJob={
+              selectedDrawerJob.routeIndex !== undefined &&
+              selectedDrawerJob.routeIndex >= 0 &&
+              selectedDrawerJob.job?.id
+                ? () =>
+                    handleRemoveJob(
+                      selectedDrawerJob.routeIndex!,
+                      selectedDrawerJob.job!.id,
+                      selectedDrawerJob.driverName || "Driver",
+                    )
+                : undefined
+            }
+          />
+        )}
       </div>
 
       {/* Route Export Preview Modal */}

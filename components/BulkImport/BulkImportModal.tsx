@@ -12,8 +12,9 @@ const { Text, Title } = Typography;
 interface BulkImportModalProps {
   open: boolean;
   onClose: () => void;
-  entityType: "vehicle" | "driver";
+  entityType: "vehicle" | "driver" | "location";
   onSuccess?: () => void;
+  zIndex?: number;
 }
 
 export default function BulkImportModal({
@@ -21,6 +22,7 @@ export default function BulkImportModal({
   onClose,
   entityType,
   onSuccess,
+  zIndex,
 }: BulkImportModalProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [rawHeaders, setRawHeaders] = useState<string[]>([]);
@@ -29,7 +31,12 @@ export default function BulkImportModal({
   const [skipFirstRow, setSkipFirstRow] = useState(false);
   const [importedCount, setImportedCount] = useState<number | null>(null);
 
-  const entityTitle = entityType === "vehicle" ? "Vehicles" : "Drivers";
+  const entityTitle =
+    entityType === "vehicle"
+      ? "Vehicles"
+      : entityType === "driver"
+      ? "Drivers"
+      : "Locations & Stations";
 
   const handleReset = () => {
     setCurrentStep(1);
@@ -75,6 +82,7 @@ export default function BulkImportModal({
       onCancel={handleClose}
       maskClosable={false}
       footer={null}
+      zIndex={zIndex}
       title={
         <Flex align="center" gap={8}>
           <FileSpreadsheet className="text-primary-500" size={20} />

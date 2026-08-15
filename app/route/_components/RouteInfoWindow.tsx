@@ -25,9 +25,10 @@ interface MarkerData {
 interface RouteInfoWindowProps {
   marker: MarkerData;
   onRemoveJob?: () => void;
+  onViewDetails?: () => void;
 }
 
-const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker, onRemoveJob }) => {
+const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker, onRemoveJob, onViewDetails }) => {
   const { jobData, title, description } = marker;
   const { patchJobLocally } = useJobsStore();
   const { modal } = App.useApp();
@@ -80,7 +81,7 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker, onRemoveJob }
     <div className="min-w-[240px] max-w-[320px] bg-white text-gray-800">
       {/* Address */}
       <div className="flex gap-3 mb-3 items-start">
-        <EnvironmentOutlined className="text-gray-400 text-lg shrink-0 mt-0.5" />
+        <EnvironmentOutlined className="text-[#003220] text-lg shrink-0 mt-0.5" />
         <Text className="text-sm text-gray-700 leading-snug font-medium">
           {title || jobData?.address_formatted || "Unknown Address"}
         </Text>
@@ -119,34 +120,48 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker, onRemoveJob }
           </Tag>
         )}
       </div>
-      {jobData && !showButtons && (
+      {jobData && (
         <div className="mt-3 pt-3 border-t border-gray-100 flex flex-col gap-2">
-          <div className="flex gap-2">
+          {/* {onViewDetails && (
             <Button
               type="primary"
               size="small"
-              icon={<CheckCircleOutlined />}
-              loading={isMarkingComplete}
-              onClick={() => confirmAction("completed")}
-              style={{
-                width: "100%",
-                backgroundColor: "#16a34a",
-                borderColor: "#16a34a",
-              }}
+              className="bg-[#003220] hover:bg-[#002417] text-xs font-semibold"
+              style={{ width: "100%" }}
+              onClick={onViewDetails}
             >
-              Mark as Completed
+              View Full Job Details
             </Button>
-            <Button
-              onClick={() => confirmAction("failed")}
-              type="default"
-              size="small"
-            >
-              Skip
-            </Button>
-          </div>
-          {onRemoveJob && (
+          )} */}
+
+          {!showButtons && (
+            <div className="flex gap-2">
+              <Button
+                type="default"
+                size="small"
+                icon={<CheckCircleOutlined />}
+                loading={isMarkingComplete}
+                onClick={() => confirmAction("completed")}
+                style={{
+                  width: "100%",
+                }}
+              >
+                Mark Complete
+              </Button>
+              <Button
+                onClick={() => confirmAction("failed")}
+                type="default"
+                size="small"
+              >
+                Skip
+              </Button>
+            </div>
+          )}
+
+          {onRemoveJob && !showButtons && (
             <Button
               danger
+              type="text"
               size="small"
               style={{ width: "100%" }}
               onClick={onRemoveJob}

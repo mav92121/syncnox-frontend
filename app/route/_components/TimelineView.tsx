@@ -76,6 +76,8 @@ const getRouteDurationStr = (route: any): string => {
   return "";
 };
 
+const DRIVER_COLUMN_WIDTH = 265;
+
 const TimelineView: React.FC<TimelineViewProps> = ({
   routes,
   jobs = [],
@@ -146,10 +148,10 @@ const TimelineView: React.FC<TimelineViewProps> = ({
           >
             {/* Sticky Driver Column Header */}
             <div
-              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 px-4 flex items-center justify-between font-medium text-gray-500 shadow-sm"
-              style={{ width: 250, minWidth: 250 }}
+              className="sticky left-0 z-30 bg-gray-50 border-r border-gray-200 px-3 flex items-center justify-between font-medium text-gray-500 shadow-sm"
+              style={{ width: DRIVER_COLUMN_WIDTH, minWidth: DRIVER_COLUMN_WIDTH }}
             >
-              <span>Driver</span>
+              <span className="text-xs font-semibold text-gray-600">Driver</span>
               <Select
                 value={intervalMinutes}
                 onChange={setIntervalMinutes}
@@ -179,7 +181,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
             {/* Vertical Grid Lines (Background) */}
             <div
               className="absolute inset-0 z-0 pointer-events-none"
-              style={{ marginLeft: 250, width: timelineWidth }}
+              style={{ marginLeft: DRIVER_COLUMN_WIDTH, width: timelineWidth }}
             >
               {timeMarkers.map((marker, i) => (
                 <div
@@ -193,6 +195,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
             {routes.map((route, routeIndex) => {
               const routeColor = getRouteColor(routeIndex);
               const durationStr = getRouteDurationStr(route);
+              const totalStopsCount = route.stops?.length || 0;
 
               return (
                 <div
@@ -202,27 +205,24 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                 >
                   {/* Sticky Driver Info */}
                   <div
-                    className="sticky left-0 z-10 bg-white border-r border-gray-200 px-4 flex items-center gap-3 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]"
-                    style={{ width: 250, minWidth: 250 }}
+                    className="sticky left-0 z-10 bg-white border-r border-gray-200 px-3 flex items-center gap-2.5 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]"
+                    style={{ width: DRIVER_COLUMN_WIDTH, minWidth: DRIVER_COLUMN_WIDTH }}
                   >
                     <Avatar
                       icon={<UserOutlined />}
                       style={{ backgroundColor: routeColor }}
-                      className="text-white"
+                      className="text-white shrink-0"
+                      size="default"
                     />
                     <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-1 min-w-0">
-                        <span className="font-medium truncate text-gray-700 text-sm">
-                          {route.team_member_name ||
-                            `Driver ${route.team_member_id}`}
-                        </span>
-                        <span className="text-[9px] text-gray-500 font-normal shrink-0 absolute right-11">
-                          {route.stops.length} stops
-                        </span>
-                      </div>
-                      <span className="text-xs text-gray-400 truncate">
+                      <span className="font-semibold truncate text-gray-800 text-xs">
+                        {route.team_member_name ||
+                          `Driver ${route.team_member_id}`}
+                      </span>
+                      <span className="text-[11px] text-gray-400 truncate">
                         {Math.round(route.total_distance_meters / 1000)} km
                         {durationStr ? ` • ${durationStr}` : ""}
+                        {` • ${totalStopsCount} stops`}
                       </span>
                     </div>
 
