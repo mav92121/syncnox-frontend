@@ -23,6 +23,17 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
     handleClose();
   };
 
+  const getModalWidth = () => {
+    if (currentStep === 1) return 1460;
+    if (currentStep === 2) return 1160;
+    return 1420;
+  };
+
+  const getModalClassName = () => {
+    if (currentStep === 1) return "bulk-upload-modal-compact";
+    return "bulk-upload-modal-large";
+  };
+
   const steps = [
     { title: "Upload File" },
     { title: "Map Columns" },
@@ -36,25 +47,25 @@ const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
       onCancel={handleClose}
       maskClosable={false}
       footer={null}
-      width="90vw"
+      width={getModalWidth()}
       centered
-      className="bulk-upload-modal"
+      className={getModalClassName()}
       styles={{
         body: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 },
         header: { borderRadius: 0, paddingBottom: '16px' },
         mask: { backdropFilter: 'blur(4px)' }
       }}
     >
-      <div>
+      <div className="flex flex-col flex-1 min-h-0">
         <Steps
           current={currentStep - 1}
           items={steps}
-          className="mb-3"
+          className="mb-6 shrink-0"
           size="small"
         />
 
         {/* Render only the current step */}
-        <div className="mt-4 flex-1 min-h-0 flex flex-col">
+        <div className="mt-6 flex-1 min-h-0 flex flex-col">
           {currentStep === 1 && <FileUploadStep />}
           {currentStep === 2 && (
             <ColumnMappingStep onNext={() => setCurrentStep(3)} />

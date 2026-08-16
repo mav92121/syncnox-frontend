@@ -56,7 +56,7 @@ const RoutePage = () => {
   if (isLoading) {
     return (
       <div className="absolute inset-0 flex items-center justify-center">
-        <Spin size="large" tip="Loading optimization data..." />
+        <Spin size="large" />
       </div>
     );
   }

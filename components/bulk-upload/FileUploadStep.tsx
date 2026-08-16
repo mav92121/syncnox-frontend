@@ -84,7 +84,7 @@ const FileUploadStep = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4 py-1 h-full min-h-0">
+    <div className="flex flex-col gap-6 py-3 h-full min-h-0">
       {/* 2-Column Top Bar */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 shrink-0">
         {/* Scheduled Date Section */}
@@ -140,7 +140,7 @@ const FileUploadStep = () => {
       </div>
 
       {/* Main Drag & Drop Zone */}
-      <div className="flex-1 min-h-[220px]">
+      <div className="flex-1 min-h-[300px]">
         <Dragger
           name="file"
           fileList={fileList}

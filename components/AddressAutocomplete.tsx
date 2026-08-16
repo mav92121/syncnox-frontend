@@ -37,7 +37,10 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
   const [options, setOptions] = useState<PredictionOption[]>([]);
   const [searchValue, setSearchValue] = useState(value || "");
   const [confirmedValue, setConfirmedValue] = useState(value || "");
-  const [isTypingNew, setIsTypingNew] = useState(false);
+  // Track whether the input is currently focused so that external value
+  // prop changes (e.g. from a parent re-render after onChange) do NOT
+  // overwrite what the user is actively typing.
+  const isFocusedRef = useRef(false);
   const autocompleteService =
     useRef<google.maps.places.AutocompleteService | null>(null);
   const placesService = useRef<google.maps.places.PlacesService | null>(null);
@@ -55,13 +58,14 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     }
   }, [isLoaded]);
 
-  // Sync searchValue with external value prop
+  // Sync searchValue with external value prop ONLY when the input is NOT focused.
+  // When the user is actively typing we own the state; parent re-renders triggered
+  // by onChange callbacks must not overwrite the current input text.
   useEffect(() => {
-    if (value !== undefined) {
+    if (!isFocusedRef.current && value !== undefined && value !== searchValue) {
       setSearchValue(value);
-      setConfirmedValue(value);
-      setIsTypingNew(false);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   // Cleanup debounce timer on unmount
@@ -75,31 +79,6 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   // Handle search input with debouncing
   const handleSearch = (searchText: string) => {
-    // If user has a confirmed value and starts typing, clear and start fresh
-    if (confirmedValue && !isTypingNew && searchText !== confirmedValue) {
-      setIsTypingNew(true);
-      setSearchValue(searchText.slice(-1)); // Keep only the last typed character
-      onChange?.(searchText.slice(-1));
-
-      // Clear previous debounce timer
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
-
-      // Search with the new character
-      if (searchText.slice(-1) && autocompleteService.current) {
-        debounceTimer.current = setTimeout(() => {
-          autocompleteService.current!.getPlacePredictions(
-            { input: searchText.slice(-1) },
-            handlePredictions
-          );
-        }, 200);
-      } else {
-        setOptions([]);
-      }
-      return;
-    }
-
     setSearchValue(searchText);
     onChange?.(searchText);
 
@@ -114,13 +93,13 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     }
 
     // Set new debounce timer (200ms delay)
+    // Set new debounce timer (200ms delay)
     debounceTimer.current = setTimeout(() => {
       autocompleteService.current!.getPlacePredictions(
         { input: searchText },
         handlePredictions
       );
     }, 200);
-
   };
 
   const handlePredictions = (
@@ -171,7 +150,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             // Update internal state to reflect the selected address
             setSearchValue(formattedAddress);
             setConfirmedValue(formattedAddress);
-            setIsTypingNew(false);
+            // setIsTypingNew(false);
             onChange?.(formattedAddress);
             onSelect?.(addressData);
           }
@@ -182,12 +161,16 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
 
   // Handle blur - revert to confirmed value if no selection was made
   const handleBlur = () => {
-    if (isTypingNew && searchValue !== confirmedValue) {
+    isFocusedRef.current = false;
+    if (searchValue !== confirmedValue && !options.length) {
       // User typed but didn't select - revert to confirmed value
       setSearchValue(confirmedValue);
-      setIsTypingNew(false);
       setOptions([]);
     }
+  };
+
+  const handleFocus = () => {
+    isFocusedRef.current = true;
   };
 
   if (error) {
@@ -201,6 +184,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
       options={options}
       onSearch={handleSearch}
       onSelect={handleSelectAddress}
+      onFocus={handleFocus}
       onBlur={handleBlur}
       placeholder={isLoaded ? placeholder : "Loading Google Maps..."}
       disabled={!!error}
