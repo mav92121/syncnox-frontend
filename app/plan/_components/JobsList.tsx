@@ -40,6 +40,7 @@ import MarkerTooltip from "@/components/MarkerTooltip";
 import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import CreateRouteModal from "@/app/plan/_components/CreateRouteModal";
+import CreateTransportRouteModal from "@/app/plan/_components/CreateTransportRouteModal";
 import DraftJobsDatePicker from "@/components/Jobs/DraftJobsDatePicker";
 import { useIndexStore } from "@/store/index.store";
 import AddJobsModal from "@/app/plan/AddJobsModal";
@@ -89,6 +90,7 @@ export default function JobsList() {
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
 
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
+  const [showCreateTransportRouteModal, setShowCreateTransportRouteModal] = useState(false);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [showTransportImportModal, setShowTransportImportModal] = useState(false);
@@ -522,6 +524,16 @@ export default function JobsList() {
             </Button>
           )}
 
+          {jobCategory === "transport" && (
+            <Button
+              type="primary"
+              onClick={() => setShowCreateTransportRouteModal(true)}
+              className="bg-[#0F4C3A] hover:bg-[#0a3529] font-semibold"
+            >
+              Optimize Transport Routes
+            </Button>
+          )}
+
           <Button
             danger
             disabled={selectedJobIds.length === 0}
@@ -645,6 +657,13 @@ export default function JobsList() {
           setEditTransportJobData(null);
         }}
         initialValues={editTransportJobData}
+      />
+
+      {/* Transport Route Optimization Modal */}
+      <CreateTransportRouteModal
+        open={showCreateTransportRouteModal}
+        onClose={() => setShowCreateTransportRouteModal(false)}
+        scheduledDate={selectedDate ?? new Date().toISOString().split("T")[0]}
       />
 
       {showCreateRouteModal &&
