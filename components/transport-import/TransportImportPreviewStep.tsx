@@ -312,7 +312,7 @@ export default function TransportImportPreviewStep({
           newErrors.push("Pickup type is required.");
         } else {
           const validAliases = [
-            "one_way", "oneway", "one way", "aller", "aller simple",
+            "one_way", "oneway", "one way", "one-way", "one-way (go)", "aller", "aller simple",
             "round_trip", "roundtrip", "round trip", "aller retour", "aller-retour",
             "return_only", "returnonly", "return only", "retour", "retour seul"
           ];
@@ -361,22 +361,31 @@ export default function TransportImportPreviewStep({
   );
 
   return (
-    <div className="flex flex-col h-full" style={{height: "calc(70vh - 100px)"}}>
+    <div className="flex flex-col h-full" style={{ height: "calc(75vh - 80px)", minHeight: "500px" }}>
       {/* Summary Header Bar */}
-      <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-none shrink-0">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 size={16} className="text-emerald-600" />
+      <div className="flex items-center justify-between bg-slate-50 border border-slate-200 py-2 px-3 rounded-none shrink-0 gap-3 mb-2">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
           <span className="text-xs font-medium text-gray-800">
             Review and edit imported records. {stats.importable} valid record(s) ready for import.
           </span>
+          {stats.skipped > 0 && (
+            <span className="inline-flex items-center gap-1.5 text-xs text-amber-900 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-none ml-2">
+              <ExclamationCircleOutlined className="text-amber-600 text-xs" />
+              <span>
+                <strong>{stats.skipped} row(s)</strong> have errors and will be skipped during import. Hover over status icon for details.
+              </span>
+            </span>
+          )}
         </div>
-        <Tag color="blue" className="text-xs rounded-none">
+
+        <Tag color="blue" className="text-xs rounded-none shrink-0 m-0">
           {stats.total} Total Rows
         </Tag>
       </div>
 
       {/* Interactive Filter Bar */}
-      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-gray-50/80 border border-gray-200 rounded-none shadow-2xs">
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-gray-50/80 border border-gray-200 rounded-none shadow-2xs mb-2 shrink-0">
         <div className="flex items-center gap-1.5 px-2 text-gray-500 border-r border-gray-200 pr-2.5 mr-0.5">
           <FilterOutlined className="text-xs text-gray-500" />
           <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500">
@@ -500,24 +509,8 @@ export default function TransportImportPreviewStep({
         )}
       </div>
 
-      {/* Error Alerts */}
-      {stats.skipped > 0 && (
-        <Alert
-          type="warning"
-          showIcon
-          icon={<ExclamationCircleOutlined />}
-          className="mb-4"
-          message={
-            <span>
-              <strong>{stats.skipped} rows</strong> have errors and will be skipped during import.
-              Hover over the status icon to see details.
-            </span>
-          }
-        />
-      )}
-
       {/* Data Grid */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-[350px] overflow-hidden mb-3 border border-gray-200">
         <div className="h-full w-full" style={{ "--ag-wrapper-border-radius": "0" } as React.CSSProperties}>
           <AgGridReact
             ref={gridRef}
@@ -538,7 +531,7 @@ export default function TransportImportPreviewStep({
       </div>
 
       {/* Footer Actions */}
-      <div className="flex items-center justify-between border-t mt-6">
+      <div className="flex items-center justify-between bg-white shrink-0">
         <span className="text-sm text-gray-500">
           {stats.importable > 0
             ? `${stats.importable} transport jobs will be imported`
