@@ -4,8 +4,10 @@ import { immer } from "zustand/middleware/immer";
 import {
   LocationMapping,
   LocationMappingCreate,
+  LocationMappingUpdate,
   fetchLocationMappings,
   createLocationMapping,
+  updateLocationMapping,
   batchCreateLocationMappings,
   deleteLocationMapping,
 } from "@/apis/location-mapping.api";
@@ -20,6 +22,7 @@ interface LocationMappingStore {
   fetchLocationMappings: () => Promise<void>;
   initializeLocationMappings: () => Promise<void>;
   createLocationMapping: (payload: LocationMappingCreate) => Promise<boolean>;
+  updateLocationMapping: (id: number, payload: LocationMappingUpdate) => Promise<boolean>;
   batchCreateLocationMappingsAction: (payloads: LocationMappingCreate[]) => Promise<number>;
   deleteLocationMapping: (id: number) => Promise<boolean>;
   bulkDeleteLocationMappings: (ids: number[]) => Promise<boolean>;
@@ -58,6 +61,25 @@ export const useLocationMappingStore = create(
           const newItem = await createLocationMapping(payload);
           set((state) => {
             state.locationMappings.push(newItem);
+          });
+          return true;
+        } catch (error) {
+          set({ error: (error as Error).message });
+          return false;
+        } finally {
+          set({ isSaving: false });
+        }
+      },
+
+      updateLocationMapping: async (id: number, payload: LocationMappingUpdate) => {
+        set({ isSaving: true, error: null });
+        try {
+          const updated = await updateLocationMapping(id, payload);
+          set((state) => {
+            const idx = state.locationMappings.findIndex((m) => m.id === id);
+            if (idx !== -1) {
+              state.locationMappings[idx] = updated;
+            }
           });
           return true;
         } catch (error) {

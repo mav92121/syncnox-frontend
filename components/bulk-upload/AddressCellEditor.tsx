@@ -1,26 +1,29 @@
 "use client";
 
-import React, { forwardRef, useImperativeHandle, useState } from "react";
+import React, { forwardRef, useImperativeHandle, useState, useRef } from "react";
 import { ICellEditorParams } from "ag-grid-community";
 import AddressAutocomplete, { AddressData } from "@/components/AddressAutocomplete";
 import { useBulkUploadStore } from "@/store/bulkUpload.store";
 
 export default forwardRef((props: ICellEditorParams, ref) => {
   const [currentValue, setCurrentValue] = useState(props.value);
+  const valRef = useRef(props.value);
 
   useImperativeHandle(ref, () => {
     return {
       getValue() {
-        return currentValue;
+        return valRef.current;
       },
     };
   });
 
   const handleChange = (newValue: string) => {
+    valRef.current = newValue;
     setCurrentValue(newValue);
   };
 
   const handleSelect = (addressData: AddressData) => {
+    valRef.current = addressData.address_formatted;
     setCurrentValue(addressData.address_formatted);
     
     const store = useBulkUploadStore.getState();

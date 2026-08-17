@@ -36,7 +36,31 @@ const LOCATION_CATEGORIES = [
   { value: "Landmark", label: "Custom Landmark" },
 ];
 
-const geocodeAddress = (query: string): Promise<{ lat: number; lng: number; formatted_address?: string } | null> => {
+interface AddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
+
+const extractAddressComponent = (
+  components: AddressComponent[],
+  types: string[]
+): string => {
+  const match = components.find((c) =>
+    c?.types?.some((t: string) => types.includes(t))
+  );
+  return match?.long_name || "";
+};
+
+const geocodeAddress = (
+  query: string
+): Promise<{
+  lat: number;
+  lng: number;
+  formatted_address?: string;
+  city?: string;
+  country?: string;
+} | null> => {
   return new Promise((resolve) => {
     if (typeof window === "undefined" || !(window as any).google?.maps?.Geocoder) {
       resolve(null);
@@ -47,10 +71,18 @@ const geocodeAddress = (query: string): Promise<{ lat: number; lng: number; form
       geocoder.geocode({ address: query }, (results: any, status: any) => {
         if (status === "OK" && results && results[0]) {
           const loc = results[0].geometry.location;
+          const components = results[0].address_components || [];
           resolve({
             lat: loc.lat(),
             lng: loc.lng(),
             formatted_address: results[0].formatted_address,
+            city:
+              extractAddressComponent(components, ["locality", "postal_town"]) ||
+              extractAddressComponent(components, ["sublocality_level_1", "sublocality"]) ||
+              extractAddressComponent(components, ["administrative_area_level_2"]) ||
+              undefined,
+            country:
+              extractAddressComponent(components, ["country"]) || undefined,
           });
         } else {
           resolve(null);
@@ -162,6 +194,8 @@ export default function BulkImportDataPreviewStep({
           _key: idx,
           name: rawName || rawAddress,
           address: rawAddress || rawName,
+          city: getVal("city"),
+          country: getVal("country"),
           latitude: getVal("latitude"),
           longitude: getVal("longitude"),
         };
@@ -191,6 +225,8 @@ export default function BulkImportDataPreviewStep({
                 latitude: res.lat.toFixed(6),
                 longitude: res.lng.toFixed(6),
                 address: copy[i].address || res.formatted_address || query,
+                city: copy[i].city || res.city || "",
+                country: copy[i].country || res.country || "",
               };
               return copy;
             });
@@ -303,6 +339,8 @@ export default function BulkImportDataPreviewStep({
             name: stationName || addressStr,
             address: addressStr || stationName,
             aliases: aliases.length > 0 ? aliases : undefined,
+            city: r.city ? r.city.trim() : undefined,
+            country: r.country ? r.country.trim() : undefined,
             latitude: latNum,
             longitude: lngNum,
             is_active: true,
@@ -688,6 +726,37 @@ export default function BulkImportDataPreviewStep({
           value={val}
           onChange={(e) => updateCell(idx, "address", e.target.value)}
           placeholder="Street address"
+          className="text-xs"
+        />
+      ),
+    },
+
+    {
+      title: "City",
+      dataIndex: "city",
+      key: "city",
+      width: 140,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "city", e.target.value)}
+          placeholder="Auto-resolved"
+          className="text-xs"
+        />
+      ),
+    },
+    {
+      title: "Country",
+      dataIndex: "country",
+      key: "country",
+      width: 140,
+      render: (val: string, record: any, idx: number) => (
+        <Input
+          size="small"
+          value={val}
+          onChange={(e) => updateCell(idx, "country", e.target.value)}
+          placeholder="Auto-resolved"
           className="text-xs"
         />
       ),

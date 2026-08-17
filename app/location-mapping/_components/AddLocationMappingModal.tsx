@@ -8,6 +8,12 @@ interface AddLocationMappingModalProps {
   setOpen: (open: boolean) => void;
 }
 
+interface AddLocationMappingFormValues {
+  name: string;
+  address?: string;
+  aliases?: string;
+}
+
 export default function AddLocationMappingModal({
   open,
   setOpen,
@@ -15,7 +21,7 @@ export default function AddLocationMappingModal({
   const [form] = Form.useForm();
   const { createLocationMapping, isSaving } = useLocationMappingStore();
 
-  const handleFinish = async (values: any) => {
+  const handleFinish = async (values: AddLocationMappingFormValues) => {
     const success = await createLocationMapping({
       name: values.name.trim(),
       address: values.address?.trim() || values.name.trim(),

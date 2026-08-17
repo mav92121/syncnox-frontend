@@ -22,6 +22,7 @@ const JOB_TYPE_CONFIG: Record<
   delivery: { color: "#1677ff", label: "Delivery", bg: "#e6f4ff", icon: "📦" },
   pickup: { color: "#52c41a", label: "Pickup", bg: "#ecfdf5", icon: "📍" },
   service: { color: "#fa8c16", label: "Service", bg: "#fff7e6", icon: "🔧" },
+  transport: { color: "#059669", label: "Transport", bg: "#ecfdf5", icon: "🚌" },
 };
 
 const MarkerTooltip: React.FC<MarkerTooltipProps> = ({

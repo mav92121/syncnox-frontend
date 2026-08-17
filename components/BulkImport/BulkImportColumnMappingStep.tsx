@@ -41,6 +41,8 @@ const DRIVER_FIELDS: SystemFieldDefinition[] = [
 const LOCATION_FIELDS: SystemFieldDefinition[] = [
   { key: "name", label: "Station Name / Title", required: true },
   { key: "address", label: "Location Address / Formatted Address" },
+  { key: "city", label: "City" },
+  { key: "country", label: "Country" },
   { key: "latitude", label: "Latitude (Lat)" },
   { key: "longitude", label: "Longitude (Lng)" },
 ];
@@ -80,6 +82,8 @@ function autoMatchField(header: string, entityType: "vehicle" | "driver" | "loca
     if (clean.includes("code") || clean.includes("alias") || clean.includes("stn") || clean.includes("station id") || clean === "id") return "code";
     if (clean === "lat" || clean.includes("latitude")) return "latitude";
     if (clean === "lng" || clean === "lon" || clean.includes("longitude")) return "longitude";
+    if (clean === "city" || clean === "town" || clean.includes("ville") || clean === "municipality") return "city";
+    if (clean === "country" || clean === "pays" || clean.includes("nationality")) return "country";
     if (clean.includes("category") || clean.includes("type") || clean.includes("kind")) return "category";
     if (clean.includes("zone") || clean.includes("area") || clean.includes("region")) return "service_zone";
     if (clean.includes("hours") || clean.includes("operating") || clean.includes("schedule")) return "operating_hours";

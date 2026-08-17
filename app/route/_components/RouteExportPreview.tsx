@@ -125,7 +125,7 @@ const RouteExportPreview: React.FC<RouteExportPreviewProps> = ({
           Print / Save as PDF
         </Button>
       }
-      destroyOnClose
+      destroyOnHidden
       styles={{ body: { padding: 0, height: "70vh" } }}
       title={
         <div className="flex justify-between items-center px-1 py-3">
