@@ -5,7 +5,7 @@ export type JobStatus =
   | "completed"
   | "cancelled"
   | "failed";
-export type JobType = "delivery" | "pickup" | "service";
+export type JobType = "delivery" | "pickup" | "service" | "transport";
 export type PriorityLevel = "low" | "medium" | "high";
 export type RecurrenceType = "one_time" | "daily" | "weekly" | "monthly";
 export type PaymentStatus = "unpaid" | "paid" | "pending";
