@@ -460,7 +460,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             </Text>
             <Text type="secondary">
               <TeamOutlined /> {totalVehicles}{" "}
-              {totalVehicles === 1 ? "vehicle" : "vehicles"}
+              {totalVehicles === 1 ? "team member" : "team members"}
             </Text>
           </div>
 

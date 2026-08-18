@@ -184,8 +184,8 @@ const SideBar = () => {
           <button
             type="button"
             onClick={() => {
-              handleNavigation("/depot", "depot");
-              router.push("/depot");
+              handleNavigation("/locations", "location");
+              router.push("/locations");
             }}
             className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
           >
@@ -193,7 +193,7 @@ const SideBar = () => {
               <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
                 <EnvironmentOutlined />
               </div>
-              <span>Depots</span>
+              <span>Locations</span>
             </div>
             <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
               {depots.length}

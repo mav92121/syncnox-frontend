@@ -1,14 +1,19 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { Form, Input, message, Typography, Flex } from "antd";
+import { Form, Input, Select, message, Typography, Flex } from "antd";
 import type { FormInstance } from "antd";
-import { LocationMapping } from "@/apis/location-mapping.api";
+import {
+  LocationMapping,
+  LOCATION_TYPE_OPTIONS,
+  LocationTypeEnum,
+} from "@/apis/location-mapping.api";
 import { useLocationMappingStore } from "@/store/location-mapping.store";
 
 const { Text } = Typography;
 
 interface LocationMappingFormValues {
   name: string;
+  type?: LocationTypeEnum;
   address?: string;
   city?: string;
   country?: string;
@@ -61,8 +66,14 @@ const LocationMappingForm = ({
   useEffect(() => {
     if (initialData) {
       isPrefillingRef.current = true;
+      const initialType =
+        (initialData.type as LocationTypeEnum) ||
+        (initialData.location_type as LocationTypeEnum) ||
+        undefined;
+
       form.setFieldsValue({
         name: initialData.name,
+        type: initialType,
         address: initialData.address || undefined,
         city: initialData.city || undefined,
         country: initialData.country || undefined,
@@ -81,6 +92,8 @@ const LocationMappingForm = ({
     }
     const payload = {
       name: values.name.trim(),
+      type: values.type,
+      location_type: values.type,
       address: values.address?.trim() || undefined,
       city: values.city?.trim() || undefined,
       country: values.country?.trim() || undefined,
@@ -120,6 +133,16 @@ const LocationMappingForm = ({
           />
         </Form.Item>
 
+        <Form.Item label="Location Type" name="type">
+          <Select
+            placeholder="Select location type (optional)"
+            allowClear
+            options={LOCATION_TYPE_OPTIONS}
+            className="rounded-none text-xs"
+            onChange={() => triggerAutoSave()}
+          />
+        </Form.Item>
+
         <Form.Item label="Street Address / Location" name="address">
           <Input
             placeholder="e.g. 5300 Henri-Bourassa Blvd W, Montreal"
@@ -152,12 +175,6 @@ const LocationMappingForm = ({
           />
         </Form.Item>
       </Form>
-
-      <Flex>
-        <Text type="secondary" style={{ fontSize: 11 }}>
-          Changes are saved automatically.
-        </Text>
-      </Flex>
     </Flex>
   );
 };

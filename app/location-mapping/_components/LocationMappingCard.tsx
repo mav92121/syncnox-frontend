@@ -1,4 +1,4 @@
-import { LocationMapping } from "@/apis/location-mapping.api";
+import { LocationMapping, LOCATION_TYPE_OPTIONS } from "@/apis/location-mapping.api";
 import { MapPin } from "lucide-react";
 import { Checkbox } from "antd";
 
@@ -18,6 +18,11 @@ const LocationMappingCard = ({
   onClick,
 }: LocationMappingCardProps) => {
   const sub = [mapping.address, mapping.city].filter(Boolean).join(" · ");
+  const rawType = mapping.type || mapping.location_type;
+  const matchedOpt = LOCATION_TYPE_OPTIONS.find(
+    (opt) => opt.value === rawType || opt.label.toLowerCase() === String(rawType).toLowerCase()
+  );
+  const displayType = matchedOpt ? matchedOpt.label : rawType || null;
 
   return (
     <div
@@ -51,8 +56,15 @@ const LocationMappingCard = ({
         <MapPin size={18} />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-xs font-semibold text-gray-900 truncate leading-snug">
-          {mapping.name}
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-xs font-semibold text-gray-900 truncate leading-snug">
+            {mapping.name}
+          </span>
+          {displayType && (
+            <span className="px-1.5 py-0.2 text-[9.5px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded shrink-0">
+              {displayType}
+            </span>
+          )}
         </div>
         {sub ? (
           <div className="text-[11.5px] text-gray-500 truncate mt-0.5 leading-snug">
