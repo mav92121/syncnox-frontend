@@ -416,48 +416,50 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex gap-6 border-b border-gray-200 shrink-0 px-1">
-        <button
-          type="button"
-          onClick={() => handleTabChange("depots")}
-          className={`flex items-center gap-2 py-2.5 text-xs font-bold transition-all cursor-pointer bg-transparent border-none border-b-2 outline-none ${
-            activeTab === "depots"
-              ? "border-[#003220] text-[#003220]"
-              : "border-transparent text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          <span>Depots</span>
-          <span
-            className={`px-1.5 py-0.5 text-[10.5px] rounded-full font-semibold ${
+      <div className="my-3 shrink-0">
+        <div className="inline-flex items-center gap-1 bg-gray-100 rounded-none border border-gray-200">
+          <button
+            type="button"
+            onClick={() => handleTabChange("depots")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all select-none cursor-pointer border-none outline-none ${
               activeTab === "depots"
-                ? "bg-[#003220]/10 text-[#003220]"
-                : "bg-gray-100 text-gray-600"
+                ? "bg-[#0F4C3A] text-white shadow-xs"
+                : "text-gray-500 hover:text-gray-800 bg-transparent"
             }`}
           >
-            {depots.length}
-          </span>
-        </button>
+            <span>Depots</span>
+            <span
+              className={`px-1.5 py-0.2 text-[10px] rounded font-bold ${
+                activeTab === "depots"
+                  ? "bg-white/20 text-white"
+                  : "bg-gray-200 text-gray-600"
+              }`}
+            >
+              {depots.length}
+            </span>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => handleTabChange("additional-locations")}
-          className={`flex items-center gap-2 py-2.5 text-xs font-bold transition-all cursor-pointer bg-transparent border-none border-b-2 outline-none ${
-            activeTab === "additional-locations"
-              ? "border-[#003220] text-[#003220]"
-              : "border-transparent text-gray-500 hover:text-gray-800"
-          }`}
-        >
-          <span>Additional Locations</span>
-          <span
-            className={`px-1.5 py-0.5 text-[10.5px] rounded-full font-semibold ${
+          <button
+            type="button"
+            onClick={() => handleTabChange("additional-locations")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all select-none cursor-pointer border-none outline-none ${
               activeTab === "additional-locations"
-                ? "bg-[#003220]/10 text-[#003220]"
-                : "bg-gray-100 text-gray-600"
+                ? "bg-[#0F4C3A] text-white shadow-xs"
+                : "text-gray-500 hover:text-gray-800 bg-transparent"
             }`}
           >
-            {locationMappings.length}
-          </span>
-        </button>
+            <span>Additional Locations</span>
+            <span
+              className={`px-1.5 py-0.2 text-[10px] rounded font-bold ${
+                activeTab === "additional-locations"
+                  ? "bg-white/20 text-white"
+                  : "bg-gray-200 text-gray-600"
+              }`}
+            >
+              {locationMappings.length}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Tab 1: Depots Split View */}
