@@ -1,10 +1,14 @@
 "use client";
 
 import { Suspense } from "react";
-import LocationsView from "../locations/_components/LocationsView";
+import LocationsView from "./_components/LocationsView";
 import { Spin } from "antd";
 
-export default function LocationMappingPage() {
+function LocationsPageContent() {
+  return <LocationsView defaultTab="depots" />;
+}
+
+export default function LocationsPage() {
   return (
     <Suspense
       fallback={
@@ -13,7 +17,7 @@ export default function LocationMappingPage() {
         </div>
       }
     >
-      <LocationsView defaultTab="additional-locations" />
+      <LocationsPageContent />
     </Suspense>
   );
 }

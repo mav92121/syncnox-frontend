@@ -2,7 +2,7 @@
 import BaseTable from "@/components/Table/BaseTable";
 import { AllRoutes } from "@/types/routes.type";
 import { useRouteStore } from "@/store/routes.store";
-import { Typography, Progress, Button, Select, Flex } from "antd";
+import { Typography, Progress, Button, Select, Flex, Popover, Checkbox } from "antd";
 import { ColDef } from "ag-grid-community";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/Jobs/StatusBanner";
@@ -10,6 +10,7 @@ import { useState } from "react";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import Link from "next/link";
 import { useIndexStore } from "@/store/index.store";
+import { FilterFilled } from "@ant-design/icons";
 
 const { Title } = Typography;
 
@@ -20,6 +21,87 @@ export const statusStyleMap: Record<string, string> = {
   completed: "bg-green-100 text-green-700 border border-green-200",
   failed: "bg-red-100 text-red-800 border border-red-200",
   default: "bg-gray-100 text-gray-700 border border-gray-200",
+};
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "scheduled", label: "Scheduled", dot: "bg-amber-400" },
+  { value: "in_transit", label: "In Transit", dot: "bg-blue-500" },
+  { value: "completed", label: "Completed", dot: "bg-emerald-500" },
+  { value: "all", label: "All", dot: "" },
+] as const;
+
+const StatusHeader = (props: any) => {
+  const { selectedStatus, setSelectedStatus } = props;
+  const [open, setOpen] = useState(false);
+
+  const activeOption =
+    STATUS_FILTER_OPTIONS.find((opt) => opt.value === selectedStatus) ||
+    STATUS_FILTER_OPTIONS[3];
+
+  const filterContent = (
+    <div className="p-1 min-w-[150px] space-y-1 font-sans">
+      <div className="px-2 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1">
+        Filter by Status
+      </div>
+      {STATUS_FILTER_OPTIONS.map(({ value, label, dot }) => {
+        const isChecked = selectedStatus === value;
+        return (
+          <div
+            key={value}
+            onClick={() => {
+              setSelectedStatus(value);
+              setOpen(false);
+            }}
+            className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-pointer transition-colors text-xs ${
+              isChecked
+                ? "bg-emerald-50 text-emerald-900 font-semibold"
+                : "hover:bg-gray-50 text-gray-700 font-medium"
+            }`}
+          >
+            <Checkbox checked={isChecked} />
+            {dot && <span className={`w-2 h-2 rounded-full ${dot} shrink-0`} />}
+            <span>{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <Popover
+      content={filterContent}
+      trigger="click"
+      placement="bottomRight"
+      open={open}
+      onOpenChange={setOpen}
+      arrow={false}
+      styles={{ container: { padding: 4, borderRadius: 8 } }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex items-center justify-between w-full cursor-pointer group py-1"
+      >
+        <span className="font-bold text-sm text-[#003220]">Status</span>
+        <div
+          className={`flex items-center gap-1.5 px-2 py-0.5 rounded border transition-all text-xs ${
+            selectedStatus !== "all"
+              ? "bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold"
+              : "bg-gray-50 border-gray-200 text-gray-600 group-hover:border-gray-300"
+          }`}
+        >
+          {activeOption.dot && (
+            <span className={`w-1.5 h-1.5 rounded-full ${activeOption.dot} shrink-0`} />
+          )}
+          <span className="text-[11px] truncate max-w-[70px]">
+            {activeOption.label}
+          </span>
+          <span className="text-[9px] text-gray-400 group-hover:text-gray-600 transition-transform">
+            {open ? "▲" : "▼"}
+          </span>
+        </div>
+      </div>
+    </Popover>
+  );
 };
 
 const DistanceHeader = (props: any) => {
@@ -59,35 +141,40 @@ export default function RoutesView() {
   const [distanceUnit, setDistanceUnit] = useState<"km" | "mi">("km");
   const columns: ColDef<AllRoutes>[] = [
     {
-      headerName: "ID",
-      field: "id",
-      width: 100,
-    },
-    {
       headerName: "Name",
       field: "name",
-    },
-    {
-      headerName: "View",
       cellRenderer: (params: any) => {
         return (
-          <Button
-            type="link"
-            size="small"
+          <button
+            type="button"
             onClick={() => {
               router.push(`/route/${params.data.optimization_id}`);
             }}
+            className="text-blue-600 hover:underline font-semibold cursor-pointer border-none bg-transparent p-0 text-left"
           >
-            Map View
-          </Button>
+            {params.value || "-"}
+          </button>
         );
       },
-      width: 120,
     },
     {
       headerName: "Scheduled Date",
       field: "scheduled_date",
       width: 150,
+    },
+    {
+      headerName: "Status",
+      headerComponent: StatusHeader,
+      headerComponentParams: {
+        selectedStatus,
+        setSelectedStatus,
+      },
+      field: "status",
+      cellRenderer: (params: any) => (
+        <StatusBadge value={params.value} styleMap={statusStyleMap} />
+      ),
+      width: 180,
+      minWidth: 160,
     },
     {
       headerName: "Team Members",
@@ -132,14 +219,6 @@ export default function RoutesView() {
       cellRenderer: (params: any) => (
         <Progress percent={params.data?.progress_percentage} />
       ),
-    },
-    {
-      headerName: "Route Status",
-      field: "status",
-      cellRenderer: (params: any) => (
-        <StatusBadge value={params.value} styleMap={statusStyleMap} />
-      ),
-      width: 150,
     },
     {
       headerName: "Total Stops",
@@ -193,29 +272,6 @@ export default function RoutesView() {
         <Title level={4} className="m-0 pt-2">
           Routes
         </Title>
-        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-none">
-          {([
-            { value: "scheduled", label: "Scheduled", dot: "bg-amber-400" },
-            { value: "in_transit", label: "In Transit", dot: "bg-blue-500" },
-            { value: "completed", label: "Completed", dot: "bg-emerald-500" },
-            { value: "all", label: "All", dot: "" },
-          ] as const).map(({ value, label, dot }) => (
-            <button
-              key={value}
-              onClick={() => setSelectedStatus(value)}
-              className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-none text-sm font-medium transition-all duration-150 select-none cursor-pointer border-none outline-none ${
-                selectedStatus === value
-                  ? "bg-white text-gray-900 shadow-sm ring-1 ring-gray-200"
-                  : "text-gray-500 hover:text-gray-700 bg-transparent"
-              }`}
-            >
-              {dot && (
-                <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${dot}`} />
-              )}
-              {label}
-            </button>
-          ))}
-        </div>
         <Flex gap={8}>
           <Link href="/plan" onClick={() => setCurrentTab("jobs")}>
             <Button >Create New Route</Button>

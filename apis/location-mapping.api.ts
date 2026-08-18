@@ -1,9 +1,26 @@
 import apiClient from "@/config/apiClient.config";
 
+export type LocationTypeEnum =
+  | "customer_site"
+  | "end_customer"
+  | "pickup"
+  | "warehouse"
+  | "other";
+
+export const LOCATION_TYPE_OPTIONS: { value: LocationTypeEnum; label: string }[] = [
+  { value: "customer_site", label: "Customer site" },
+  { value: "end_customer", label: "End customer" },
+  { value: "pickup", label: "Pickup" },
+  { value: "warehouse", label: "Warehouse" },
+  { value: "other", label: "Other" },
+];
+
 export interface LocationMapping {
   id: number;
   tenant_id: number;
   name: string;
+  type?: LocationTypeEnum | string | null;
+  location_type?: string | null;
   aliases?: string[] | null;
   address?: string | null;
   city?: string | null;
@@ -15,6 +32,8 @@ export interface LocationMapping {
 
 export interface LocationMappingCreate {
   name: string;
+  type?: LocationTypeEnum | string;
+  location_type?: string;
   aliases?: string[];
   address?: string;
   city?: string;
@@ -26,6 +45,8 @@ export interface LocationMappingCreate {
 
 export interface LocationMappingUpdate {
   name?: string;
+  type?: LocationTypeEnum | string;
+  location_type?: string;
   aliases?: string[];
   address?: string;
   city?: string;

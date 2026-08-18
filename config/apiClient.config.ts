@@ -15,6 +15,7 @@ if (env === "development" && backendUrl?.includes("localhost")) {
 const apiClient = axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
+  timeout: 120000, // 2 minutes timeout for long-running optimization requests
 });
 
 // Flag to prevent multiple 401 handlers running simultaneously

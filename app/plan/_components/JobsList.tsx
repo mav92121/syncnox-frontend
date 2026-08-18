@@ -10,6 +10,8 @@ import {
   Tag,
   message,
   Dropdown,
+  Popover,
+  Checkbox,
   type MenuProps,
 } from "antd";
 import {
@@ -18,7 +20,8 @@ import {
   DownOutlined,
   PlusOutlined,
   UploadOutlined,
-  FileExcelOutlined
+  FileExcelOutlined,
+  EnvironmentOutlined,
 } from "@ant-design/icons";
 import { Panel, PanelGroup } from "react-resizable-panels";
 import ResizeHandle from "@/components/ResizeHandle";
@@ -40,6 +43,7 @@ import MarkerTooltip from "@/components/MarkerTooltip";
 import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import CreateRouteModal from "@/app/plan/_components/CreateRouteModal";
+import CreateTransportRouteModal from "@/app/plan/_components/CreateTransportRouteModal";
 import DraftJobsDatePicker from "@/components/Jobs/DraftJobsDatePicker";
 import { useIndexStore } from "@/store/index.store";
 import AddJobsModal from "@/app/plan/AddJobsModal";
@@ -89,6 +93,7 @@ export default function JobsList() {
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
 
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
+  const [showCreateTransportRouteModal, setShowCreateTransportRouteModal] = useState(false);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [showTransportImportModal, setShowTransportImportModal] = useState(false);
@@ -216,9 +221,8 @@ export default function JobsList() {
   const deliveryColumns = [
     ...createJobTableColumns({
       viewColumnRenderer: (params: any) => (
-        <Button
-          type="link"
-          size="small"
+        <button
+          type="button"
           onClick={() => {
             if (params.data.location?.lat && params.data.location?.lng) {
               setIsMapOpen(true);
@@ -229,12 +233,17 @@ export default function JobsList() {
               setSelectedMarkerId(params.data.id);
             }
           }}
+          className="text-blue-600 hover:underline font-semibold cursor-pointer border-none bg-transparent p-0"
         >
-          Map View
-        </Button>
+          {params.value}
+        </button>
       ),
       teamsMap: getTeamsMap(),
       jobStatus: selectedJobTab === "all" ? undefined : selectedJobTab,
+      statusHeaderProps: {
+        selectedJobTab,
+        handleJobStatusChange,
+      },
     }),
     createActionsColumn<Job>({
       actions: [
@@ -476,49 +485,27 @@ export default function JobsList() {
           />
         </Flex>
 
-        {/* Center: Delivery Job Status Tabs (Only shown for Delivery category) */}
-        {jobCategory === "delivery" && (
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-none">
-            {([
-              { value: "draft", label: "Draft", dot: "bg-gray-400" },
-              { value: "assigned", label: "Assigned", dot: "bg-blue-500" },
-              { value: "completed", label: "Completed", dot: "bg-emerald-500" },
-              { value: "all", label: "All", dot: "" },
-            ] as const).map(({ value, label, dot }) => (
-              <button
-                key={value}
-                onClick={() => handleJobStatusChange({ target: { value } })}
-                className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-none text-sm font-medium transition-all duration-150 select-none cursor-pointer border-none outline-none ${
-                  selectedJobTab === value
-                    ? "bg-white text-gray-900 shadow-sm ring-1 ring-gray-200"
-                    : "text-gray-500 hover:text-gray-700 bg-transparent"
-                }`}
-              >
-                {dot && <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${dot}`} />}
-                {label}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* Right Section: Action Buttons */}
         <Flex gap={8} justify="flex-end" style={{ minWidth: 220 }}>
-          {jobCategory === "delivery" && (
+          {jobCategory === "delivery" &&
+            selectedJobTab !== "assigned" &&
+            selectedJobTab !== "completed" && (
+              <Button
+                type="primary"
+                disabled={selectedJobIds.length === 0}
+                onClick={() => setShowCreateRouteModal(true)}
+              >
+                Create New Route
+              </Button>
+            )}
+
+          {jobCategory === "transport" && (
             <Button
               type="primary"
-              disabled={
-                selectedJobIds.length === 0 ||
-                (selectedJobTab !== "draft" && selectedJobTab !== "all")
-              }
-              onClick={() => setShowCreateRouteModal(true)}
-              style={{
-                visibility:
-                  selectedJobTab === "all" || selectedJobTab === "draft"
-                    ? "visible"
-                    : "hidden",
-              }}
+              onClick={() => setShowCreateTransportRouteModal(true)}
+              className="bg-[#0F4C3A] hover:bg-[#0a3529] font-semibold"
             >
-              Create New Route
+              Optimize Transport Routes
             </Button>
           )}
 
@@ -528,9 +515,11 @@ export default function JobsList() {
             onClick={handleDeleteJobsRequest}
             icon={<DeleteOutlined style={{ fontSize: 18 }} />}
           />
-          <Button onClick={() => setIsMapOpen(!isMapOpen)}>
-            {isMapOpen ? "Close Map" : "Map View"}
-          </Button>
+          <Button
+            onClick={() => setIsMapOpen(!isMapOpen)}
+            icon={<EnvironmentOutlined style={{ fontSize: 18 }} />}
+            title={isMapOpen ? "Close Map" : "Map View"}
+          />
           <Dropdown trigger={["click"]} menu={{ items: addJobsMenu }} placement="bottomRight">
             <Button type="primary">
               Add Jobs <DownOutlined />
@@ -645,6 +634,13 @@ export default function JobsList() {
           setEditTransportJobData(null);
         }}
         initialValues={editTransportJobData}
+      />
+
+      {/* Transport Route Optimization Modal */}
+      <CreateTransportRouteModal
+        open={showCreateTransportRouteModal}
+        onClose={() => setShowCreateTransportRouteModal(false)}
+        scheduledDate={selectedDate ?? new Date().toISOString().split("T")[0]}
       />
 
       {showCreateRouteModal &&

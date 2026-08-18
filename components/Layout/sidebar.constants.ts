@@ -80,15 +80,9 @@ export const MENU_ITEMS: MenuItem[] = [
       },
       {
         icon: EnvironmentOutlined,
-        label: "Depot",
-        path: "/depot",
-        tabKey: "depot",
-      },
-      {
-        icon: EnvironmentOutlined,
-        label: "Location Mappings",
-        path: "/location-mapping",
-        tabKey: "location_mapping",
+        label: "Location",
+        path: "/locations",
+        tabKey: "location",
       },
     ],
   },

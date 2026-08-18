@@ -165,7 +165,6 @@ const Depot = () => {
             </Button>
           )}
           <Button
-            icon={<Map size={15} />}
             onClick={() => {
               if (!isMapOpen && selectedDepot) {
                 setSelectedMarkerId(selectedDepot.id);
@@ -175,10 +174,10 @@ const Depot = () => {
               }
               setIsMapOpen(!isMapOpen);
             }}
+            icon={<MapPin size={18} />}
+            title={isMapOpen ? "Close Map" : "Map View"}
             id="depot-map-view-btn"
-          >
-            {isMapOpen ? "Close Map" : "Map View"}
-          </Button>
+          />
           <Button
             type="primary"
             icon={<Plus size={15} />}

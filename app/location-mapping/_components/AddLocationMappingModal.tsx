@@ -1,7 +1,10 @@
 "use client";
-
-import { Modal, Form, Input, Button, message } from "antd";
+import { Modal, Form, Input, Select, Button, message } from "antd";
 import { useLocationMappingStore } from "@/store/location-mapping.store";
+import {
+  LOCATION_TYPE_OPTIONS,
+  LocationTypeEnum,
+} from "@/apis/location-mapping.api";
 
 interface AddLocationMappingModalProps {
   open: boolean;
@@ -10,6 +13,7 @@ interface AddLocationMappingModalProps {
 
 interface AddLocationMappingFormValues {
   name: string;
+  type?: LocationTypeEnum;
   address?: string;
   aliases?: string;
 }
@@ -24,6 +28,8 @@ export default function AddLocationMappingModal({
   const handleFinish = async (values: AddLocationMappingFormValues) => {
     const success = await createLocationMapping({
       name: values.name.trim(),
+      type: values.type,
+      location_type: values.type,
       address: values.address?.trim() || values.name.trim(),
       aliases: values.aliases ? values.aliases.split(",").map((a: string) => a.trim()).filter(Boolean) : undefined,
       is_active: true,
@@ -60,6 +66,15 @@ export default function AddLocationMappingModal({
           rules={[{ required: true, message: "Please enter station/location name" }]}
         >
           <Input placeholder="e.g. Montmorency Metro" className="rounded-none text-xs" />
+        </Form.Item>
+
+        <Form.Item label="Location Type" name="type">
+          <Select
+            placeholder="Select location type (optional)"
+            allowClear
+            options={LOCATION_TYPE_OPTIONS}
+            className="rounded-none text-xs"
+          />
         </Form.Item>
 
         <Form.Item
