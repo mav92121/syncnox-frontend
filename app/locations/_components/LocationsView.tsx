@@ -532,7 +532,7 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
           <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-white">
             {selectedDepot ? (
               <>
-                <div className="flex items-center gap-3 p-3.5 px-5 border-b border-gray-200 shrink-0 bg-white">
+                <div className="flex items-center gap-3 px-5 border-gray-200 shrink-0 bg-white">
                   <div className="w-10 h-10 bg-slate-100 flex items-center justify-center text-[#003220] shrink-0">
                     <MapPin size={20} />
                   </div>
