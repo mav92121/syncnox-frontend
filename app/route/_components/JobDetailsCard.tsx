@@ -5,6 +5,19 @@ import {
   DeleteOutlined,
   CheckCircleOutlined,
 } from "@ant-design/icons";
+import {
+  User,
+  MapPin,
+  Clock,
+  Building2,
+  Phone,
+  Mail,
+  Flag,
+  Calendar,
+  Timer,
+  FileText,
+  Activity,
+} from "lucide-react";
 import dayjs from "dayjs";
 import type { Job, JobStatus } from "@/types/job.type";
 import { STATUS_COLORS } from "@/utils/jobs.utils";
@@ -44,8 +57,11 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
     stopData?.address_formatted ||
     "Address not specified";
   const status = job?.status || stopData?.status || "assigned";
-  const priority =
-    job?.priority_level || (job as any)?.priority || "medium";
+  const priority = (
+    job?.priority_level ||
+    (job as any)?.priority ||
+    "medium"
+  ).toLowerCase();
 
   const arrivalTime = stopData?.arrival_time
     ? dayjs(stopData.arrival_time).format("hh:mm A")
@@ -69,6 +85,20 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   const driverLabel = driverName
     ? driverName.split(" ")[0].toUpperCase()
     : "DR1";
+
+  const getPriorityBadgeClass = (p: string) => {
+    switch (p) {
+      case "high":
+      case "urgent":
+        return "bg-red-50 text-red-700 border-red-200";
+      case "medium":
+        return "bg-amber-50 text-amber-700 border-amber-200";
+      case "low":
+        return "bg-slate-100 text-slate-700 border-slate-200";
+      default:
+        return "bg-slate-100 text-slate-700 border-slate-200";
+    }
+  };
 
   const handleUpdateStatus = async (newStatus: string) => {
     if (!jobId) return;
@@ -101,7 +131,7 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   };
 
   return (
-    <div className="absolute top-3 right-3 z-50 w-84 h-[calc(75%-24px)] max-h-[580px] bg-white rounded-xl shadow-2xl border border-gray-200/90 flex flex-col overflow-hidden text-xs transition-all animate-in fade-in slide-in-from-right-4 duration-200">
+    <div className="absolute top-3 right-3 z-50 w-88 h-[calc(78%-24px)] max-h-[600px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col overflow-hidden text-xs transition-all animate-in fade-in slide-in-from-right-4 duration-200">
       {/* Header */}
       <div className="p-3.5 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
         <div className="font-bold text-gray-900 text-sm">
@@ -132,23 +162,26 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
       {/* Scrollable Key-Value Grid */}
       <div className="p-3.5 space-y-3 flex-1 overflow-y-auto custom-scrollbar">
         {/* Row 1: Contact Name & Status */}
-        <div className="grid grid-cols-2 gap-2 border-b border-gray-100 pb-2.5">
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              Contact Name
+        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <User size={13} className="text-gray-400 shrink-0" />
+              <span>Contact Name</span>
             </div>
-            <div className="text-xs text-gray-600 font-medium truncate">
+            <div className="text-xs text-gray-600 font-medium truncate pl-4.5">
               {customerName}
             </div>
           </div>
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              Status
+
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <Activity size={13} className="text-gray-400 shrink-0" />
+              <span>Status</span>
             </div>
-            <div>
+            <div className="pl-4.5 pt-0.5">
               <Tag
                 color={STATUS_COLORS[status as JobStatus] || "blue"}
-                className="capitalize font-semibold border-none text-[10px] px-1.5 py-0 m-0"
+                className="capitalize font-semibold border-none text-[10.5px] px-2 py-0.5 m-0 rounded"
               >
                 {(status || "assigned").replace("_", " ")}
               </Tag>
@@ -156,90 +189,111 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
           </div>
         </div>
 
-        {/* Row 2: Destination Address & ETA */}
-        <div className="grid grid-cols-2 gap-2 border-b border-gray-100 pb-2.5">
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              Address
+        {/* Row 2: Address & ETA / Arrival */}
+        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <MapPin size={13} className="text-gray-400 shrink-0" />
+              <span>Address</span>
             </div>
-            <div className="text-xs text-gray-600 font-medium leading-snug line-clamp-2">
+            <div className="text-xs text-gray-600 font-medium leading-snug line-clamp-2 pl-4.5">
               {address}
             </div>
           </div>
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              ETA / Arrival
+
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <Clock size={13} className="text-gray-400 shrink-0" />
+              <span>ETA / Arrival</span>
             </div>
-            <div className="text-xs text-gray-900 font-bold">{arrivalTime}</div>
+            <div className="text-xs text-gray-900 font-bold pl-4.5">
+              {arrivalTime}
+            </div>
           </div>
         </div>
 
         {/* Row 3: Company Name & Phone */}
-        <div className="grid grid-cols-2 gap-2 border-b border-gray-100 pb-2.5">
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              Company Name
+        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <Building2 size={13} className="text-gray-400 shrink-0" />
+              <span>Company Name</span>
             </div>
-            <div className="text-xs text-gray-600 font-medium truncate">
+            <div className="text-xs text-gray-600 font-medium truncate pl-4.5">
               {companyName}
             </div>
           </div>
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              Phone
+
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <Phone size={13} className="text-gray-400 shrink-0" />
+              <span>Phone</span>
             </div>
-            <div className="text-xs text-gray-600 font-medium truncate">
+            <div className="text-xs text-gray-600 font-medium truncate pl-4.5">
               {phone}
             </div>
           </div>
         </div>
 
         {/* Row 4: Email & Priority */}
-        <div className="grid grid-cols-2 gap-2 border-b border-gray-100 pb-2.5">
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              Email
+        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <Mail size={13} className="text-gray-400 shrink-0" />
+              <span>Email</span>
             </div>
-            <div className="text-xs text-gray-600 font-medium truncate">
+            <div className="text-xs text-gray-600 font-medium truncate pl-4.5" title={email}>
               {email}
             </div>
           </div>
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              Priority
+
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <Flag size={13} className="text-gray-400 shrink-0" />
+              <span>Priority</span>
             </div>
-            <div className="text-xs font-semibold capitalize text-gray-800">
-              {priority}
+            <div className="pl-4.5 pt-0.5">
+              <span
+                className={`inline-block text-[10.5px] font-bold capitalize px-2 py-0.5 border rounded ${getPriorityBadgeClass(
+                  priority,
+                )}`}
+              >
+                {priority}
+              </span>
             </div>
           </div>
         </div>
 
         {/* Row 5: Time Window & Service Duration */}
-        <div className="grid grid-cols-2 gap-2 border-b border-gray-100 pb-2.5">
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              Time Window
+        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <Calendar size={13} className="text-gray-400 shrink-0" />
+              <span>Time Window</span>
             </div>
-            <div className="text-xs text-gray-600 font-medium">
+            <div className="text-xs text-gray-600 font-medium pl-4.5">
               {timeWindow}
             </div>
           </div>
-          <div>
-            <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-              Service Duration
+
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+              <Timer size={13} className="text-gray-400 shrink-0" />
+              <span>Service Duration</span>
             </div>
-            <div className="text-xs text-gray-600 font-medium">
+            <div className="text-xs text-gray-600 font-medium pl-4.5">
               {serviceDuration} min
             </div>
           </div>
         </div>
 
         {/* Row 6: Notes */}
-        <div>
-          <div className="text-[11px] font-bold text-gray-700 mb-0.5">
-            Notes
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+            <FileText size={13} className="text-gray-400 shrink-0" />
+            <span>Notes</span>
           </div>
-          <div className="text-xs text-gray-600 leading-relaxed break-words bg-gray-50 p-2 border border-gray-200/60 rounded">
+          <div className="text-xs text-gray-700 leading-relaxed break-words bg-gray-50/80 p-2.5 border border-gray-200 rounded text-[11.5px] ml-4.5">
             {notes}
           </div>
         </div>
@@ -255,7 +309,7 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
             loading={isUpdating}
             disabled={status === "completed"}
             onClick={() => handleUpdateStatus("completed")}
-            className="w-1/2 bg-[#003220] hover:bg-[#002417] text-xs font-semibold"
+            className="w-1/2 bg-[#003220] hover:bg-[#002417] text-xs font-semibold h-8"
           >
             Mark Completed
           </Button>
@@ -264,7 +318,7 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
             size="small"
             disabled={status === "skipped" || status === "failed"}
             onClick={() => handleUpdateStatus("failed")}
-            className="w-1/2 text-xs"
+            className="w-1/2 text-xs font-semibold h-8"
           >
             Skip Stop
           </Button>
