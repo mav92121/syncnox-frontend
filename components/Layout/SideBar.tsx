@@ -11,6 +11,7 @@ import {
   CarOutlined,
   EnvironmentOutlined,
   UserOutlined,
+  SettingOutlined,
 } from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/store/index.store";
 import { useOnboardingStore } from "@/store/onboarding.store";
@@ -91,6 +92,8 @@ const SideBar = () => {
     });
   }, [clearUser]);
 
+  const [showStatsInPopover, setShowStatsInPopover] = useState(false);
+
   const userPopoverContent = (
     <div className="w-[260px] p-3 font-sans space-y-3">
       {/* Centered Avatar & Identity */}
@@ -120,65 +123,84 @@ const SideBar = () => {
         )}
       </div>
 
-      {/* 3 Stats Direct List */}
-      <div className="pt-2 border-t border-gray-200 space-y-1.5">
+      {/* Settings Action Button */}
+      <div className="pt-2 border-t border-gray-200">
         <button
           type="button"
-          onClick={() => {
-            handleNavigation("/team", "team");
-            router.push("/team");
-          }}
-          className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
+          onClick={() => setShowStatsInPopover((prev) => !prev)}
+          className="w-full flex items-center justify-between text-xs px-3 py-2 bg-gray-50 rounded border border-gray-200 hover:bg-emerald-50 hover:border-emerald-300 transition-all cursor-pointer font-semibold text-gray-700 hover:text-[#003220]"
         >
-          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-              <TeamOutlined />
-            </div>
-            <span>Team Members</span>
+          <div className="flex items-center gap-2">
+            <SettingOutlined className="text-sm text-center text-gray-500" />
+            <span>Settings</span>
           </div>
-          <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
-            {teams.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            handleNavigation("/vehicle", "vehicle");
-            router.push("/vehicle");
-          }}
-          className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
-        >
-          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-              <CarOutlined />
-            </div>
-            <span>Vehicles</span>
-          </div>
-          <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
-            {vehicles.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            handleNavigation("/depot", "depot");
-            router.push("/depot");
-          }}
-          className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
-        >
-          <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
-            <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
-              <EnvironmentOutlined />
-            </div>
-            <span>Depots</span>
-          </div>
-          <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
-            {depots.length}
+          <span className="text-[10px] text-gray-400">
+            {showStatsInPopover ? "▲" : "▼"}
           </span>
         </button>
       </div>
+
+      {/* Stats List (collapsible under Settings) */}
+      {showStatsInPopover && (
+        <div className="space-y-1.5 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              handleNavigation("/team", "team");
+              router.push("/team");
+            }}
+            className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
+          >
+            <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+              <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+                <TeamOutlined />
+              </div>
+              <span>Team Members</span>
+            </div>
+            <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
+              {teams.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              handleNavigation("/vehicle", "vehicle");
+              router.push("/vehicle");
+            }}
+            className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
+          >
+            <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+              <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+                <CarOutlined />
+              </div>
+              <span>Vehicles</span>
+            </div>
+            <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
+              {vehicles.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              handleNavigation("/depot", "depot");
+              router.push("/depot");
+            }}
+            className="w-full flex items-center justify-between text-xs px-2.5 py-2 bg-white rounded-none border border-gray-200 hover:border-emerald-500 hover:bg-emerald-50/50 transition-all cursor-pointer text-left group"
+          >
+            <div className="flex items-center gap-2 text-gray-700 group-hover:text-[#003220] font-medium">
+              <div className="w-5 h-5 rounded-none bg-emerald-100/80 group-hover:bg-[#003220] group-hover:text-white flex items-center justify-center text-[#003220] text-xs shrink-0 transition-colors">
+                <EnvironmentOutlined />
+              </div>
+              <span>Depots</span>
+            </div>
+            <span className="bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-[#003220] border border-emerald-200 rounded-none">
+              {depots.length}
+            </span>
+          </button>
+        </div>
+      )}
     </div>
   );
 

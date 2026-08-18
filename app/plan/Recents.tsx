@@ -62,22 +62,22 @@ const Recents = () => {
   const columns = [
     ...createJobTableColumns({
       viewColumnRenderer: (params: any) => (
-        <Button
-          type="link"
-          size="small"
+        <button
+          type="button"
           onClick={() => {
             if (params.data.location?.lat && params.data.location?.lng) {
               setMapCenter({
                 lat: params.data.location.lat,
                 lng: params.data.location.lng,
               });
-              // Auto-open tooltip when Map View is clicked
+              // Auto-open tooltip when ID is clicked
               setSelectedMarkerId(params.data.id);
             }
           }}
+          className="text-blue-600 hover:underline font-semibold cursor-pointer border-none bg-transparent p-0"
         >
-          Map View
-        </Button>
+          {params.value}
+        </button>
       ),
       teamsMap: getTeamsMap(),
     }),

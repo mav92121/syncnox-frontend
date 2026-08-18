@@ -4,6 +4,8 @@ import { Job, JobStatus } from "@/types/job.type";
 import StatusBadge from "@/components/Jobs/StatusBanner";
 import { formatTimeWindow } from "./app.utils";
 import { COUNTRY_CODES } from "@/constants/country";
+import { Popover, Checkbox } from "antd";
+import { useState } from "react";
 
 export const filterCountryOptions = (input: string, option: any): boolean => {
   const searchText = input.toLowerCase();
@@ -51,6 +53,87 @@ export const statusStyleMap: Record<string, string> = {
   default: "bg-gray-100 text-gray-700 border border-gray-200",
 };
 
+const JOB_STATUS_FILTER_OPTIONS = [
+  { value: "draft", label: "Draft", dot: "bg-gray-400" },
+  { value: "assigned", label: "Assigned", dot: "bg-blue-500" },
+  { value: "completed", label: "Completed", dot: "bg-emerald-500" },
+  { value: "all", label: "All", dot: "" },
+] as const;
+
+const JobStatusHeader = (props: any) => {
+  const { selectedJobTab, handleJobStatusChange } = props;
+  const [open, setOpen] = useState(false);
+
+  const activeOption =
+    JOB_STATUS_FILTER_OPTIONS.find((opt) => opt.value === selectedJobTab) ||
+    JOB_STATUS_FILTER_OPTIONS[0];
+
+  const filterContent = (
+    <div className="p-1 min-w-[150px] space-y-1 font-sans">
+      <div className="px-2 py-1 text-[11px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1">
+        Filter by Status
+      </div>
+      {JOB_STATUS_FILTER_OPTIONS.map(({ value, label, dot }) => {
+        const isChecked = selectedJobTab === value;
+        return (
+          <div
+            key={value}
+            onClick={() => {
+              handleJobStatusChange({ target: { value } });
+              setOpen(false);
+            }}
+            className={`flex items-center gap-2.5 px-2 py-1.5 rounded cursor-pointer transition-colors text-xs ${
+              isChecked
+                ? "bg-emerald-50 text-emerald-900 font-semibold"
+                : "hover:bg-gray-50 text-gray-700 font-medium"
+            }`}
+          >
+            <Checkbox checked={isChecked} />
+            {dot && <span className={`w-2 h-2 rounded-full ${dot} shrink-0`} />}
+            <span>{label}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  return (
+    <Popover
+      content={filterContent}
+      trigger="click"
+      placement="bottomRight"
+      open={open}
+      onOpenChange={setOpen}
+      arrow={false}
+      styles={{ container: { padding: 4, borderRadius: 8 } }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex items-center justify-between w-full cursor-pointer group py-1 pr-1"
+      >
+        <span className="font-bold text-sm text-[#003220]">Status</span>
+        <div
+          className={`flex items-center gap-1.5 px-2 py-0.5 rounded border transition-all text-xs ${
+            selectedJobTab !== "all"
+              ? "bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold"
+              : "bg-gray-50 border-gray-200 text-gray-600 group-hover:border-gray-300"
+          }`}
+        >
+          {activeOption.dot && (
+            <span className={`w-1.5 h-1.5 rounded-full ${activeOption.dot} shrink-0`} />
+          )}
+          <span className="text-[11px] truncate max-w-[65px]">
+            {activeOption.label}
+          </span>
+          <span className="text-[9px] text-gray-400 group-hover:text-gray-600 transition-transform">
+            {open ? "▲" : "▼"}
+          </span>
+        </div>
+      </div>
+    </Popover>
+  );
+};
+
 /**
  * Factory function to create common job table columns.
  * @param options Configuration options for customizing specific columns
@@ -58,16 +141,40 @@ export const statusStyleMap: Record<string, string> = {
  */
 export const createJobTableColumns = (options?: {
   viewColumnRenderer?: (params: any) => any;
+  onIdClick?: (job: Job) => void;
   teamsMap?: Record<number, string>;
   jobStatus?: JobStatus;
+  statusHeaderProps?: {
+    selectedJobTab: string;
+    handleJobStatusChange: (e: any) => void;
+  };
 }): ColDef<Job>[] => {
   const allColumns: ColDef<Job>[] = [
 
     {
       field: "id",
       headerName: "ID",
-      width: 80,
+      width: 100,
       minWidth: 80,
+      cellRenderer: (params: any) => {
+        const idVal = params.value;
+        if (!idVal) return "-";
+        if (options?.viewColumnRenderer) {
+          return options.viewColumnRenderer(params);
+        }
+        if (options?.onIdClick) {
+          return (
+            <button
+              type="button"
+              className="text-blue-600 hover:underline font-medium cursor-pointer"
+              onClick={() => options.onIdClick!(params.data)}
+            >
+              {idVal}
+            </button>
+          );
+        }
+        return <span className="font-medium text-gray-700">{idVal}</span>;
+      },
     },
     {
       field: "priority_level",
@@ -84,20 +191,17 @@ export const createJobTableColumns = (options?: {
       width: 280,
     },
     {
-      headerName: "View",
-      width: 120,
-      ...(options?.viewColumnRenderer && {
-        sortable: false,
-        filter: false,
-        cellRenderer: options.viewColumnRenderer,
+      field: "status",
+      headerName: "Status",
+      ...(options?.statusHeaderProps && {
+        headerComponent: JobStatusHeader,
+        headerComponentParams: options.statusHeaderProps,
       }),
-      ...(!options?.viewColumnRenderer && {
-        cellRenderer: (params: any) => (
-          <button type="button" className="text-blue-600">
-            Map View
-          </button>
-        ),
-      }),
+      cellRenderer: (params: any) => (
+        <StatusBadge value={params.value} styleMap={statusStyleMap} />
+      ),
+      width: 180,
+      minWidth: 160,
     },
     {
       field: "scheduled_date",
@@ -140,14 +244,6 @@ export const createJobTableColumns = (options?: {
       field: "service_duration",
       headerName: "Duration (mins)",
       width: 150,
-    },
-    {
-      field: "status",
-      cellRenderer: (params: any) => (
-        <StatusBadge value={params.value} styleMap={statusStyleMap} />
-      ),
-      width: 130,
-      minWidth: 130,
     },
     {
       headerName: "Time Window",

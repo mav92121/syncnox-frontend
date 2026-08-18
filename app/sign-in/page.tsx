@@ -176,7 +176,7 @@ export default function SignInPage() {
               priority
               className="mb-2"
             />
-            <p className="text-2xl font-bold text-gray-900 mt-3 mb-1">Sign in to Syncnox</p>
+            <p className="text-2xl font-bold text-gray-900 mt-3 mb-1">Sign in</p>
             {/* <p className="text-xs text-gray-500">Welcome back. Let&apos;s plan some routes.</p> */}
           </div>
 
