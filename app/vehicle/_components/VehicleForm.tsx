@@ -22,12 +22,15 @@ import {
 } from "@ant-design/icons";
 import { Vehicle, VehicleType, ConstraintType, LoadConstraint } from "@/types/vehicle.type";
 import { useVehicleStore } from "@/store/vehicle.store";
+import { CustomFieldDefinition, getCustomFields } from "@/apis/custom-fields.api";
+import { DynamicCustomFieldsForm } from "@/components/DynamicCustomFieldsForm";
 
 const { Text } = Typography;
 
 interface VehicleFormProps {
   initialData?: Vehicle | null;
   onSubmit?: () => void;
+  isInline?: boolean;
 }
 
 const VEHICLE_TYPES: { value: VehicleType; label: string }[] = [
@@ -61,6 +64,8 @@ const CONSTRAINT_UNITS: Record<ConstraintType, { value: string; label: string }[
   ],
   quantity: [
     { value: "units", label: "units" },
+    { value: "boxes", label: "boxes" },
+    { value: "items", label: "items" },
   ],
   pallets: [
     { value: "pallets", label: "pallets" },
@@ -73,9 +78,7 @@ const CONSTRAINT_UNITS: Record<ConstraintType, { value: string; label: string }[
     { value: "min", label: "min" },
     { value: "hr", label: "hr" },
   ],
-  custom: [
-    { value: "units", label: "units" },
-  ],
+  custom: [],
 };
 
 const CONSTRAINT_TYPES: { value: ConstraintType; label: string }[] = [
@@ -109,6 +112,20 @@ const VehicleForm = ({
     useVehicleStore();
 
   const [activeSection, setActiveSection] = useState<SectionKey>("basic");
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDefinition[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    getCustomFields("vehicle")
+      .then((defs) => setCustomFieldDefs(defs))
+      .catch((err) => console.error("Failed to load vehicle custom fields", err));
+  }, []);
+
+  useEffect(() => {
+    if (initialData?.custom_fields) {
+      setCustomFieldValues(initialData.custom_fields);
+    }
+  }, [initialData]);
 
   // Auto-save ref
   const isPrefillingRef = useRef<boolean>(true);
@@ -188,6 +205,7 @@ const VehicleForm = ({
             label: c.label ?? null,
           })
         ),
+        custom_fields: customFieldValues,
       };
 
       if (initialData?.id) {
@@ -200,6 +218,7 @@ const VehicleForm = ({
         await createVehicleAction(payload);
         messageApi.success("Vehicle created successfully");
         form.resetFields();
+        setCustomFieldValues({});
       }
       onSubmit?.();
     } catch (e: any) {
@@ -502,12 +521,11 @@ const VehicleForm = ({
                 )}
               </Form.List>
 
-              <Text
-                type="secondary"
-                style={{ fontSize: 11, display: "block", marginTop: 8 }}
-              >
-                Leave a field empty to skip that constraint.
-              </Text>
+              <DynamicCustomFieldsForm
+                customFields={customFieldDefs}
+                values={customFieldValues}
+                onChange={(updated) => setCustomFieldValues(updated)}
+              />
             </div>
           </Form>
         </Flex>

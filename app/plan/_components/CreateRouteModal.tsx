@@ -44,7 +44,8 @@ import { DepotPayload } from "@/apis/depots.api";
 
 interface CreateRouteModalProps {
   open: boolean;
-  setOpen: (open: boolean) => void;
+  setOpen?: (open: boolean) => void;
+  onCancel?: () => void;
   selectedJobIds: number[];
   hasMixedDates?: boolean;
 }
@@ -52,6 +53,7 @@ interface CreateRouteModalProps {
 const CreateRouteModal = ({
   open,
   setOpen,
+  onCancel,
   selectedJobIds,
   hasMixedDates = false,
 }: CreateRouteModalProps) => {
@@ -119,7 +121,8 @@ const CreateRouteModal = ({
       // Short delay to show completion message
       const timeout = setTimeout(() => {
         router.push(`/route/${currentOptimization.id}`);
-        setOpen(false);
+        if (setOpen) setOpen(false);
+        if (onCancel) onCancel();
         // Reset status to scheduled and fetch corresponding routes
         setSelectedStatus("scheduled");
         // Use refreshDraftJobs to specifically update the draft jobs store
@@ -135,6 +138,7 @@ const CreateRouteModal = ({
     currentOptimization,
     router,
     setOpen,
+    onCancel,
     form,
     fetchRoutes,
     refreshDraftJobs,
@@ -175,7 +179,8 @@ const CreateRouteModal = ({
       currentOptimization?.status === "failed" ||
       error
     ) {
-      setOpen(false);
+      if (setOpen) setOpen(false);
+      if (onCancel) onCancel();
       form.resetFields();
       setIsSubmitting(false);
       clearOptimization();
@@ -283,10 +288,7 @@ const CreateRouteModal = ({
           </div>
         </div>
       ) : (
-
-
         <>
-
           {error && (
             <Alert
               className="mb-4"

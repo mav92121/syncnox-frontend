@@ -10,7 +10,6 @@ import {
 import { Button, Dropdown, Radio, Spin } from "antd";
 import { Layers } from "lucide-react";
 import { Job, JobType } from "@/types/job.type";
-import { TransportJob } from "@/types/transportJob.type";
 import { createCustomMarkerIcon } from "@/utils/customMapMarker";
 
 // Declared outside the component to keep the reference stable across renders.
@@ -54,7 +53,7 @@ interface MarkerData {
   timeWindowStart?: string;
   timeWindowEnd?: string;
   jobType?: JobType;
-  jobData?: Pick<Job, "id" | "address_formatted" | "status" | "location"> | Job | TransportJob;
+  jobData?: Pick<Job, "id" | "address_formatted" | "status" | "location"> | Job | any;
   sequenceNumber?: number;
   color?: string;
   isDepot?: boolean;

@@ -11,6 +11,8 @@ import {
   CarOutlined,
   EnvironmentOutlined,
   DashboardOutlined,
+  FieldStringOutlined,
+  SlidersOutlined,
 } from "@ant-design/icons";
 
 interface SubMenuItem {
@@ -41,30 +43,6 @@ export const MENU_ITEMS: MenuItem[] = [
     path: "/plan",
     tabKey: "jobs",
   },
-  // {
-  //   icon: BarChartOutlined,
-  //   label: "Insights",
-  //   path: "/insights",
-  //   tabKey: "team",
-  // },
-  // {
-  //   icon: LineChartOutlined,
-  //   label: "Analytics",
-  //   path: "/analytics",
-  //   tabKey: "optimization",
-  // },
-  // {
-  //   icon: AimOutlined,
-  //   label: "Live Tracking & Alerts",
-  //   path: "/tracking",
-  //   tabKey: "routes",
-  // },
-  // {
-  //   icon: UserOutlined,
-  //   label: "Customers",
-  //   path: "/customers",
-  //   tabKey: "api",
-  // },
   {
     icon: SettingOutlined,
     label: "Settings",
@@ -83,6 +61,18 @@ export const MENU_ITEMS: MenuItem[] = [
         label: "Location",
         path: "/locations",
         tabKey: "location",
+      },
+      {
+        icon: FieldStringOutlined,
+        label: "Custom Fields",
+        path: "/settings/custom-fields",
+        tabKey: "team",
+      },
+      {
+        icon: SlidersOutlined,
+        label: "Optimization Rules",
+        path: "/settings/optimization-rules",
+        tabKey: "team",
       },
     ],
   },

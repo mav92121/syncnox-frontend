@@ -16,4 +16,5 @@ export interface Depot {
   id: number;
   tenant_id: number;
   location: LocationType;
+  custom_fields?: Record<string, any>;
 }

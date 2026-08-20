@@ -15,6 +15,7 @@ export interface DepotPayload {
     lat: number;
     lng: number;
   };
+  custom_fields?: Record<string, any>;
 }
 
 export const createDepot = async (payload: DepotPayload): Promise<Depot> => {

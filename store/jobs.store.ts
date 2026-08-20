@@ -53,11 +53,10 @@ export const useJobsStore = create<JobsState>()(
       isLoading: false,
       error: null,
 
-      // Initialize with all draft jobs
+      // Initialize with all jobs
       initializeJobs: async () => {
         const { isLoading } = get();
 
-        // Skip if already loading
         if (isLoading) {
           return;
         }
@@ -68,10 +67,7 @@ export const useJobsStore = create<JobsState>()(
         });
 
         try {
-          await get().fetchJobsByStatus("draft");
-          set((state) => {
-            state.isLoading = false;
-          });
+          await get().fetchAllJobs();
         } catch (error) {
           set((state) => {
             state.error =
@@ -89,55 +85,39 @@ export const useJobsStore = create<JobsState>()(
         });
 
         try {
-          if (status === "draft") {
-            // Fetch all draft jobs and filter by selected date
-            const draftJobsData = await fetchJobs({
-              status: "draft",
-              limit: 1000,
-            });
+          const jobsData = await fetchJobs({ status, limit: 1000 });
 
-            set((state) => {
-              state.jobs = draftJobsData;
-              state.allDraftJobs = draftJobsData;
-              // Do NOT overwrite state.allJobs here!
+          set((state) => {
+            state.jobs = jobsData;
+            state.allDraftJobs = jobsData;
 
-              // Update dates
-              state.draftJobDates = [
-                ...new Set(draftJobsData.map((job) => job.scheduled_date)),
-              ].sort();
+            state.draftJobDates = [
+              ...new Set(
+                jobsData
+                  .map((job) => job.scheduled_date)
+                  .filter((d): d is string => Boolean(d))
+              ),
+            ].sort();
 
-              // Ensure selectedDate is valid
-              if (state.draftJobDates.length > 0) {
-                if (
-                  !state.selectedDate ||
-                  !state.draftJobDates.includes(state.selectedDate)
-                ) {
-                  state.selectedDate = findClosestDateToToday(
-                    state.draftJobDates,
-                  );
-                }
-
-                // Filter by selected date
-                state.draftJobs = draftJobsData.filter(
-                  (job) => job.scheduled_date === state.selectedDate,
+            if (state.draftJobDates.length > 0) {
+              if (
+                !state.selectedDate ||
+                !state.draftJobDates.includes(state.selectedDate)
+              ) {
+                state.selectedDate = findClosestDateToToday(
+                  state.draftJobDates,
                 );
-              } else {
-                state.selectedDate = null;
-                state.draftJobs = [];
               }
 
-              state.isLoading = false;
-            });
-          } else {
-            // Fetch other status jobs but preserve draft jobs
-            const jobsData = await fetchJobs({ status });
+              state.draftJobs = jobsData.filter(
+                (job) => job.scheduled_date === state.selectedDate,
+              );
+            } else {
+              state.draftJobs = jobsData;
+            }
 
-            set((state) => {
-              state.jobs = jobsData;
-              // Don't touch allDraftJobs or draftJobs - keep them preserved
-              state.isLoading = false;
-            });
-          }
+            state.isLoading = false;
+          });
         } catch (error) {
           set((state) => {
             state.error =
@@ -162,14 +142,18 @@ export const useJobsStore = create<JobsState>()(
           set((state) => {
             state.jobs = jobsData;
             state.allJobs = jobsData;
-            state.allDraftJobs = jobsData.filter((job) => job.status === "draft");
+            state.allDraftJobs = jobsData;
 
-            // Extract unique dates and sort
+            // Extract unique scheduled_date entries
             state.draftJobDates = [
-              ...new Set(state.allDraftJobs.map((job) => job.scheduled_date)),
+              ...new Set(
+                jobsData
+                  .map((job) => job.scheduled_date)
+                  .filter((d): d is string => Boolean(d))
+              ),
             ].sort();
 
-            // Set initial selected date to closest to today
+            // Set initial selected date
             if (state.draftJobDates.length > 0) {
               if (
                 !state.selectedDate ||
@@ -178,13 +162,13 @@ export const useJobsStore = create<JobsState>()(
                 state.selectedDate = findClosestDateToToday(state.draftJobDates);
               }
 
-              // Filter draft jobs by selected date
-              state.draftJobs = state.allDraftJobs.filter(
+              const filtered = jobsData.filter(
                 (job) => job.scheduled_date === state.selectedDate,
               );
+              state.draftJobs = filtered.length > 0 ? filtered : jobsData;
             } else {
               state.selectedDate = null;
-              state.draftJobs = [];
+              state.draftJobs = jobsData;
             }
 
             state.isLoading = false;
@@ -198,18 +182,18 @@ export const useJobsStore = create<JobsState>()(
         }
       },
 
-      // Set selected date and filter draft jobs
+      // Set selected date and filter jobs
       setSelectedDate: (date: string | null) => {
         set((state) => {
           state.selectedDate = date;
 
-          // Filter draft jobs from allDraftJobs by new selected date
           if (date) {
-            state.draftJobs = state.allDraftJobs.filter(
+            const filtered = state.allJobs.filter(
               (job) => job.scheduled_date === date,
             );
+            state.draftJobs = filtered.length > 0 ? filtered : state.allJobs;
           } else {
-            state.draftJobs = state.allDraftJobs;
+            state.draftJobs = state.allJobs;
           }
         });
       },

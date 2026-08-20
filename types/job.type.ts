@@ -5,7 +5,7 @@ export type JobStatus =
   | "completed"
   | "cancelled"
   | "failed";
-export type JobType = "delivery" | "pickup" | "service" | "transport";
+export type JobType = "delivery" | "pickup" | "service";
 export type PriorityLevel = "low" | "medium" | "high";
 export type RecurrenceType = "one_time" | "daily" | "weekly" | "monthly";
 export type PaymentStatus = "unpaid" | "paid" | "pending";
@@ -42,6 +42,7 @@ export interface Job {
   completed_at?: string | null;
   route_name?: string;
   optimization_id?: number;
+  custom_fields?: Record<string, any>;
 }
 
 export interface FetchJobsParams {

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import {
   Form,
@@ -33,6 +33,8 @@ import {
 import { useJobsStore } from "@/store/jobs.store";
 import { filterCountryOptions } from "@/utils/jobs.utils";
 import { useTeamStore } from "@/store/team.store";
+import { CustomFieldDefinition, getCustomFields } from "@/apis/custom-fields.api";
+import { DynamicCustomFieldsForm } from "@/components/DynamicCustomFieldsForm";
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -43,6 +45,14 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const { isLoading, createJobAction, updateJobAction } = useJobsStore();
   const { teams } = useTeamStore();
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDefinition[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    getCustomFields("job")
+      .then((defs) => setCustomFieldDefs(defs))
+      .catch((err) => console.error("Failed to load job custom fields", err));
+  }, []);
 
   const [form] = Form.useForm();
 
@@ -79,16 +89,21 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
     // Remove phone object from payload regardless
     delete transformedValues.phone;
 
+    // 4. Attach dynamic custom fields
+    transformedValues.custom_fields = customFieldValues;
+
     try {
       if (initialData?.id) {
         const updatedJob = await updateJobAction(transformedValues);
         messageApi.success("Job updated successfully");
         form.resetFields();
+        setCustomFieldValues({});
         onSubmit?.(updatedJob);
       } else {
         const newJob = await createJobAction(transformedValues);
         messageApi.success("Job created successfully");
         form.resetFields();
+        setCustomFieldValues({});
         onSubmit?.(newJob);
       }
     } catch (e: any) {
@@ -102,6 +117,9 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   useEffect(() => {
     if (initialData) {
       const formValues: any = { ...initialData };
+      if (initialData.custom_fields) {
+        setCustomFieldValues(initialData.custom_fields);
+      }
 
       // 1. Transform scheduled_date: string (YYYY-MM-DD) -> dayjs object
       if (formValues.scheduled_date) {
@@ -425,15 +443,12 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
             </Col>
           </Row>
 
-          {/* File Attachment */}
-          {/* <Form.Item label="Attach Files" name="files">
-            <Upload.Dragger multiple>
-              <Space direction="horizontal" align="center">
-                <PlusOutlined />
-                <Text>Attach Files</Text>
-              </Space>
-            </Upload.Dragger>
-          </Form.Item> */}
+          {/* Dynamic Tenant Custom Fields */}
+          <DynamicCustomFieldsForm
+            customFields={customFieldDefs}
+            values={customFieldValues}
+            onChange={(updatedVals) => setCustomFieldValues(updatedVals)}
+          />
         </Form>
       </Flex>
 

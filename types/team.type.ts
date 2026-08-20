@@ -43,4 +43,5 @@ export interface Team {
   activation_code?: string | null;
   created_at: string;
   updated_at: string;
+  custom_fields?: Record<string, any>;
 }

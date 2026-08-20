@@ -9,6 +9,9 @@ import AddressAutocomplete, {
 import { DepotPayload } from "@/apis/depots.api";
 import { Depot } from "@/types/depots.type";
 
+import { CustomFieldDefinition, getCustomFields } from "@/apis/custom-fields.api";
+import { DynamicCustomFieldsForm } from "@/components/DynamicCustomFieldsForm";
+
 interface DepotFormProps {
   initialValues?: Depot;
   onSubmit: (values: DepotPayload) => Promise<boolean>;
@@ -34,15 +37,29 @@ const DepotForm = ({
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     null,
   );
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDefinition[]>([]);
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    getCustomFields("depot")
+      .then((defs) => setCustomFieldDefs(defs))
+      .catch((err) => console.error("Failed to load depot custom fields", err));
+  }, []);
+
+  useEffect(() => {
+    if (initialValues?.custom_fields) {
+      setCustomFieldValues(initialValues.custom_fields);
+    }
+  }, [initialValues]);
 
   const isPrefillingRef = useRef<boolean>(true);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Keep ref of latest state to prevent stale closure in debounced auto-save
-  const latestValuesRef = useRef({ name, address, location });
+  const latestValuesRef = useRef({ name, address, location, custom_fields: customFieldValues });
   useEffect(() => {
-    latestValuesRef.current = { name, address, location };
-  }, [name, address, location]);
+    latestValuesRef.current = { name, address, location, custom_fields: customFieldValues };
+  }, [name, address, location, customFieldValues]);
 
   const handleSave = async () => {
     if (autoSaveTimerRef.current) {
@@ -67,6 +84,7 @@ const DepotForm = ({
         formatted_address: currentAddress,
       },
       location: currentLocation,
+      custom_fields: latestValuesRef.current.custom_fields,
     });
 
     if (success) {
@@ -223,6 +241,19 @@ const DepotForm = ({
           />
         </div>
       </div>
+
+      {customFieldDefs.length > 0 && (
+        <div className="mb-3 px-1">
+          <DynamicCustomFieldsForm
+            customFields={customFieldDefs}
+            values={customFieldValues}
+            onChange={(updated) => {
+              setCustomFieldValues(updated);
+              triggerAutoSave();
+            }}
+          />
+        </div>
+      )}
 
       <div className="flex-1 w-full overflow-hidden bg-gray-50">
         <GoogleMaps

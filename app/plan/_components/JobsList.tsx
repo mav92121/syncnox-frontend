@@ -1,17 +1,14 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
-  Typography,
   Button,
   Drawer,
   Modal,
-  Flex,
-  Tag,
   message,
   Dropdown,
-  Popover,
-  Checkbox,
+  Flex,
+  Typography,
   type MenuProps,
 } from "antd";
 import {
@@ -20,35 +17,28 @@ import {
   DownOutlined,
   PlusOutlined,
   UploadOutlined,
-  FileExcelOutlined,
   EnvironmentOutlined,
 } from "@ant-design/icons";
 import { Panel, PanelGroup } from "react-resizable-panels";
 import ResizeHandle from "@/components/ResizeHandle";
 import { useJobsStore } from "@/store/jobs.store";
-import { useTransportJobsStore } from "@/store/transportJobs.store";
 import { useTeamStore } from "@/store/team.store";
 import { ColDef } from "ag-grid-community";
-import { Job, JobStatus, JobType } from "@/types/job.type";
-import { PickupType, TransportJob } from "@/types/transportJob.type";
+import { Job, JobStatus } from "@/types/job.type";
+import { CustomFieldDefinition, getCustomFields } from "@/apis/custom-fields.api";
 
 type JobTab = "all" | JobStatus;
-type JobCategory = "delivery" | "transport";
 
 import BaseTable from "@/components/Table/BaseTable";
 import JobForm from "@/components/Jobs/JobForm";
-import TransportJobFormModal from "@/components/Jobs/TransportJobFormModal";
 import GoogleMaps from "@/components/GoogleMaps";
 import MarkerTooltip from "@/components/MarkerTooltip";
 import { createJobTableColumns } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import CreateRouteModal from "@/app/plan/_components/CreateRouteModal";
-import CreateTransportRouteModal from "@/app/plan/_components/CreateTransportRouteModal";
 import DraftJobsDatePicker from "@/components/Jobs/DraftJobsDatePicker";
-import { useIndexStore } from "@/store/index.store";
 import AddJobsModal from "@/app/plan/AddJobsModal";
 import BulkUploadModal from "@/components/BulkUploadModal";
-import TransportImportModal from "@/components/TransportImportModal";
 
 const { Title } = Typography;
 
@@ -58,95 +48,73 @@ export default function JobsList() {
     draftJobs,
     allJobs,
     isLoading: isJobsLoading,
-    error: jobsError,
-    deleteJobAction,
-    deleteJobsAction,
+    initializeJobs,
     fetchJobsByStatus,
     fetchAllJobs,
+    deleteJobAction,
+    deleteJobsAction,
     resetAllJobs,
     selectedDate,
     setSelectedDate,
     draftJobDates,
   } = useJobsStore();
 
-  const {
-    transportJobs,
-    transportJobDates,
-    isLoading: isTransportLoading,
-    error: transportError,
-    fetchTransportJobs,
-    deleteTransportJobAction,
-    deleteTransportJobsAction,
-  } = useTransportJobsStore();
-
-  const { setCurrentTab } = useIndexStore();
   const { getTeamsMap } = useTeamStore();
 
-  // Category & Tab selection
-  const [jobCategory, setJobCategory] = useState<JobCategory>("delivery");
+  // Tab / Status Filter Selection
   const [selectedJobTab, setSelectedJobTab] = useState<JobTab>("draft");
+
+  // Custom Field definitions
+  const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>([]);
 
   // Selection & Modals
   const [editJobData, setEditJobData] = useState<Job | null>(null);
-  const [editTransportJobData, setEditTransportJobData] = useState<TransportJob | null>(null);
-  const [showAddTransportModal, setShowAddTransportModal] = useState(false);
   const [selectedJobIds, setSelectedJobIds] = useState<number[]>([]);
-
   const [showCreateRouteModal, setShowCreateRouteModal] = useState(false);
-  const [showCreateTransportRouteModal, setShowCreateTransportRouteModal] = useState(false);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
-  const [showTransportImportModal, setShowTransportImportModal] = useState(false);
 
   // Map state
   const [isMapOpen, setIsMapOpen] = useState(false);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | undefined>(undefined);
   const [selectedMarkerId, setSelectedMarkerId] = useState<number | string | null>(null);
 
-  // Remember category preference in localStorage
+  // Initialize jobs and load custom field definitions on mount
   useEffect(() => {
-    const saved = localStorage.getItem("syncnox_job_category") as JobCategory | null;
-    if (saved === "delivery" || saved === "transport") {
-      setJobCategory(saved);
-    }
-  }, []);
+    initializeJobs();
+    getCustomFields("job")
+      .then((defs) => setCustomFields(defs.filter((d) => d.is_visible_in_list)))
+      .catch((err) => console.error("Failed to fetch custom fields for jobs", err));
+  }, [initializeJobs]);
 
-  const handleCategoryChange = (category: JobCategory) => {
-    setJobCategory(category);
+  const handleJobStatusChange = (e: any) => {
+    const value = e.target.value as JobTab;
+    setSelectedJobTab(value);
     setSelectedJobIds([]);
-    localStorage.setItem("syncnox_job_category", category);
-    if (category === "transport") {
-      fetchTransportJobs(selectedDate ?? undefined);
+    if (value === "all") {
+      fetchAllJobs();
+    } else {
+      fetchJobsByStatus(value as JobStatus);
     }
   };
-
-  useEffect(() => {
-    if (jobCategory === "transport") {
-      fetchTransportJobs(selectedDate ?? undefined);
-    }
-  }, [selectedDate, jobCategory, fetchTransportJobs]);
 
   const handleDeleteJobsRequest = () => {
     if (selectedJobIds.length === 0) return;
 
     const count = selectedJobIds.length;
-    const isTransport = jobCategory === "transport";
 
     Modal.confirm({
-      title: isTransport ? "Delete Transport Jobs" : "Delete Jobs",
+      title: "Delete Jobs",
       icon: <ExclamationCircleFilled />,
-      content: `Are you sure you want to delete ${count} selected ${isTransport ? "transport" : ""} job(s)?`,
+      content: `Are you sure you want to delete ${count} selected job(s)?`,
       okText: "Delete",
       okType: "danger",
-      okButtonProps: { danger: true },
+      okButtonProps: { danger: true, style: { borderRadius: 0 } },
       cancelText: "Cancel",
+      cancelButtonProps: { style: { borderRadius: 0 } },
       onOk: async () => {
         try {
-          if (isTransport) {
-            await deleteTransportJobsAction(selectedJobIds);
-          } else {
-            await deleteJobsAction(selectedJobIds, "draft");
-          }
+          await deleteJobsAction(selectedJobIds, "draft");
           message.success(`Successfully deleted ${count} job(s)`);
           setSelectedJobIds([]);
         } catch (err) {
@@ -157,34 +125,29 @@ export default function JobsList() {
     });
   };
 
-  const handleJobStatusChange = (e: any) => {
-    const value = e.target.value as JobTab;
-    setSelectedJobTab(value);
-    setSelectedJobIds([]);
-    if (jobCategory === "delivery") {
-      if (value === "all") {
-        fetchAllJobs();
-      } else {
-        fetchJobsByStatus(value as JobStatus);
-      }
-    }
-  };
-
   useEffect(() => {
     return () => {
       resetAllJobs();
     };
   }, [resetAllJobs]);
 
-  // Transformed jobs & map markers
-  const displayedDeliveryJobs =
+  // Status and Date Filtered Jobs
+  const rawStatusJobs =
     selectedJobTab === "all"
       ? allJobs
       : selectedJobTab === "draft"
-      ? draftJobs
-      : jobs;
+      ? (draftJobs.length > 0 ? draftJobs : jobs.filter((j) => j.status === "draft"))
+      : jobs.filter((j) => j.status === selectedJobTab);
 
-  const deliveryMarkers = displayedDeliveryJobs
+  const fallbackSourceJobs = rawStatusJobs.length > 0 ? rawStatusJobs : (allJobs.length > 0 ? allJobs : jobs);
+
+  const dateFilteredJobs = selectedDate
+    ? fallbackSourceJobs.filter((j) => j.scheduled_date === selectedDate)
+    : fallbackSourceJobs;
+
+  const displayedJobs = dateFilteredJobs.length > 0 ? dateFilteredJobs : fallbackSourceJobs;
+
+  const activeMarkers = displayedJobs
     .filter((job: Job) => job.location?.lat && job.location?.lng)
     .map((job: Job, index: number) => ({
       id: job.id,
@@ -198,495 +161,244 @@ export default function JobsList() {
       sequenceNumber: index + 1,
     }));
 
-  const transportMarkers = transportJobs
-    .filter((j) => (j.go_pickup_latitude && j.go_pickup_longitude) || (j.client_latitude && j.client_longitude))
-    .map((j, index) => ({
-      id: `transport-${j.id}`,
-      position: {
-        lat: j.go_pickup_latitude || j.client_latitude || 0,
-        lng: j.go_pickup_longitude || j.client_longitude || 0,
-      },
-      description: `${j.candidate_name} (${j.client_name})`,
-      duration: 0,
-      timeWindowStart: j.start_hour,
-      timeWindowEnd: j.end_hour,
-      jobType: "transport" as JobType,
-      jobData: j,
-      sequenceNumber: index + 1,
-    }));
+  // Build Dynamic Custom Field Columns for AG Grid
+  const customFieldColumns: ColDef<Job>[] = customFields.map((f) => ({
+    field: `custom_fields.${f.field_key}` as any,
+    headerName: f.label,
+    valueGetter: (params) => {
+      const customData = params.data?.custom_fields;
+      if (!customData || customData[f.field_key] === undefined || customData[f.field_key] === null) {
+        return "-";
+      }
+      return String(customData[f.field_key]);
+    },
+    width: 150,
+  }));
 
-  const activeMarkers = jobCategory === "transport" ? transportMarkers : deliveryMarkers;
+  // Base Table Columns (includes Status Header Dropdown)
+  const baseColumns = createJobTableColumns({
+    viewColumnRenderer: (params: any) => (
+      <button
+        type="button"
+        onClick={() => {
+          if (params.data.location?.lat && params.data.location?.lng) {
+            setIsMapOpen(true);
+            setMapCenter({
+              lat: params.data.location.lat,
+              lng: params.data.location.lng,
+            });
+            setSelectedMarkerId(params.data.id);
+          }
+        }}
+        className="text-blue-600 hover:underline font-semibold cursor-pointer border-none bg-transparent p-0"
+      >
+        {params.value}
+      </button>
+    ),
+    teamsMap: getTeamsMap(),
+    jobStatus: selectedJobTab === "all" ? undefined : selectedJobTab,
+    statusHeaderProps: {
+      selectedJobTab,
+      handleJobStatusChange,
+    },
+  });
 
-  // Delivery Table Columns
-  const deliveryColumns = [
-    ...createJobTableColumns({
-      viewColumnRenderer: (params: any) => (
-        <button
-          type="button"
-          onClick={() => {
-            if (params.data.location?.lat && params.data.location?.lng) {
-              setIsMapOpen(true);
-              setMapCenter({
-                lat: params.data.location.lat,
-                lng: params.data.location.lng,
-              });
-              setSelectedMarkerId(params.data.id);
-            }
-          }}
-          className="text-blue-600 hover:underline font-semibold cursor-pointer border-none bg-transparent p-0"
-        >
-          {params.value}
-        </button>
-      ),
-      teamsMap: getTeamsMap(),
-      jobStatus: selectedJobTab === "all" ? undefined : selectedJobTab,
-      statusHeaderProps: {
-        selectedJobTab,
-        handleJobStatusChange,
+  const actionsColumn = createActionsColumn<Job>({
+    actions: [
+      {
+        key: "edit",
+        label: "Edit",
+        onClick: (record) => setEditJobData(record),
       },
-    }),
-    createActionsColumn<Job>({
-      actions: [
-        {
-          key: "edit",
-          label: "Edit",
-          onClick: (job: Job) => setEditJobData(job),
+      {
+        key: "delete",
+        label: "Delete",
+        danger: true,
+        onClick: (record) => {
+          Modal.confirm({
+            title: "Delete Job",
+            icon: <ExclamationCircleFilled />,
+            content: `Are you sure you want to delete job #${record.id}?`,
+            okText: "Delete",
+            okType: "danger",
+            okButtonProps: { danger: true, style: { borderRadius: 0 } },
+            cancelText: "Cancel",
+            cancelButtonProps: { style: { borderRadius: 0 } },
+            onOk: async () => {
+              try {
+                await deleteJobAction(record.id);
+                message.success("Job deleted successfully");
+              } catch (err) {
+                message.error("Failed to delete job");
+                console.error(err);
+              }
+            },
+          });
         },
-        {
-          key: "delete",
-          label: "Delete",
-          type: "delete",
-          onClick: async (job: Job) => {
-            await deleteJobAction(job.id);
-          },
-        },
-      ],
-      entityName: "Job",
-    }),
-  ];
+      },
+    ],
+  });
 
-  // Dedicated Transport Table Columns
-  const transportColumns: ColDef<TransportJob>[] = [
-    {
-      headerName: "Quart / Shift",
-      field: "quart_id",
-      width: 120,
-      valueGetter: (params: any) => params.data?.quart_id || "-",
-    },
-    {
-      headerName: "Candidate / Passenger",
-      field: "candidate_name",
-      width: 220,
-      cellRenderer: (params: any) => {
-        const j: TransportJob = params.data;
-        if (!j) return null;
-        return (
-          <div className="flex flex-col justify-center h-full py-0.5 leading-snug">
-            <span className="font-semibold text-gray-900 text-xs truncate" title={j.candidate_name}>
-              {j.candidate_name}
-            </span>
-            {j.candidate_phone && (
-              <span className="text-[11px] text-gray-500 truncate" title={j.candidate_phone}>
-                {j.candidate_phone}
-              </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      headerName: "Client / Company",
-      field: "client_name",
-      width: 220,
-      cellRenderer: (params: any) => {
-        const j: TransportJob = params.data;
-        if (!j) return null;
-        return (
-          <div className="flex flex-col justify-center h-full py-0.5 leading-snug">
-            <span className="font-semibold text-gray-900 text-xs truncate" title={j.client_name}>
-              {j.client_name}
-            </span>
-            {j.client_address && (
-              <span className="text-[11px] text-gray-500 truncate" title={j.client_address}>
-                {j.client_address}
-              </span>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      headerName: "Pickup Type",
-      field: "pickup_type",
-      width: 130,
-      cellRenderer: (params: any) => {
-        const type: PickupType = params.data?.pickup_type;
-        if (type === "one_way") {
-          return <Tag color="purple" className="text-xs rounded-none border-purple-200">One-way (go)</Tag>;
-        }
-        if (type === "return_only") {
-          return <Tag color="orange" className="text-xs rounded-none border-orange-200">Return only</Tag>;
-        }
-        return <Tag color="blue" className="text-xs rounded-none border-blue-200">Round trip</Tag>;
-      },
-    },
-    {
-      headerName: "Shift Hours",
-      field: "start_hour",
-      width: 140,
-      valueGetter: (params: any) => {
-        const j: TransportJob = params.data;
-        const start = j.start_hour ? j.start_hour.substring(0, 5) : "";
-        const end = j.end_hour ? j.end_hour.substring(0, 5) : "";
-        return `${start} - ${end}`;
-      },
-    },
-    {
-      headerName: "Go Pick-up Point",
-      field: "go_pickup_point",
-      width: 220,
-      valueGetter: (params: any) => params.data?.go_pickup_point || params.data?.candidate_address || "-",
-    },
-    {
-      headerName: "Return Drop-off Point",
-      field: "return_dropoff_point",
-      width: 220,
-      valueGetter: (params: any) => params.data?.return_dropoff_point || params.data?.candidate_address || "-",
-    },
-    createActionsColumn<TransportJob>({
-      actions: [
-        {
-          key: "edit",
-          label: "Edit",
-          onClick: (job: TransportJob) => setEditTransportJobData(job),
-        },
-        {
-          key: "delete",
-          label: "Delete",
-          type: "delete",
-          onClick: async (job: TransportJob) => {
-            await deleteTransportJobAction(job.id);
-            message.success("Transport job deleted");
-          },
-        },
-      ],
-      entityName: "Transport Job",
-    }),
-  ];
+  const deliveryColumns = [...baseColumns, ...customFieldColumns, actionsColumn];
 
-  // Add Jobs Menu Options
-  const addJobsMenu: MenuProps["items"] = [
+  const addJobsMenuItems: MenuProps["items"] = [
     {
-      key: "group_delivery",
-      type: "group",
-      label: (
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-1">
-          Delivery Jobs
-        </span>
-      ),
-      children: [
-        {
-          key: "manual_delivery",
-          icon: <PlusOutlined className="text-gray-500" />,
-          label: <span className="font-medium text-xs text-gray-800">Add Delivery Job</span>,
-          onClick: () => setShowAddJobModal(true),
-        },
-        {
-          key: "bulk_delivery",
-          icon: <UploadOutlined className="text-gray-500" />,
-          label: <span className="font-medium text-xs text-gray-800">Bulk Upload Delivery Jobs</span>,
-          onClick: () => setShowBulkUploadModal(true),
-        },
-      ],
+      key: "add_single",
+      label: "Add Single Job",
+      icon: <PlusOutlined />,
+      onClick: () => setShowAddJobModal(true),
     },
     {
-      type: "divider",
-    },
-    {
-      key: "group_transport",
-      type: "group",
-      label: (
-        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 px-1">
-          Transport Jobs
-        </span>
-      ),
-      children: [
-        {
-          key: "manual_transport",
-          icon: <PlusOutlined className="text-emerald-700" />,
-          label: <span className="font-medium text-xs text-gray-800">Add Transport Job</span>,
-          onClick: () => {
-            setEditTransportJobData(null);
-            setShowAddTransportModal(true);
-          },
-        },
-        {
-          key: "import_transport",
-          icon: <FileExcelOutlined className="text-emerald-700" />,
-          label: <span className="font-medium text-xs text-gray-800">Import Transport Jobs (Excel)</span>,
-          onClick: () => setShowTransportImportModal(true),
-        },
-      ],
+      key: "bulk_import",
+      label: "Bulk Import Jobs",
+      icon: <UploadOutlined />,
+      onClick: () => setShowBulkUploadModal(true),
     },
   ];
 
-  const activeError = jobCategory === "transport" ? transportError : jobsError;
+  const tableContent = (
+    <div className="h-full w-full p-0 flex flex-col min-h-0 overflow-hidden">
+      <BaseTable<Job>
+        columnDefs={deliveryColumns}
+        rowData={displayedJobs}
+        loading={isJobsLoading}
+        pagination={true}
+        paginationPageSize={100}
+        rowSelection="multiple"
+        containerClassName="h-full w-full flex-1"
+        containerStyle={{ height: "100%", width: "100%" }}
+        onSelectionChanged={(event) => {
+          if (event.api) {
+            const selectedRows = event.api.getSelectedRows().map((r: Job) => r.id);
+            setSelectedJobIds(selectedRows);
+          }
+        }}
+      />
+    </div>
+  );
 
-  if (activeError) {
-    return <div className="p-4 text-red-600 font-semibold">Error: {activeError}</div>;
-  }
-
-  const listContent = (
+  return (
     <div className="flex flex-col h-full">
-      <Flex justify="space-between" align="center" className="my-3">
-        {/* Left Section: Title + Job Category Switcher + Date Picker */}
-        <Flex gap={16} align="center" className="shrink-0">
-          <Title level={4} className="m-0 pt-1 shrink-0 whitespace-nowrap">
+      {/* ── Top Bar (Exact same layout as RoutesView) ── */}
+      <Flex justify="space-between" gap={36} align="center" className="my-4">
+        <Flex gap={24} align="center">
+          <Title level={4} className="m-0 pt-2">
             Jobs
           </Title>
-
-          {/* Job Category Switcher (Delivery vs Transport) */}
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-none border border-gray-200 shrink-0">
-            <button
-              type="button"
-              onClick={() => handleCategoryChange("delivery")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all select-none cursor-pointer border-none outline-none ${
-                jobCategory === "delivery"
-                  ? "bg-[#0F4C3A] text-white shadow-xs"
-                  : "text-gray-500 hover:text-gray-800 bg-transparent"
-              }`}
-            >
-              <span>Delivery Jobs</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleCategoryChange("transport")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all select-none cursor-pointer border-none outline-none ${
-                jobCategory === "transport"
-                  ? "bg-[#0F4C3A] text-white shadow-xs"
-                  : "text-gray-500 hover:text-gray-800 bg-transparent"
-              }`}
-            >
-              <span>Transport Jobs</span>
-            </button>
-          </div>
-
-          {/* Date Picker */}
           <DraftJobsDatePicker
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
-            draftJobDates={jobCategory === "transport" ? transportJobDates : draftJobDates}
-            style={{
-              visibility:
-                jobCategory === "transport" || selectedJobTab === "draft"
-                  ? "visible"
-                  : "hidden",
-            }}
+            draftJobDates={draftJobDates}
           />
         </Flex>
 
-        {/* Right Section: Action Buttons */}
-        <Flex gap={8} justify="flex-end" style={{ minWidth: 220 }}>
-          {jobCategory === "delivery" &&
-            selectedJobTab !== "assigned" &&
-            selectedJobTab !== "completed" && (
-              <Button
-                type="primary"
-                disabled={selectedJobIds.length === 0}
-                onClick={() => setShowCreateRouteModal(true)}
-              >
-                Create New Route
-              </Button>
-            )}
-
-          {jobCategory === "transport" && (
-            <Button
-              type="primary"
-              onClick={() => setShowCreateTransportRouteModal(true)}
-              className="bg-[#0F4C3A] hover:bg-[#0a3529] font-semibold"
-            >
-              Optimize Transport Routes
-            </Button>
-          )}
+        <Flex gap={8} align="center">
+          <Button
+            disabled={selectedJobIds.length === 0}
+            onClick={() => setShowCreateRouteModal(true)}
+          >
+            Create New Route
+          </Button>
 
           <Button
-            danger
+            icon={<DeleteOutlined />}
             disabled={selectedJobIds.length === 0}
             onClick={handleDeleteJobsRequest}
-            icon={<DeleteOutlined style={{ fontSize: 18 }} />}
           />
+
           <Button
+            icon={<EnvironmentOutlined />}
+            type={isMapOpen ? "primary" : "default"}
             onClick={() => setIsMapOpen(!isMapOpen)}
-            icon={<EnvironmentOutlined style={{ fontSize: 18 }} />}
-            title={isMapOpen ? "Close Map" : "Map View"}
           />
-          <Dropdown trigger={["click"]} menu={{ items: addJobsMenu }} placement="bottomRight">
-            <Button type="primary">
-              Add Jobs <DownOutlined />
+
+          <Dropdown menu={{ items: addJobsMenuItems }} trigger={["click"]}>
+            <Button
+              type="primary"
+              className="bg-[#003220] hover:bg-[#002417] text-white flex items-center gap-1.5 border-none"
+            >
+              <span>Add Jobs</span>
+              <DownOutlined style={{ fontSize: "10px" }} />
             </Button>
           </Dropdown>
         </Flex>
       </Flex>
 
-      {/* Main Table View */}
+      {/* ── Table & Map Area ── */}
       <div className="flex-1 min-h-0 mt-2">
-        {jobCategory === "delivery" ? (
-          <BaseTable<Job>
-            columnDefs={deliveryColumns}
-            rowData={displayedDeliveryJobs}
-            rowSelection="multiple"
-            loading={isJobsLoading}
-            emptyMessage={
-              selectedJobTab === "draft"
-                ? "No delivery jobs on the selected date"
-                : selectedJobTab === "all"
-                ? "No delivery jobs found"
-                : "No delivery jobs to show"
-            }
-            pagination={true}
-            containerStyle={{ height: "100%" }}
-            onSelectionChanged={(event) => {
-              const selectedRows = event.api
-                .getSelectedRows()
-                .map((row: Job) => row.id);
-              setSelectedJobIds(selectedRows);
-            }}
-          />
+        {isMapOpen ? (
+          <PanelGroup direction="vertical" className="h-full w-full">
+            <Panel defaultSize={40} minSize={20} className="w-full">
+              <div className="h-full w-full relative">
+                <GoogleMaps
+                  markers={activeMarkers}
+                  center={
+                    mapCenter ||
+                    (activeMarkers.length > 0 ? activeMarkers[0].position : undefined)
+                  }
+                  zoom={mapCenter ? 17 : 11}
+                  selectedMarkerId={selectedMarkerId}
+                  InfoWindowModal={({ marker }) => (
+                    <MarkerTooltip
+                      address={marker.description}
+                      duration={marker.duration}
+                      timeWindowStart={marker.timeWindowStart}
+                      timeWindowEnd={marker.timeWindowEnd}
+                      jobType={marker.jobType}
+                      jobData={marker.jobData}
+                    />
+                  )}
+                />
+                <Button
+                  onClick={() => setIsMapOpen(false)}
+                  className="absolute top-4 right-4 z-10 bg-white shadow-md font-medium text-xs rounded-none"
+                >
+                  Close Map
+                </Button>
+              </div>
+            </Panel>
+            <ResizeHandle />
+            <Panel defaultSize={60} minSize={20} className="w-full">
+              {tableContent}
+            </Panel>
+          </PanelGroup>
         ) : (
-          <BaseTable<TransportJob>
-            columnDefs={transportColumns}
-            rowData={transportJobs}
-            rowSelection="multiple"
-            loading={isTransportLoading}
-            emptyMessage="No transport jobs on the selected date"
-            pagination={true}
-            rowHeight={48}
-            containerStyle={{ height: "100%" }}
-            onSelectionChanged={(event) => {
-              const selectedRows = event.api
-                .getSelectedRows()
-                .map((row: TransportJob) => row.id);
-              setSelectedJobIds(selectedRows);
-            }}
-          />
+          tableContent
         )}
       </div>
-    </div>
-  );
 
-  return (
-    <div className="absolute inset-0">
-      {isMapOpen ? (
-        <PanelGroup direction="vertical">
-          <Panel defaultSize={40} minSize={10}>
-            <div className="h-full">
-              <GoogleMaps
-                markers={activeMarkers}
-                center={mapCenter || undefined}
-                zoom={mapCenter ? 17 : undefined}
-                selectedMarkerId={selectedMarkerId}
-                onMarkerSelect={setSelectedMarkerId}
-                InfoWindowModal={({ marker }) => (
-                  <MarkerTooltip
-                    jobType={marker.jobType}
-                    address={marker.description}
-                    duration={marker.duration}
-                    timeWindowStart={marker.timeWindowStart}
-                    timeWindowEnd={marker.timeWindowEnd}
-                    onEdit={() => {
-                      if (jobCategory === "delivery") {
-                        setEditJobData((marker.jobData as Job) ?? null);
-                      } else {
-                        setEditTransportJobData((marker.jobData as unknown as TransportJob) ?? null);
-                        setShowAddTransportModal(true);
-                      }
-                    }}
-                  />
-                )}
-              />
-            </div>
-          </Panel>
-          <ResizeHandle />
-          <Panel defaultSize={60} minSize={5}>
-            <div className="pt-2 h-full">{listContent}</div>
-          </Panel>
-        </PanelGroup>
-      ) : (
-        <div className="h-full">{listContent}</div>
-      )}
-
-      {/* Edit Delivery Job Drawer */}
+      {/* Edit Job Drawer */}
       <Drawer
+        title={`Edit Job #${editJobData?.id || ""}`}
+        width={540}
         onClose={() => setEditJobData(null)}
-        title="Edit Delivery Job"
-        open={editJobData?.id !== undefined}
-        size="large"
-        placement="right"
+        open={Boolean(editJobData)}
+        destroyOnClose
       >
-        <JobForm onSubmit={() => setEditJobData(null)} initialData={editJobData} />
+        <JobForm
+          initialData={editJobData}
+          onSubmit={() => setEditJobData(null)}
+        />
       </Drawer>
 
-      {/* Transport Job Form Modal (Manual Create / Edit) */}
-      <TransportJobFormModal
-        open={showAddTransportModal || editTransportJobData !== null}
-        onClose={() => {
-          setShowAddTransportModal(false);
-          setEditTransportJobData(null);
-        }}
-        initialValues={editTransportJobData}
-      />
-
-      {/* Transport Route Optimization Modal */}
-      <CreateTransportRouteModal
-        open={showCreateTransportRouteModal}
-        onClose={() => setShowCreateTransportRouteModal(false)}
-        scheduledDate={selectedDate ?? new Date().toISOString().split("T")[0]}
-      />
-
-      {showCreateRouteModal &&
-        (() => {
-          const selectedJobs = displayedDeliveryJobs.filter((job: Job) =>
-            selectedJobIds.includes(job.id)
-          );
-          const uniqueDates = new Set(selectedJobs.map((job: Job) => job.scheduled_date));
-          return (
-            <CreateRouteModal
-              open={showCreateRouteModal}
-              setOpen={setShowCreateRouteModal}
-              selectedJobIds={selectedJobIds}
-              hasMixedDates={uniqueDates.size > 1}
-            />
-          );
-        })()}
-
+      {/* Add Single Job Modal */}
       <AddJobsModal
         open={showAddJobModal}
-        setOpen={setShowAddJobModal}
-        onJobCreated={() => {
-          if (selectedJobTab === "all") fetchAllJobs();
-          else fetchJobsByStatus(selectedJobTab as JobStatus);
-        }}
+        onCancel={() => setShowAddJobModal(false)}
       />
+
+      {/* Bulk Upload Modal */}
       <BulkUploadModal
         open={showBulkUploadModal}
-        onClose={() => {
-          setShowBulkUploadModal(false);
-          if (selectedJobTab === "all") fetchAllJobs();
-          else fetchJobsByStatus(selectedJobTab as JobStatus);
-        }}
+        onCancel={() => setShowBulkUploadModal(false)}
       />
-      <TransportImportModal
-        open={showTransportImportModal}
-        onClose={() => setShowTransportImportModal(false)}
-        onSuccess={() => {
-          if (jobCategory === "transport") {
-            fetchTransportJobs(selectedDate ?? undefined);
-          } else if (selectedJobTab === "all") {
-            fetchAllJobs();
-          } else {
-            fetchJobsByStatus(selectedJobTab as JobStatus);
-          }
-        }}
+
+      {/* Create Route Optimization Modal */}
+      <CreateRouteModal
+        open={showCreateRouteModal}
+        setOpen={setShowCreateRouteModal}
+        onCancel={() => setShowCreateRouteModal(false)}
+        selectedJobIds={selectedJobIds}
       />
     </div>
   );
