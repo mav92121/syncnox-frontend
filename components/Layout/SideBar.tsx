@@ -12,6 +12,7 @@ import {
   EnvironmentOutlined,
   UserOutlined,
   SettingOutlined,
+  DownOutlined,
 } from "@ant-design/icons";
 import { TabKey, useIndexStore } from "@/store/index.store";
 import { useOnboardingStore } from "@/store/onboarding.store";
@@ -93,6 +94,7 @@ const SideBar = () => {
   }, [clearUser]);
 
   const [showStatsInPopover, setShowStatsInPopover] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const userPopoverContent = (
     <div className="w-[260px] p-3 font-sans space-y-3">
@@ -251,55 +253,108 @@ const SideBar = () => {
 
           return (
             <div key={item.path} className="mb-1">
-              {hasSubItems ? (
-                // Menu item with sub-items (always visible)
-                <>
-                  <div className={getMenuItemClasses(item.path, activeSub)}>
-                    <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                      <Icon
-                        className={`text-base ${
-                          active ? "text-primary" : "text-gray-700"
-                        }`}
-                      />
-                    </div>
-                    <span className="ml-2.5 text-sm font-medium whitespace-nowrap overflow-hidden">
-                      {item.label}
-                    </span>
-                  </div>
+{hasSubItems ? (
+  item.label === "Settings" ? (
+    <>
+      <div
+        className={getMenuItemClasses(item.path, activeSub)}
+        onClick={() => setSettingsOpen(!settingsOpen)}
+      >
+        <div className="w-5 h-5 flex items-center justify-center shrink-0">
+          <Icon
+            className={`text-base ${
+              active ? "text-primary" : "text-gray-700"
+            }`}
+          />
+        </div>
+        <span className="ml-2.5 text-sm font-medium whitespace-nowrap overflow-hidden">
+          {item.label}
+        </span>
+        <DownOutlined
+          className={`ml-auto transition-transform ${
+            settingsOpen ? "rotate-180" : ""
+          }`}
+          style={{ fontSize: 12 }}
+        />
+      </div>
+      {settingsOpen && (
+        <div className="mt-1 mb-1 space-y-0.5">
+          {item.subItems!.map((subItem) => {
+            const SubIcon = subItem.icon;
+            const subActive = isActive(subItem.path);
+            return (
+              <Link
+                key={subItem.path}
+                href={subItem.path}
+                onClick={() => handleNavigation(subItem.path, subItem.tabKey)}
+              >
+                <div
+                  className={`flex items-center py-1.5 pl-8 pr-2.5 text-xs rounded-none cursor-pointer transition-colors ${
+                    subActive
+                      ? "bg-primary text-white font-medium"
+                      : "hover:bg-emerald-50 text-gray-600"
+                  }`}
+                >
+                  <SubIcon
+                    className={`mr-2 text-xs shrink-0 ${
+                      subActive ? "text-white" : "text-gray-500"
+                    }`}
+                  />
+                  <span className="truncate">{subItem.label}</span>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </>
+  ) : (
+    <>
+      <div className={getMenuItemClasses(item.path, activeSub)}>
+        <div className="w-5 h-5 flex items-center justify-center shrink-0">
+          <Icon
+            className={`text-base ${
+              active ? "text-primary" : "text-gray-700"
+            }`}
+          />
+        </div>
+        <span className="ml-2.5 text-sm font-medium whitespace-nowrap overflow-hidden">
+          {item.label}
+        </span>
+      </div>
 
-                  {/* Sub-items (always open) */}
-                  <div className="mt-1 mb-1 space-y-0.5">
-                    {item.subItems!.map((subItem) => {
-                      const SubIcon = subItem.icon;
-                      const subActive = isActive(subItem.path);
-                      return (
-                        <Link
-                          key={subItem.path}
-                          href={subItem.path}
-                          onClick={() =>
-                            handleNavigation(subItem.path, subItem.tabKey)
-                          }
-                        >
-                          <div
-                            className={`flex items-center py-1.5 pl-8 pr-2.5 text-xs rounded-none cursor-pointer transition-colors ${
-                              subActive
-                                ? "bg-primary text-white font-medium"
-                                : "hover:bg-emerald-50 text-gray-600"
-                            }`}
-                          >
-                            <SubIcon
-                              className={`mr-2 text-xs shrink-0 ${
-                                subActive ? "text-white" : "text-gray-500"
-                              }`}
-                            />
-                            <span className="truncate">{subItem.label}</span>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
+      {/* Sub-items (always open) */}
+      <div className="mt-1 mb-1 space-y-0.5">
+        {item.subItems!.map((subItem) => {
+          const SubIcon = subItem.icon;
+          const subActive = isActive(subItem.path);
+          return (
+            <Link
+              key={subItem.path}
+              href={subItem.path}
+              onClick={() => handleNavigation(subItem.path, subItem.tabKey)}
+            >
+              <div
+                className={`flex items-center py-1.5 pl-8 pr-2.5 text-xs rounded-none cursor-pointer transition-colors ${
+                  subActive
+                    ? "bg-primary text-white font-medium"
+                    : "hover:bg-emerald-50 text-gray-600"
+                }`}
+              >
+                <SubIcon
+                  className={`mr-2 text-xs shrink-0 ${
+                    subActive ? "text-white" : "text-gray-500"
+                  }`}
+                />
+                <span className="truncate">{subItem.label}</span>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </>
+  )
+) : (
                 // Regular menu item with navigation
                 <Link
                   href={item.path}

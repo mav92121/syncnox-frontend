@@ -30,6 +30,16 @@ interface LocationMappingFormProps {
   existingLocations?: LocationMapping[];
 }
 
+const getCoords = (data: any) => {
+  if (!data) return null;
+  const lat = data.latitude ?? data.lat ?? data.location?.lat;
+  const lng = data.longitude ?? data.lng ?? data.location?.lng;
+  if (typeof lat === "number" && typeof lng === "number" && !isNaN(lat) && !isNaN(lng)) {
+    return { lat, lng };
+  }
+  return null;
+};
+
 const LocationMappingForm = ({
   initialData = null,
   form: externalForm,
@@ -85,10 +95,31 @@ const LocationMappingForm = ({
         aliases: initialData.aliases?.join(", ") || undefined,
       });
 
-      if (initialData.latitude && initialData.longitude) {
-        setMapLocation({ lat: initialData.latitude, lng: initialData.longitude });
+      const coords = getCoords(initialData);
+      if (coords) {
+        setMapLocation(coords);
+      } else if (initialData.address || initialData.city || initialData.name) {
+        const fullAddress = [initialData.address, initialData.city, initialData.country]
+          .filter(Boolean)
+          .join(", ");
+        if (typeof window !== "undefined" && (window as any).google?.maps?.Geocoder) {
+          const geocoder = new (window as any).google.maps.Geocoder();
+          geocoder.geocode({ address: fullAddress || initialData.name }, (results: any, status: any) => {
+            if (status === "OK" && results && results[0]?.geometry?.location) {
+              const loc = {
+                lat: results[0].geometry.location.lat(),
+                lng: results[0].geometry.location.lng(),
+              };
+              setMapLocation(loc);
+            } else {
+              setMapLocation({ lat: 45.5017, lng: -73.5673 });
+            }
+          });
+        } else {
+          setMapLocation({ lat: 45.5017, lng: -73.5673 });
+        }
       } else {
-        setMapLocation(null);
+        setMapLocation({ lat: 45.5017, lng: -73.5673 });
       }
 
       setTimeout(() => {
@@ -129,15 +160,20 @@ const LocationMappingForm = ({
 
   const existingMarkers = useMemo(() => {
     return existingLocations
-      .filter((m) => m.latitude && m.longitude && m.id !== initialData?.id)
-      .map((m) => ({
-        id: m.id,
-        position: { lat: m.latitude!, lng: m.longitude! },
-        title: m.name,
-        description: m.address || m.name,
-        isDepot: false,
-        draggable: false,
-      }));
+      .map((m) => {
+        const coords = getCoords(m);
+        if (!coords || m.id === initialData?.id) return null;
+        return {
+          id: m.id,
+          position: coords,
+          title: m.name,
+          description: m.address || m.name,
+          isDepot: true,
+          color: "#003220",
+          draggable: false,
+        };
+      })
+      .filter(Boolean) as any[];
   }, [existingLocations, initialData?.id]);
 
   const currentMarker = mapLocation
@@ -147,6 +183,8 @@ const LocationMappingForm = ({
           position: mapLocation,
           title: initialData?.name || "Location",
           description: initialData?.address || initialData?.name || "Location",
+          isDepot: true,
+          color: "#003220",
           draggable: true,
         },
       ]
@@ -231,7 +269,7 @@ const LocationMappingForm = ({
         </div>
 
         {/* Embedded Interactive Map identical to Depots view */}
-        <div className="flex-1 min-h-[260px] border border-gray-200 overflow-hidden relative rounded-none my-2">
+        <div className="flex-1 min-h-[280px] border border-gray-200 overflow-hidden relative rounded-none my-2">
           <GoogleMaps
             markers={allMarkers}
             center={mapCenter}
