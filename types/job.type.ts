@@ -42,6 +42,7 @@ export interface Job {
   completed_at?: string | null;
   route_name?: string;
   optimization_id?: number;
+  custom_fields?: Record<string, any>;
 }
 
 export interface FetchJobsParams {

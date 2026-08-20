@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Form,
   Input,
@@ -25,6 +26,8 @@ import { useDepotStore } from "@/store/depots.store";
 import AddressAutocomplete, {
   AddressData,
 } from "@/components/AddressAutocomplete";
+import { CustomFieldDefinition, getCustomFields } from "@/apis/custom-fields.api";
+import { DynamicCustomFieldsForm } from "@/components/DynamicCustomFieldsForm";
 
 const { Text } = Typography;
 
@@ -68,6 +71,14 @@ const BasicInformation = ({
   setEndDepotId,
 }: BasicInformationProps) => {
   const { depots } = useDepotStore();
+  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDefinition[]>([]);
+  const customFieldValues = form.getFieldValue("custom_fields") || {};
+
+  useEffect(() => {
+    getCustomFields("team_member")
+      .then((defs) => setCustomFieldDefs(defs))
+      .catch((err) => console.error("Failed to load team member custom fields", err));
+  }, []);
 
   const depotOptions = depots.map((depot) => ({
     value: depot.id,
@@ -513,6 +524,12 @@ const BasicInformation = ({
           )}
         </>
       )}
+
+      <DynamicCustomFieldsForm
+        customFields={customFieldDefs}
+        values={customFieldValues}
+        onChange={(updated) => form.setFieldsValue({ custom_fields: updated })}
+      />
     </>
   );
 };

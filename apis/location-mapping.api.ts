@@ -59,7 +59,7 @@ export interface LocationMappingUpdate {
 
 export const fetchLocationMappings = async (): Promise<LocationMapping[]> => {
   try {
-    const response = await apiClient.get("/transport/metro-stations");
+    const response = await apiClient.get("/location-mappings/metro-stations");
     return response.data.items || response.data || [];
   } catch (err) {
     console.error("Error fetching location mappings:", err);
@@ -68,7 +68,7 @@ export const fetchLocationMappings = async (): Promise<LocationMapping[]> => {
 };
 
 export const createLocationMapping = async (payload: LocationMappingCreate): Promise<LocationMapping> => {
-  const response = await apiClient.post("/transport/metro-stations", payload);
+  const response = await apiClient.post("/location-mappings/metro-stations", payload);
   return response.data;
 };
 
@@ -76,12 +76,12 @@ export const updateLocationMapping = async (
   id: number,
   payload: LocationMappingUpdate
 ): Promise<LocationMapping> => {
-  const response = await apiClient.put(`/transport/metro-stations/${id}`, payload);
+  const response = await apiClient.put(`/location-mappings/metro-stations/${id}`, payload);
   return response.data;
 };
 
 export const batchCreateLocationMappings = async (stations: LocationMappingCreate[]): Promise<number> => {
-  const response = await apiClient.post("/transport/metro-stations/batch", { stations });
+  const response = await apiClient.post("/location-mappings/metro-stations/batch", { stations });
   if (typeof response.data?.upserted === "number") {
     return response.data.upserted;
   }
@@ -96,5 +96,5 @@ export const batchCreateLocationMappings = async (stations: LocationMappingCreat
 
 
 export const deleteLocationMapping = async (id: number): Promise<void> => {
-  await apiClient.delete(`/transport/metro-stations/${id}`);
+  await apiClient.delete(`/location-mappings/metro-stations/${id}`);
 };

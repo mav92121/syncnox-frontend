@@ -252,7 +252,7 @@ const Depot = () => {
           {selectedDepot ? (
             <>
               {/* Detail header */}
-              <div className="flex items-center gap-3 p-3.5 px-5 border-b border-gray-200 shrink-0 bg-white">
+              <div className="flex items-center gap-3 border-b border-gray-200 shrink-0 bg-white">
                 <div className="w-11 h-11 bg-slate-100 flex items-center justify-center text-[#003220] shrink-0 rounded-none">
                   <MapPin size={22} />
                 </div>

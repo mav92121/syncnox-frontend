@@ -41,4 +41,5 @@ export interface Vehicle {
   relation?: "or" | "and" | null;
   created_at: string;
   updated_at: string;
+  custom_fields?: Record<string, any>;
 }

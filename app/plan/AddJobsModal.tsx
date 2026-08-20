@@ -2,22 +2,31 @@ import JobForm from "@/components/Jobs/JobForm";
 import { Modal } from "antd";
 import type { Job } from "@/types/job.type";
 
+interface AddJobsModalProps {
+  open: boolean;
+  setOpen?: (value: boolean) => void;
+  onCancel?: () => void;
+  /** Optional: called with the created Job after successful submission */
+  onJobCreated?: (job: Job) => void;
+}
+
 const AddJobsModal = ({
   open,
   setOpen,
+  onCancel,
   onJobCreated,
-}: {
-  open: boolean;
-  setOpen: (value: boolean) => void;
-  /** Optional: called with the created Job after successful submission */
-  onJobCreated?: (job: Job) => void;
-}) => {
+}: AddJobsModalProps) => {
+  const handleClose = () => {
+    if (setOpen) setOpen(false);
+    if (onCancel) onCancel();
+  };
+
   return (
     <Modal
       footer={null}
       title="Add Job"
       open={open}
-      onCancel={() => setOpen(false)}
+      onCancel={handleClose}
       width={700}
       centered
       styles={{ body: { overflow: "hidden", height: "80vh" } }}
@@ -25,7 +34,7 @@ const AddJobsModal = ({
       <div style={{ height: "100%" }}>
         <JobForm
           onSubmit={(job) => {
-            setOpen(false);
+            handleClose();
             if (job && onJobCreated) {
               onJobCreated(job);
             }

@@ -8,15 +8,17 @@ import DataPreviewStep from "./bulk-upload/DataPreviewStep";
 
 interface BulkUploadModalProps {
   open: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  onCancel?: () => void;
 }
 
-const BulkUploadModal = ({ open, onClose }: BulkUploadModalProps) => {
+const BulkUploadModal = ({ open, onClose, onCancel }: BulkUploadModalProps) => {
   const { currentStep, setCurrentStep, reset } = useBulkUploadStore();
 
   const handleClose = () => {
     reset();
-    onClose();
+    if (onClose) onClose();
+    if (onCancel) onCancel();
   };
 
   const handleFinish = () => {

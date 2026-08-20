@@ -35,6 +35,7 @@ export interface BaseTableProps<TData = any> {
   minHeight?: number; // Minimum height for loading/empty states (default: 300)
 
   // Optional - Callbacks
+  getRowId?: (params: any) => string;
   onRowClicked?: (event: any) => void;
   onSelectionChanged?: (event: any) => void;
   onGridReady?: (event: any) => void;
@@ -86,6 +87,7 @@ export default function BaseTable<TData = any>({
   loading = false,
   emptyMessage = "No data available",
   minHeight = 300,
+  getRowId,
   onRowClicked,
   onSelectionChanged,
   onGridReady,
@@ -169,6 +171,18 @@ export default function BaseTable<TData = any>({
     return rowSelection;
   }, [rowSelection, pagination]);
 
+  const defaultGetRowId = useMemo(() => {
+    if (getRowId) return getRowId;
+    return (params: any) => {
+      const data = params.data;
+      if (!data) return String(Math.random());
+      if (data.id !== undefined && data.id !== null) return String(data.id);
+      if (data._id !== undefined && data._id !== null) return String(data._id);
+      if (data.uuid !== undefined && data.uuid !== null) return String(data.uuid);
+      return String(Math.random());
+    };
+  }, [getRowId]);
+
   // Loading state
   if (loading) {
     return (
@@ -215,7 +229,7 @@ export default function BaseTable<TData = any>({
           rowData={rowData}
           defaultColDef={defaultColumnDef}
           rowSelection={processedRowSelection}
-          // rowSelection={rowSelection}
+          getRowId={defaultGetRowId}
           suppressRowClickSelection={true}
           rowHeight={32}
           theme={theme || defaultTheme}

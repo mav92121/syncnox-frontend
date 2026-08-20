@@ -8,7 +8,7 @@ import {
   Plus,
   Trash2,
   FileSpreadsheet,
-  Settings,
+  Building,
 } from "lucide-react";
 import { useDepotStore } from "@/store/depots.store";
 import { useLocationMappingStore } from "@/store/location-mapping.store";
@@ -25,9 +25,6 @@ import LocationMappingForm from "@/app/location-mapping/_components/LocationMapp
 import AddLocationMappingModal from "@/app/location-mapping/_components/AddLocationMappingModal";
 import BulkImportModal from "@/components/BulkImport/BulkImportModal";
 import { DepotPayload } from "@/apis/depots.api";
-import { Panel, PanelGroup } from "react-resizable-panels";
-import ResizeHandle from "@/components/ResizeHandle";
-import GoogleMaps from "@/components/GoogleMaps";
 import { useSearchParams, useRouter } from "next/navigation";
 
 type LocationTab = "depots" | "additional-locations";
@@ -74,11 +71,6 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
   const [isCreateDepotModalOpen, setIsCreateDepotModalOpen] = useState(false);
   const [depotSearch, setDepotSearch] = useState("");
 
-  // Map state for Depots
-  const [isMapOpen, setIsMapOpen] = useState(false);
-  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
-  const [selectedMarkerId, setSelectedMarkerId] = useState<number | string | null>(null);
-
   useEffect(() => {
     fetchDepots();
   }, [fetchDepots]);
@@ -99,15 +91,6 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
       } else {
         setSelectedDepot(undefined);
       }
-      setSelectedMarkerId(selectedDepot.id);
-      if (selectedDepot.location?.lat && selectedDepot.location?.lng) {
-        setMapCenter({
-          lat: selectedDepot.location.lat,
-          lng: selectedDepot.location.lng,
-        });
-      }
-    } else {
-      setSelectedMarkerId(null);
     }
   }, [depots, selectedDepot?.id]);
 
@@ -162,16 +145,6 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
     const success = await updateDepot(selectedDepot.id, values);
     return success;
   };
-
-  const depotMarkers = depots
-    .filter((d: DepotType) => d.location?.lat && d.location?.lng)
-    .map((d: DepotType, index: number) => ({
-      id: d.id,
-      position: { lat: d.location.lat, lng: d.location.lng },
-      description: d.address?.formatted_address || "No address",
-      jobData: d as any,
-      sequenceNumber: index + 1,
-    }));
 
   // ── Additional Locations Store State ─────────────────────────────────────
   const {
@@ -239,6 +212,16 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
     });
     return counts;
   }, [locationMappings]);
+
+  // Reset selectedTypeFilter to "all" if active filter has no items
+  useEffect(() => {
+    if (
+      selectedTypeFilter !== "all" &&
+      (!typeCounts[selectedTypeFilter] || typeCounts[selectedTypeFilter] === 0)
+    ) {
+      setSelectedTypeFilter("all");
+    }
+  }, [typeCounts, selectedTypeFilter]);
 
   const filteredLocations = useMemo(() => {
     let result = locationMappings;
@@ -332,9 +315,8 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
     );
   }
 
-  // ── Render Tab Main Content ──────────────────────────────────────────────
-  const mainContent = (
-    <div className="flex flex-col h-full overflow-hidden">
+  return (
+    <div className="flex flex-col h-full overflow-hidden font-sans">
       {/* Top Header */}
       <div className="flex items-start justify-between pb-3 shrink-0 border-b border-gray-200">
         <div>
@@ -358,24 +340,6 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
                   Delete ({depotCheckedIds.length})
                 </Button>
               )}
-              <Button
-                onClick={() => {
-                  if (!isMapOpen && selectedDepot) {
-                    setSelectedMarkerId(selectedDepot.id);
-                    if (selectedDepot.location?.lat && selectedDepot.location?.lng) {
-                      setMapCenter({
-                        lat: selectedDepot.location.lat,
-                        lng: selectedDepot.location.lng,
-                      });
-                    }
-                  }
-                  setIsMapOpen(!isMapOpen);
-                }}
-                icon={<MapPin size={16} />}
-                title={isMapOpen ? "Close Map" : "Map View"}
-              >
-                Map View
-              </Button>
               <Button
                 type="primary"
                 icon={<Plus size={15} />}
@@ -415,51 +379,51 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
         </div>
       </div>
 
-      {/* Tabs Navigation */}
-      <div className="my-3 shrink-0">
-        <div className="inline-flex items-center gap-1 bg-gray-100 rounded-none border border-gray-200">
-          <button
-            type="button"
-            onClick={() => handleTabChange("depots")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all select-none cursor-pointer border-none outline-none ${
+      {/* Tabs Navigation (Underline Style matching Jobs, Routes, Schedule & Custom Fields) */}
+      <div className="flex border-b border-gray-200 my-3 space-x-6 shrink-0">
+        <button
+          type="button"
+          onClick={() => handleTabChange("depots")}
+          className={`pb-2.5 px-1 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer bg-transparent border-t-0 border-x-0 outline-none ${
+            activeTab === "depots"
+              ? "border-b-2 border-[#003220] text-[#003220] font-bold"
+              : "border-b-2 border-transparent text-gray-500 hover:text-gray-800"
+          }`}
+        >
+          <Building className="w-4 h-4" />
+          <span>Depots</span>
+          <span
+            className={`px-1.5 py-0.2 text-[10px] rounded font-bold ${
               activeTab === "depots"
-                ? "bg-[#0F4C3A] text-white shadow-xs"
-                : "text-gray-500 hover:text-gray-800 bg-transparent"
+                ? "bg-[#003220]/10 text-[#003220]"
+                : "bg-gray-100 text-gray-600"
             }`}
           >
-            <span>Depots</span>
-            <span
-              className={`px-1.5 py-0.2 text-[10px] rounded font-bold ${
-                activeTab === "depots"
-                  ? "bg-white/20 text-white"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              {depots.length}
-            </span>
-          </button>
+            {depots.length}
+          </span>
+        </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange("additional-locations")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold transition-all select-none cursor-pointer border-none outline-none ${
+        <button
+          type="button"
+          onClick={() => handleTabChange("additional-locations")}
+          className={`pb-2.5 px-1 text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer bg-transparent border-t-0 border-x-0 outline-none ${
+            activeTab === "additional-locations"
+              ? "border-b-2 border-[#003220] text-[#003220] font-bold"
+              : "border-b-2 border-transparent text-gray-500 hover:text-gray-800"
+          }`}
+        >
+          <MapPin className="w-4 h-4" />
+          <span>Additional Locations</span>
+          <span
+            className={`px-1.5 py-0.2 text-[10px] rounded font-bold ${
               activeTab === "additional-locations"
-                ? "bg-[#0F4C3A] text-white shadow-xs"
-                : "text-gray-500 hover:text-gray-800 bg-transparent"
+                ? "bg-[#003220]/10 text-[#003220]"
+                : "bg-gray-100 text-gray-600"
             }`}
           >
-            <span>Additional Locations</span>
-            <span
-              className={`px-1.5 py-0.2 text-[10px] rounded font-bold ${
-                activeTab === "additional-locations"
-                  ? "bg-white/20 text-white"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              {locationMappings.length}
-            </span>
-          </button>
-        </div>
+            {locationMappings.length}
+          </span>
+        </button>
       </div>
 
       {/* Tab 1: Depots Split View */}
@@ -514,13 +478,6 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
                     onToggleCheck={() => toggleDepotCheck(depot.id)}
                     onClick={() => {
                       setSelectedDepot(depot);
-                      if (isMapOpen && depot.location?.lat && depot.location?.lng) {
-                        setMapCenter({
-                          lat: depot.location.lat,
-                          lng: depot.location.lng,
-                        });
-                        setSelectedMarkerId(depot.id);
-                      }
                     }}
                   />
                 ))
@@ -532,7 +489,7 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
           <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-white">
             {selectedDepot ? (
               <>
-                <div className="flex items-center gap-3 p-3.5 px-5 border-b border-gray-200 shrink-0 bg-white">
+                <div className="flex items-center gap-3 px-5 py-3 border-b border-gray-200 shrink-0 bg-white">
                   <div className="w-10 h-10 bg-slate-100 flex items-center justify-center text-[#003220] shrink-0">
                     <MapPin size={20} />
                   </div>
@@ -548,24 +505,6 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
                     <div className="text-xs text-gray-500 mt-0.5">
                       {selectedDepot.address?.formatted_address || "No address set"}
                     </div>
-                  </div>
-
-                  <div className="ml-auto flex items-center gap-2">
-                    {selectedDepot.location?.lat && (
-                      <button
-                        className="text-xs text-[#003220] hover:underline cursor-pointer bg-transparent border-none p-0 mr-2 font-medium"
-                        onClick={() => {
-                          setIsMapOpen(true);
-                          setMapCenter({
-                            lat: selectedDepot.location.lat,
-                            lng: selectedDepot.location.lng,
-                          });
-                          setSelectedMarkerId(selectedDepot.id);
-                        }}
-                      >
-                        View on map
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -597,7 +536,7 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
       {/* Tab 2: Additional Locations View */}
       {activeTab === "additional-locations" && (
         <div className="flex flex-col h-full overflow-hidden flex-1 mt-0">
-          {/* Category / Type filter chips */}
+          {/* Category / Type filter chips (Only show chips if location type exists) */}
           <div className="flex items-center justify-between py-2 px-1 border-b border-gray-200 shrink-0 bg-white">
             <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar py-0.5">
               {[
@@ -607,33 +546,35 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
                 { label: "Pickup", type: "pickup" },
                 { label: "Warehouse", type: "warehouse" },
                 { label: "Other", type: "other" },
-              ].map(({ label, type }) => {
-                const count = typeCounts[type] || 0;
-                const isSelected = selectedTypeFilter === type;
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setSelectedTypeFilter(type)}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-all cursor-pointer outline-none border ${
-                      isSelected
-                        ? "bg-[#003220] text-white border-[#003220] font-medium"
-                        : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
-                    }`}
-                  >
-                    <span>{label}</span>
-                    <span
-                      className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
+              ]
+                .filter(({ type }) => type === "all" || (typeCounts[type] && typeCounts[type] > 0))
+                .map(({ label, type }) => {
+                  const count = typeCounts[type] || 0;
+                  const isSelected = selectedTypeFilter === type;
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setSelectedTypeFilter(type)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 text-xs transition-all cursor-pointer outline-none border ${
                         isSelected
-                          ? "bg-white/20 text-white"
-                          : "bg-gray-200 text-gray-600"
+                          ? "bg-[#003220] text-white border-[#003220] font-medium"
+                          : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200"
                       }`}
                     >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span>{label}</span>
+                      <span
+                        className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
+                          isSelected
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-200 text-gray-600"
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
             </div>
           </div>
 
@@ -687,14 +628,16 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
                       isSelected={selectedMapping?.id === mapping.id}
                       isChecked={locationCheckedIds.includes(mapping.id)}
                       onToggleCheck={() => toggleLocationCheck(mapping.id)}
-                      onClick={() => setSelectedMapping(mapping)}
+                      onClick={() => {
+                        setSelectedMapping(mapping);
+                      }}
                     />
                   ))
                 )}
               </div>
             </div>
 
-            {/* Right detail form */}
+            {/* Right detail form matching Depots structure */}
             <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-white">
               {selectedMapping ? (
                 <>
@@ -751,6 +694,7 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
                       initialData={selectedMapping}
                       isInline
                       form={locationForm}
+                      existingLocations={locationMappings}
                     />
                   </div>
                 </>
@@ -789,48 +733,5 @@ export default function LocationsView({ defaultTab = "depots" }: LocationsViewPr
         entityType="location"
       />
     </div>
-  );
-
-  // If map is open in Depots tab, wrap with vertical panel group
-  return activeTab === "depots" && isMapOpen ? (
-    <div className="flex flex-col h-full">
-      <PanelGroup direction="vertical">
-        <Panel defaultSize={35} minSize={15}>
-          <div className="h-full">
-            <GoogleMaps
-              markers={depotMarkers}
-              center={mapCenter || { lat: 40.7128, lng: -74.006 }}
-              zoom={mapCenter ? 17 : 10}
-              selectedMarkerId={selectedMarkerId}
-              onMarkerSelect={(id) => {
-                setSelectedMarkerId(id);
-                const depot = depots.find((d) => d.id === id);
-                if (depot) setSelectedDepot(depot);
-              }}
-              InfoWindowModal={({ marker }) => (
-                <div className="p-2 min-w-[200px]">
-                  <div className="font-semibold text-gray-800 mb-1">
-                    {(marker.jobData as any).name}
-                  </div>
-                  <div className="text-sm text-gray-600">{marker.description}</div>
-                  <button
-                    className="text-sm text-blue-600 mt-2 underline cursor-pointer border-none bg-transparent p-0"
-                    onClick={() => setSelectedDepot(marker.jobData as any)}
-                  >
-                    Edit Depot
-                  </button>
-                </div>
-              )}
-            />
-          </div>
-        </Panel>
-        <ResizeHandle />
-        <Panel defaultSize={65} minSize={20}>
-          <div className="pt-2 h-full overflow-hidden">{mainContent}</div>
-        </Panel>
-      </PanelGroup>
-    </div>
-  ) : (
-    mainContent
   );
 }
