@@ -236,11 +236,9 @@ const LocationMappingForm = ({
             markers={allMarkers}
             center={mapCenter}
             zoom={mapLocation ? 15 : 11}
-            onMarkerDragEnd={(e) => {
-              if (e.latLng) {
-                const newLat = e.latLng.lat();
-                const newLng = e.latLng.lng();
-                setMapLocation({ lat: newLat, lng: newLng });
+            onMarkerDragEnd={(_markerId, newPosition) => {
+              if (newPosition) {
+                setMapLocation(newPosition);
                 triggerAutoSave();
               }
             }}

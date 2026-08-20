@@ -8,6 +8,8 @@ export interface AddressData {
     lng: number;
   };
   address_formatted: string;
+  city?: string;
+  country?: string;
 }
 
 interface AddressAutocompleteProps {
@@ -130,13 +132,26 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
     placesService.current.getDetails(
       {
         placeId: selectedOption.placeId,
-        fields: ["geometry", "formatted_address"],
+        fields: ["geometry", "formatted_address", "address_components"],
       },
       (place, status) => {
         if (status === google.maps.places.PlacesServiceStatus.OK && place) {
           const lat = place.geometry?.location?.lat();
           const lng = place.geometry?.location?.lng();
           const formattedAddress = place.formatted_address;
+
+          let city = "";
+          let country = "";
+          if (place.address_components) {
+            for (const component of place.address_components) {
+              if (component.types.includes("locality")) {
+                city = component.long_name;
+              }
+              if (component.types.includes("country")) {
+                country = component.long_name;
+              }
+            }
+          }
 
           if (lat !== undefined && lng !== undefined && formattedAddress) {
             const addressData: AddressData = {
@@ -145,6 +160,8 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
                 lng,
               },
               address_formatted: formattedAddress,
+              city: city || undefined,
+              country: country || undefined,
             };
 
             // Update internal state to reflect the selected address
