@@ -101,6 +101,14 @@ const Recents = () => {
     }),
   ];
 
+  const recentsJobDates = Array.from(
+    new Set(
+      draftJobs
+        .map((j) => j.scheduled_date)
+        .filter((d): d is string => Boolean(d))
+    )
+  );
+
   if (error) {
     return <div>Error: {error}</div>;
   }
@@ -135,8 +143,9 @@ const Recents = () => {
 
         {/* Jobs Section Panel */}
         <Panel defaultSize={60} minSize={5}>
-          <div className="flex flex-col h-full mt-2">
-            <Flex justify="space-between" align="center" className="my-4">
+          <div className="flex flex-col h-full p-4 bg-gray-50">
+            {/* Top Bar */}
+            <Flex justify="space-between" align="center" className="mb-4">
               <Flex gap={24} align="center">
                 <Title level={4} className="m-0 pt-2">
                   Jobs
@@ -144,7 +153,7 @@ const Recents = () => {
                 <DraftJobsDatePicker
                   selectedDate={selectedDate}
                   setSelectedDate={setSelectedDate}
-                  draftJobDates={draftJobDates}
+                  draftJobDates={recentsJobDates}
                 />
               </Flex>
               <Flex gap={8}>

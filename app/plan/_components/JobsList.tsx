@@ -132,20 +132,25 @@ export default function JobsList() {
   }, [resetAllJobs]);
 
   // Status and Date Filtered Jobs
-  const rawStatusJobs =
+  const sourceJobs =
+    allJobs.length > 0 ? allJobs : (jobs.length > 0 ? jobs : []);
+
+  const statusFilteredJobs =
     selectedJobTab === "all"
-      ? allJobs
-      : selectedJobTab === "draft"
-      ? (draftJobs.length > 0 ? draftJobs : jobs.filter((j) => j.status === "draft"))
-      : jobs.filter((j) => j.status === selectedJobTab);
+      ? sourceJobs
+      : sourceJobs.filter((j) => j.status === selectedJobTab);
 
-  const fallbackSourceJobs = rawStatusJobs.length > 0 ? rawStatusJobs : (allJobs.length > 0 ? allJobs : jobs);
+  const availableJobDates = Array.from(
+    new Set(
+      statusFilteredJobs
+        .map((j) => j.scheduled_date)
+        .filter((d): d is string => Boolean(d))
+    )
+  );
 
-  const dateFilteredJobs = selectedDate
-    ? fallbackSourceJobs.filter((j) => j.scheduled_date === selectedDate)
-    : fallbackSourceJobs;
-
-  const displayedJobs = dateFilteredJobs.length > 0 ? dateFilteredJobs : fallbackSourceJobs;
+  const displayedJobs = selectedDate
+    ? statusFilteredJobs.filter((j) => j.scheduled_date === selectedDate)
+    : statusFilteredJobs;
 
   const activeMarkers = displayedJobs
     .filter((job: Job) => job.location?.lat && job.location?.lng)
@@ -288,7 +293,7 @@ export default function JobsList() {
           <DraftJobsDatePicker
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
-            draftJobDates={draftJobDates}
+            draftJobDates={availableJobDates}
           />
         </Flex>
 
