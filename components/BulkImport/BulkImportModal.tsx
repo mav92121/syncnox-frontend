@@ -89,17 +89,17 @@ export default function BulkImportModal({
           <span className="text-xl font-semibold">Bulk Import {entityTitle}</span>
         </Flex>
       }
-      width="90vw"
+      width="92vw"
       centered
       className="bulk-import-modal"
       styles={{
-        body: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 },
+        body: { flex: 1, height: '78vh', maxHeight: '78vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 },
         header: { borderRadius: 0, paddingBottom: '16px' },
         mask: { backdropFilter: 'blur(4px)' }
       }}
       destroyOnClose
     >
-      <div className="py-1 flex flex-col">
+      <div className="py-1 flex flex-col flex-1 h-full min-h-0">
         {importedCount !== null ? (
           <div className="text-center py-8">
             <CheckCircle2 size={52} className="text-emerald-500 mx-auto mb-3" />

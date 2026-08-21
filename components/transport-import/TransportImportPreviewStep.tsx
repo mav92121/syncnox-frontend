@@ -361,7 +361,7 @@ export default function TransportImportPreviewStep({
   );
 
   return (
-    <div className="flex flex-col h-full" style={{ height: "calc(75vh - 80px)", minHeight: "500px" }}>
+    <div className="flex flex-col h-full min-h-0 flex-1">
       {/* Summary Header Bar */}
       <div className="flex items-center justify-between bg-slate-50 border border-slate-200 py-2 px-3 rounded-none shrink-0 gap-3 mb-2">
         <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -509,9 +509,12 @@ export default function TransportImportPreviewStep({
         )}
       </div>
 
-      {/* Data Grid */}
-      <div className="flex-1 min-h-[350px] overflow-hidden mb-3 border border-gray-200">
-        <div className="h-full w-full" style={{ "--ag-wrapper-border-radius": "0" } as React.CSSProperties}>
+      {/* Data Grid Container */}
+      <div className="flex-1 min-h-0 relative mb-3 border border-gray-200 overflow-hidden">
+        <div
+          className="h-full w-full [&_.ag-root-wrapper]:!border-0 [&_.ag-header]:!bg-gray-50 [&_.ag-header-cell]:!font-semibold [&_.ag-header-cell-text]:!text-xs [&_.ag-header-cell-text]:!text-gray-700"
+          style={{ "--ag-wrapper-border-radius": "0" } as React.CSSProperties}
+        >
           <AgGridReact
             ref={gridRef}
             rowData={displayedRowData}

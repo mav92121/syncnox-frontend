@@ -405,6 +405,12 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
       } else {
         message.success(`Successfully imported ${response.created} jobs!`);
       }
+
+      const importedDate = jobs.find((j) => j.scheduled_date)?.scheduled_date;
+      if (importedDate) {
+        useJobsStore.getState().setSelectedDate(importedDate);
+      }
+
       await refreshDraftJobs();
       onFinish();
     } catch (error: any) {
@@ -415,10 +421,7 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
   };
 
   return (
-    <div
-      className="flex flex-col h-full"
-      style={{ height: "calc(70vh - 100px)" }}
-    >
+    <div className="flex flex-col h-full min-h-0 flex-1">
       {/* Interactive Filter Bar */}
       <div className="flex flex-wrap items-center gap-2 mb-2 p-1.5 bg-gray-50/80 border border-gray-200 rounded-none shadow-2xs">
         <div className="flex items-center gap-1.5 px-2 text-gray-500 border-r border-gray-200 pr-2.5 mr-0.5">
@@ -590,10 +593,10 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
         />
       )}
 
-      {/* Data Grid */}
-      <div className="flex-1 overflow-hidden">
+      {/* Data Grid Container */}
+      <div className="flex-1 min-h-0 relative mb-3 border border-gray-200 overflow-hidden">
         <div
-          className="h-full w-full"
+          className="h-full w-full [&_.ag-root-wrapper]:!border-0 [&_.ag-header]:!bg-gray-50 [&_.ag-header-cell]:!font-semibold [&_.ag-header-cell-text]:!text-xs [&_.ag-header-cell-text]:!text-gray-700"
           style={{ "--ag-wrapper-border-radius": "0" } as React.CSSProperties}
         >
           <AgGridReact

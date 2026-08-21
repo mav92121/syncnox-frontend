@@ -196,7 +196,7 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
       )}
 
       {/* Scrollable Table Container */}
-      <div className="flex-1 min-h-0 relative mb-2 border border-gray-200 rounded-none">
+      <div className="flex-1 min-h-0 relative mb-3 border border-gray-200 overflow-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb:hover]:bg-gray-400 [scrollbar-width:thin] [scrollbar-color:#c1c1c1_#f1f1f1] [&_.ant-table-thead>tr>th]:sticky [&_.ant-table-thead>tr>th]:top-0 [&_.ant-table-thead>tr>th]:z-10 [&_.ant-table-thead>tr>th]:!bg-gray-50 [&_.ant-table-container]:!overflow-visible [&_.ant-table-content]:!overflow-visible [&_.ant-table-cell-fix-left]:!sticky [&_.ant-table-cell-fix-left]:!z-11 [&_.ant-table-thead>tr>.ant-table-cell-fix-left]:!z-20 [&_.ant-table-thead>tr>.ant-table-cell-fix-left]:!top-0">
         <Table
           columns={tableColumns}
           dataSource={uploadResponse.sample_data.map((row, idx) => ({
@@ -205,8 +205,7 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
           }))}
           pagination={false}
           size="small"
-          scroll={{ x: "max-content", y: "calc(90vh - 340px)" }}
-          className="bulk-upload-horizontal-table"
+          scroll={{ x: "max-content" }}
         />
       </div>
 

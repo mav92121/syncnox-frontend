@@ -26,13 +26,10 @@ const BulkUploadModal = ({ open, onClose, onCancel }: BulkUploadModalProps) => {
   };
 
   const getModalWidth = () => {
-    if (currentStep === 1) return 1460;
-    if (currentStep === 2) return 1160;
-    return 1420;
+    return 1460;
   };
 
   const getModalClassName = () => {
-    if (currentStep === 1) return "bulk-upload-modal-compact";
     return "bulk-upload-modal-large";
   };
 
@@ -53,7 +50,7 @@ const BulkUploadModal = ({ open, onClose, onCancel }: BulkUploadModalProps) => {
       centered
       className={getModalClassName()}
       styles={{
-        body: { flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 },
+        body: { flex: 1, height: '78vh', maxHeight: '78vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', minHeight: 0 },
         header: { borderRadius: 0, paddingBottom: '16px' },
         mask: { backdropFilter: 'blur(4px)' }
       }}
