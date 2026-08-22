@@ -36,6 +36,27 @@ export function useFieldConfig(
       const data = await getCustomFields(entity);
       setCustomFields(data || []);
 
+      if (entity === "job" && data && data.length > 0) {
+        const shuttleKeys = [
+          "pickup_type",
+          "drop_off_address",
+          "pick_up_address",
+          "go_pickup_point",
+          "quant_id",
+          "dress_code",
+        ];
+        const hasShuttleKey = data.some((f) => shuttleKeys.includes(f.field_key));
+        const detectedTemplate = hasShuttleKey ? "worker_shuttle" : "pickup_delivery_job";
+
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("syncnox_active_job_template");
+          if (stored !== detectedTemplate) {
+            localStorage.setItem("syncnox_active_job_template", detectedTemplate);
+            window.dispatchEvent(new Event("syncnox_active_template_changed"));
+          }
+        }
+      }
+
       if (typeof window !== "undefined") {
         const storedOverrides = localStorage.getItem(`syncnox_base_field_overrides_${entity}`);
         if (storedOverrides) {

@@ -13,6 +13,9 @@ interface BulkUploadStore {
   // Default scheduled date for bulk upload
   defaultScheduledDate: string | null;
 
+  // Active template type for bulk upload
+  templateType: string;
+
   // Column mapping
   columnMapping: Record<string, string>; // {identifier: excel_column_name}
   saveAsDefault: boolean;
@@ -25,6 +28,7 @@ interface BulkUploadStore {
   setCurrentStep: (step: number) => void;
   setUploadedFile: (file: File | null) => void;
   setUploadResponse: (response: BulkUploadResponse | null) => void;
+  setTemplateType: (type: string) => void;
   setDefaultScheduledDate: (date: string | null) => void;
   setColumnMapping: (mapping: Record<string, string>) => void;
   setSaveAsDefault: (save: boolean) => void;
@@ -38,6 +42,7 @@ const initialState = {
   currentStep: 1,
   uploadedFile: null,
   uploadResponse: null,
+  templateType: "worker_shuttle",
   defaultScheduledDate: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD
   columnMapping: {},
   saveAsDefault: true, // Default to checked
@@ -64,6 +69,12 @@ export const useBulkUploadStore = create<BulkUploadStore>()(
     setUploadResponse: (response: BulkUploadResponse | null) => {
       set((state) => {
         state.uploadResponse = response;
+      });
+    },
+
+    setTemplateType: (type: string) => {
+      set((state) => {
+        state.templateType = type;
       });
     },
 

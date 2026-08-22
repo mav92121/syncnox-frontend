@@ -93,7 +93,7 @@ export default function BulkImportFileUploadStep({
   };
 
   return (
-    <div className="flex flex-col gap-4 py-1 h-full min-h-0">
+    <div className="flex flex-col flex-1 min-h-0 gap-4 py-1">
       {/* Top Banner Card */}
       <div className="bg-white border border-gray-200 p-3.5 flex items-center justify-between gap-4 rounded-none shrink-0">
         <div className="flex items-center gap-3">

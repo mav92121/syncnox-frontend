@@ -27,6 +27,16 @@ export const ApplyTemplateModal: React.FC<ApplyTemplateModalProps> = ({
     try {
       setSubmitting(true);
       const res = await applyFieldTemplate(template.id, applyMode);
+
+      if (template.entity_type === "job" || res.entity_type === "job") {
+        const slug = res.template_slug || template.slug || "";
+        const targetTemplate = slug.includes("shuttle") ? "worker_shuttle" : "pickup_delivery_job";
+        localStorage.setItem("syncnox_active_job_template", targetTemplate);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("syncnox_active_template_changed"));
+        }
+      }
+
       message.success(
         `Applied "${template.name}" template successfully! (${res.added_count} fields added)`
       );
@@ -98,7 +108,7 @@ export const ApplyTemplateModal: React.FC<ApplyTemplateModalProps> = ({
               <Radio value="replace" className="mt-0.5" />
               <div>
                 <div className="font-semibold text-gray-900 flex items-center gap-1.5">
-                  <Replace className="w-3.5 h-3.5 text-[#003220]" />
+                  {/* <Replace className="w-3.5 h-3.5 text-[#003220]" /> */}
                   <span>Replace Existing Custom Fields</span>
                 </div>
                 <p className="text-[11px] text-gray-500 mt-0.5">
@@ -118,7 +128,7 @@ export const ApplyTemplateModal: React.FC<ApplyTemplateModalProps> = ({
               <Radio value="merge" className="mt-0.5" />
               <div>
                 <div className="font-semibold text-gray-900 flex items-center gap-1.5">
-                  <GitMerge className="w-3.5 h-3.5 text-blue-700" />
+                  {/* <GitMerge className="w-3.5 h-3.5 text-blue-700" /> */}
                   <span>Merge with Existing Custom Fields</span>
                 </div>
                 <p className="text-[11px] text-gray-500 mt-0.5">

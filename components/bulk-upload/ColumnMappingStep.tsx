@@ -50,10 +50,18 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
   }, [uploadResponse]);
 
   const checkLocationMapping = (mapping: Record<string, string>) => {
-    const hasAddress = Boolean(
-      "address_formatted" in mapping &&
-      mapping.address_formatted &&
-      mapping.address_formatted !== "not_mapped",
+    const locationKeys = [
+      "address_formatted",
+      "client_address",
+      "pick_up_address",
+      "drop_off_address",
+      "candidate_address",
+      "go_pickup_point",
+      "return_dropoff_point",
+      "location",
+    ];
+    const hasAddress = locationKeys.some(
+      (key) => key in mapping && mapping[key] && mapping[key] !== "not_mapped"
     );
     setHasLocationColumn(hasAddress);
   };
@@ -187,7 +195,7 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
   ];
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col flex-1 min-h-0">
       <div className="mb-2 text-gray-600 font-medium shrink-0">
         Review Mapped Columns
       </div>

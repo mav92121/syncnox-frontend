@@ -183,7 +183,7 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                           onClick={() => setSelectedTemplateForApply(tpl)}
                           className="inline-flex items-center gap-1.5 bg-[#003220] hover:bg-[#002417] text-white text-xs font-semibold px-4 py-1.5 rounded-none transition-colors cursor-pointer border-none shadow-xs"
                         >
-                          <Sparkles className="w-3.5 h-3.5" />
+                          {/* <Sparkles className="w-3.5 h-3.5" /> */}
                           <span>Use Template</span>
                         </button>
                       </div>

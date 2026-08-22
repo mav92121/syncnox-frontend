@@ -48,18 +48,49 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   const { teams } = useTeamStore();
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
 
-  const [activeTemplate, setActiveTemplate] = useState<string>("pickup_delivery_job");
+  const [activeTemplate, setActiveTemplate] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("syncnox_active_job_template") || "pickup_delivery_job";
+    }
+    return "pickup_delivery_job";
+  });
 
   useEffect(() => {
-    const storedTemplate = localStorage.getItem("syncnox_active_job_template");
-    if (storedTemplate) {
-      setActiveTemplate(storedTemplate);
+    const syncActiveTemplate = () => {
+      const storedTemplate = localStorage.getItem("syncnox_active_job_template");
+      if (storedTemplate) {
+        setActiveTemplate(storedTemplate);
+      }
+    };
+
+    syncActiveTemplate();
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("syncnox_active_template_changed", syncActiveTemplate);
+      return () => {
+        window.removeEventListener("syncnox_active_template_changed", syncActiveTemplate);
+      };
     }
   }, []);
 
   const { getFieldConfig, customFields: customFieldDefs } = useFieldConfig("job", activeTemplate);
 
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (!initialData) {
+      const currentJobType = form.getFieldValue("job_type");
+      if (activeTemplate === "worker_shuttle") {
+        if (!currentJobType || currentJobType === "pickup" || currentJobType === "round_trip") {
+          form.setFieldsValue({ job_type: "one_way" });
+        }
+      } else {
+        if (!currentJobType || currentJobType === "one_way" || currentJobType === "return_only" || currentJobType === "round_trip") {
+          form.setFieldsValue({ job_type: "pickup" });
+        }
+      }
+    }
+  }, [activeTemplate, initialData, form]);
 
   const onFinish = async (values: any) => {
     // Transform the form values to match API requirements
@@ -187,7 +218,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
             priority_level: "medium",
             recurrence_type: "one_time",
             payment_status: "paid",
-            job_type: activeTemplate === "worker_shuttle" ? "round_trip" : "pickup",
+            job_type: activeTemplate === "worker_shuttle" ? "one_way" : "pickup",
             service_duration: 5,
             reach_before_minutes: -15,
           }}
@@ -195,42 +226,69 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
           {activeTemplate === "worker_shuttle" ? (
             <>
               {/* Worker Shuttle Header Row: Date & Job Type */}
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    label="Scheduled Date"
-                    name="scheduled_date"
-                    rules={[{ required: true, message: "Date is required" }]}
-                  >
-                    <DatePicker format="DD-MM-YYYY" className="w-full" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Trip Type"
-                    name="job_type"
-                    rules={[{ required: true, message: "Trip type is required" }]}
-                  >
-                    <Select
-                      placeholder="Select Trip Type"
-                      options={[
-                        { value: "one_way", label: "One Way (Pick Up Only)" },
-                        { value: "return_only", label: "Return Only (Drop Off)" },
-                        { value: "round_trip", label: "Round Trip (Creates 2 Jobs)" },
-                      ]}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
+              {(getFieldConfig("scheduled_date").isVisible || getFieldConfig("job_type").isVisible) && (
+                <Row gutter={16}>
+                  {getFieldConfig("scheduled_date").isVisible && (
+                    <Col span={getFieldConfig("job_type").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("scheduled_date").label}
+                        name="scheduled_date"
+                        required={getFieldConfig("scheduled_date").isRequired}
+                        rules={
+                          getFieldConfig("scheduled_date").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("scheduled_date").label} is required` }]
+                            : []
+                        }
+                      >
+                        <DatePicker format="DD-MM-YYYY" className="w-full" />
+                      </Form.Item>
+                    </Col>
+                  )}
+                  {getFieldConfig("job_type").isVisible && (
+                    <Col span={getFieldConfig("scheduled_date").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("job_type").label}
+                        name="job_type"
+                        required={getFieldConfig("job_type").isRequired}
+                        rules={
+                          getFieldConfig("job_type").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("job_type").label} is required` }]
+                            : []
+                        }
+                      >
+                        <Select
+                          placeholder={`Select ${getFieldConfig("job_type").label}`}
+                          options={[
+                            { value: "one_way", label: "One Way (Pick Up Only)" },
+                            { value: "return_only", label: "Return Only (Drop Off)" },
+                            { value: "round_trip", label: "Round Trip (Creates 2 Jobs)" },
+                          ]}
+                        />
+                      </Form.Item>
+                    </Col>
+                  )}
+                </Row>
+              )}
 
               {/* Quant ID & Assign Drivers */}
               <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="Quant / Shift Ref ID" name="quant_id">
-                    <Input placeholder="e.g. SHIFT-101" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
+                {getFieldConfig("quant_id").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("quant_id").label}
+                      name="quant_id"
+                      required={getFieldConfig("quant_id").isRequired}
+                      rules={
+                        getFieldConfig("quant_id").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("quant_id").label} is required` }]
+                          : []
+                      }
+                    >
+                      <Input placeholder="e.g. SHIFT-101" />
+                    </Form.Item>
+                  </Col>
+                )}
+                <Col span={getFieldConfig("quant_id").isVisible ? 12 : 24}>
                   <Form.Item label="Assign Driver / Team" name="assigned_to">
                     <Select placeholder="Select" allowClear>
                       {teams.map((team) => (
@@ -244,97 +302,191 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
               </Row>
 
               {/* Driver Reach Time & Reach Window */}
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="Driver Reach Time" name="driver_reach_time">
-                    <TimePicker format="HH:mm" className="w-full" needConfirm={false} />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="Reach Window (mins)"
-                    name="reach_before_minutes"
-                    tooltip="Negative value allows arrival buffer (e.g. -15 mins for 6:00pm allows 6:00pm - 6:15pm)"
-                  >
-                    <Input type="number" placeholder="e.g. -15" />
-                  </Form.Item>
-                </Col>
-              </Row>
+              {(getFieldConfig("driver_reach_time").isVisible || getFieldConfig("reach_before_minutes").isVisible) && (
+                <Row gutter={16}>
+                  {getFieldConfig("driver_reach_time").isVisible && (
+                    <Col span={getFieldConfig("reach_before_minutes").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("driver_reach_time").label}
+                        name="driver_reach_time"
+                        required={getFieldConfig("driver_reach_time").isRequired}
+                        rules={
+                          getFieldConfig("driver_reach_time").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("driver_reach_time").label} is required` }]
+                            : []
+                        }
+                      >
+                        <TimePicker format="HH:mm" className="w-full" needConfirm={false} />
+                      </Form.Item>
+                    </Col>
+                  )}
+                  {getFieldConfig("reach_before_minutes").isVisible && (
+                    <Col span={getFieldConfig("driver_reach_time").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("reach_before_minutes").label}
+                        name="reach_before_minutes"
+                        required={getFieldConfig("reach_before_minutes").isRequired}
+                        rules={
+                          getFieldConfig("reach_before_minutes").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("reach_before_minutes").label} is required` }]
+                            : []
+                        }
+                        tooltip="Negative value allows arrival buffer (e.g. -15 mins for 6:00pm allows 6:00pm - 6:15pm)"
+                      >
+                        <Input type="number" placeholder="e.g. -15" />
+                      </Form.Item>
+                    </Col>
+                  )}
+                </Row>
+              )}
 
-              {/* Client Pick Up Time */}
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="Client Pick Up Time" name="client_pick_up_time">
-                    <TimePicker format="HH:mm" className="w-full" needConfirm={false} />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="Client / Worker ID" name="client_id">
-                    <Input placeholder="e.g. EMP-992" />
-                  </Form.Item>
-                </Col>
-              </Row>
+              {/* Client Pick Up Time & Client ID */}
+              {(getFieldConfig("client_pick_up_time").isVisible || getFieldConfig("client_id").isVisible) && (
+                <Row gutter={16}>
+                  {getFieldConfig("client_pick_up_time").isVisible && (
+                    <Col span={getFieldConfig("client_id").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("client_pick_up_time").label}
+                        name="client_pick_up_time"
+                        required={getFieldConfig("client_pick_up_time").isRequired}
+                        rules={
+                          getFieldConfig("client_pick_up_time").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("client_pick_up_time").label} is required` }]
+                            : []
+                        }
+                      >
+                        <TimePicker format="HH:mm" className="w-full" needConfirm={false} />
+                      </Form.Item>
+                    </Col>
+                  )}
+                  {getFieldConfig("client_id").isVisible && (
+                    <Col span={getFieldConfig("client_pick_up_time").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("client_id").label}
+                        name="client_id"
+                        required={getFieldConfig("client_id").isRequired}
+                        rules={
+                          getFieldConfig("client_id").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("client_id").label} is required` }]
+                            : []
+                        }
+                      >
+                        <Input placeholder="e.g. EMP-992" />
+                      </Form.Item>
+                    </Col>
+                  )}
+                </Row>
+              )}
 
               {/* Pick Up Address */}
-              <Form.Item
-                label="Pick Up Address"
-                name="pick_up_address"
-                rules={[{ required: true, message: "Pick up address is required" }]}
-              >
-                <AddressAutocomplete
-                  value={form.getFieldValue("pick_up_address")}
-                  placeholder="Type to search pickup address"
-                  onChange={() => {
-                    form.setFieldsValue({ pick_up_address: undefined, pick_up_location: undefined });
-                  }}
-                  onSelect={(addressData: AddressData) => {
-                    form.setFieldsValue({
-                      pick_up_address: addressData.address_formatted,
-                      pick_up_location: addressData.location,
-                    });
-                  }}
-                />
-              </Form.Item>
+              {getFieldConfig("pick_up_address").isVisible && (
+                <Form.Item
+                  label={getFieldConfig("pick_up_address").label}
+                  name="pick_up_address"
+                  required={getFieldConfig("pick_up_address").isRequired}
+                  rules={
+                    getFieldConfig("pick_up_address").isRequired
+                      ? [{ required: true, message: `${getFieldConfig("pick_up_address").label} is required` }]
+                      : []
+                  }
+                >
+                  <AddressAutocomplete
+                    value={form.getFieldValue("pick_up_address")}
+                    placeholder={`Type to search ${getFieldConfig("pick_up_address").label.toLowerCase()}`}
+                    onChange={() => {
+                      form.setFieldsValue({ pick_up_address: undefined, pick_up_location: undefined });
+                    }}
+                    onSelect={(addressData: AddressData) => {
+                      form.setFieldsValue({
+                        pick_up_address: addressData.address_formatted,
+                        pick_up_location: addressData.location,
+                      });
+                    }}
+                  />
+                </Form.Item>
+              )}
 
               {/* Drop Off Address */}
-              <Form.Item
-                label="Drop Off Address"
-                name="drop_off_address"
-                rules={[{ required: true, message: "Drop off address is required" }]}
-              >
-                <AddressAutocomplete
-                  value={form.getFieldValue("drop_off_address")}
-                  placeholder="Type to search dropoff address"
-                  onChange={() => {
-                    form.setFieldsValue({ drop_off_address: undefined, drop_off_location: undefined });
-                  }}
-                  onSelect={(addressData: AddressData) => {
-                    form.setFieldsValue({
-                      drop_off_address: addressData.address_formatted,
-                      drop_off_location: addressData.location,
-                    });
-                  }}
-                />
-              </Form.Item>
+              {getFieldConfig("drop_off_address").isVisible && (
+                <Form.Item
+                  label={getFieldConfig("drop_off_address").label}
+                  name="drop_off_address"
+                  required={getFieldConfig("drop_off_address").isRequired}
+                  rules={
+                    getFieldConfig("drop_off_address").isRequired
+                      ? [{ required: true, message: `${getFieldConfig("drop_off_address").label} is required` }]
+                      : []
+                  }
+                >
+                  <AddressAutocomplete
+                    value={form.getFieldValue("drop_off_address")}
+                    placeholder={`Type to search ${getFieldConfig("drop_off_address").label.toLowerCase()}`}
+                    onChange={() => {
+                      form.setFieldsValue({ drop_off_address: undefined, drop_off_location: undefined });
+                    }}
+                    onSelect={(addressData: AddressData) => {
+                      form.setFieldsValue({
+                        drop_off_address: addressData.address_formatted,
+                        drop_off_location: addressData.location,
+                      });
+                    }}
+                  />
+                </Form.Item>
+              )}
 
               {/* Client Name & Phone */}
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item label="Passenger Name" name="client_name">
-                    <Input placeholder="Client / Passenger Name" />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="Passenger Phone" name="client_phone">
-                    <Input placeholder="Customer Phone Number" />
-                  </Form.Item>
-                </Col>
-              </Row>
+              {(getFieldConfig("client_name").isVisible || getFieldConfig("client_phone").isVisible) && (
+                <Row gutter={16}>
+                  {getFieldConfig("client_name").isVisible && (
+                    <Col span={getFieldConfig("client_phone").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("client_name").label}
+                        name="client_name"
+                        required={getFieldConfig("client_name").isRequired}
+                        rules={
+                          getFieldConfig("client_name").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("client_name").label} is required` }]
+                            : []
+                        }
+                      >
+                        <Input placeholder={getFieldConfig("client_name").label} />
+                      </Form.Item>
+                    </Col>
+                  )}
+                  {getFieldConfig("client_phone").isVisible && (
+                    <Col span={getFieldConfig("client_name").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("client_phone").label}
+                        name="client_phone"
+                        required={getFieldConfig("client_phone").isRequired}
+                        rules={
+                          getFieldConfig("client_phone").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("client_phone").label} is required` }]
+                            : []
+                        }
+                      >
+                        <Input placeholder={getFieldConfig("client_phone").label} />
+                      </Form.Item>
+                    </Col>
+                  )}
+                </Row>
+              )}
 
               {/* Shuttle Notes */}
-              <Form.Item label="Shuttle Notes" name="notes">
-                <Input.TextArea rows={3} placeholder="Special instructions or pickup details" />
-              </Form.Item>
+              {getFieldConfig("notes").isVisible && (
+                <Form.Item
+                  label={getFieldConfig("notes").label}
+                  name="notes"
+                  required={getFieldConfig("notes").isRequired}
+                  rules={
+                    getFieldConfig("notes").isRequired
+                      ? [{ required: true, message: `${getFieldConfig("notes").label} is required` }]
+                      : []
+                  }
+                >
+                  <Input.TextArea rows={3} placeholder="Special instructions or pickup details" />
+                </Form.Item>
+              )}
             </>
           ) : (
             <>

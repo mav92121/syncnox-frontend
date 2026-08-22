@@ -404,9 +404,15 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
           (!row.validation_errors || row.validation_errors.length === 0)
       );
 
+      const activeTemplate =
+        useBulkUploadStore.getState().templateType ||
+        localStorage.getItem("activeJobTemplate") ||
+        "worker_shuttle";
+
       const jobs = validRows.map((row) => {
         const jobData: JobCreate = {
           ...row.original_data,
+          template_type: activeTemplate,
           location: {
             lat: row.geocode_result.lat!,
             lng: row.geocode_result.lng!,

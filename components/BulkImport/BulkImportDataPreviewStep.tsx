@@ -813,8 +813,8 @@ export default function BulkImportDataPreviewStep({
       : locationColumns;
 
   return (
-    <div className="flex flex-col h-full space-y-3 py-1">
-      <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-none">
+    <div className="flex flex-col flex-1 min-h-0 space-y-3 py-1">
+      <div className="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-none shrink-0">
         <div className="flex items-center gap-2">
           <CheckCircle2 size={16} className="text-emerald-600" />
           <span className="text-xs font-medium text-gray-800">

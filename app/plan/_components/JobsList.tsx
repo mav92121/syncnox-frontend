@@ -204,9 +204,20 @@ export default function JobsList() {
   const [activeTemplate, setActiveTemplate] = useState<string>("pickup_delivery_job");
 
   useEffect(() => {
-    const stored = localStorage.getItem("syncnox_active_job_template");
-    if (stored) {
-      setActiveTemplate(stored);
+    const syncActiveTemplate = () => {
+      const stored = localStorage.getItem("syncnox_active_job_template");
+      if (stored) {
+        setActiveTemplate(stored);
+      }
+    };
+
+    syncActiveTemplate();
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("syncnox_active_template_changed", syncActiveTemplate);
+      return () => {
+        window.removeEventListener("syncnox_active_template_changed", syncActiveTemplate);
+      };
     }
   }, []);
 

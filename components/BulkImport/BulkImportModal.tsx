@@ -119,7 +119,7 @@ export default function BulkImportModal({
               current={currentStep - 1}
               items={steps}
               size="small"
-              className="mb-4"
+              className="mb-4 shrink-0"
             />
 
             {currentStep === 1 && (

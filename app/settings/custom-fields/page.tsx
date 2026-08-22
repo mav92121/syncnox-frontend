@@ -44,14 +44,25 @@ export default function CustomFieldsSettingsPage() {
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("syncnox_active_job_template");
-    if (stored) {
-      setActiveJobTemplate(stored);
+    const syncActiveTemplate = () => {
+      const stored = localStorage.getItem("syncnox_active_job_template");
+      if (stored) {
+        setActiveJobTemplate(stored);
+      }
+    };
+
+    syncActiveTemplate();
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("syncnox_active_template_changed", syncActiveTemplate);
+      return () => {
+        window.removeEventListener("syncnox_active_template_changed", syncActiveTemplate);
+      };
     }
   }, []);
 
   const isBaseField = (f: CustomFieldDefinition) => {
-    return f.group === "optimization" || STANDARD_JOB_FIELD_KEYS.has(f.field_key);
+    return f.group === "optimization";
   };
 
   const baseItemsFromApi: BaseFieldDefinition[] = customFields
@@ -74,11 +85,8 @@ export default function CustomFieldsSettingsPage() {
       ? TEMPLATE_BASE_FIELDS[activeJobTemplate] || DEFAULT_BASE_FIELDS.job
       : DEFAULT_BASE_FIELDS[selectedEntity];
 
-  const apiBaseFieldKeys = new Set(baseItemsFromApi.map((f) => f.field_key));
-  const currentBaseFields: BaseFieldDefinition[] = [
-    ...baseItemsFromApi,
-    ...fallbackBaseFields.filter((f) => !apiBaseFieldKeys.has(f.field_key)),
-  ];
+  const currentBaseFields: BaseFieldDefinition[] =
+    customFields.length > 0 ? baseItemsFromApi : fallbackBaseFields;
 
   const baseFieldKeys = new Set(currentBaseFields.map((f) => f.field_key));
   const filteredCustomFields = customFields.filter((f) => !isBaseField(f) && !baseFieldKeys.has(f.field_key));
@@ -355,7 +363,7 @@ export default function CustomFieldsSettingsPage() {
         <div>
           <h1 className="text-lg font-bold text-gray-900 m-0">Custom Fields & Field Settings</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Configure dynamic custom fields, visibility across apps, or reset configurations for Jobs, Vehicles, Team Members, and Depots.
+            Configure dynamic custom fields, visibility across apps
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -365,9 +373,12 @@ export default function CustomFieldsSettingsPage() {
               onChange={(val) => {
                 setActiveJobTemplate(val);
                 localStorage.setItem("syncnox_active_job_template", val);
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new Event("syncnox_active_template_changed"));
+                }
                 message.success(`Active Job Schema set to ${val === "worker_shuttle" ? "Worker Shuttle" : "Pickup Delivery"}`);
               }}
-              style={{ width: 200, height: 32 }}
+              style={{ width: 190, height: 34 }}
               options={[
                 { value: "pickup_delivery_job", label: "Pickup Delivery Job" },
                 { value: "worker_shuttle", label: "Worker Shuttle" },
