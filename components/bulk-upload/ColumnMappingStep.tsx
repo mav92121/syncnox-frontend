@@ -29,17 +29,23 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
 
   useEffect(() => {
     if (uploadResponse) {
-      // Initialize local mapping with detected mappings from backend
-      const initial: Record<string, string> = {};
-      uploadResponse.columns.forEach((col) => {
-        if (col.mapping) {
-          // Use the mapping value directly from backend response
-          initial[col.identifier] = col.mapping;
-        }
-      });
-      setLocalMapping(initial);
-      setColumnMapping(initial);
-      checkLocationMapping(initial);
+      // If store already has user mapping (e.g., coming back from step 3), preserve it!
+      if (columnMapping && Object.keys(columnMapping).length > 0) {
+        setLocalMapping(columnMapping);
+        checkLocationMapping(columnMapping);
+      } else {
+        // Initialize local mapping with detected mappings from backend
+        const initial: Record<string, string> = {};
+        uploadResponse.columns.forEach((col) => {
+          if (col.mapping) {
+            // Use the mapping value directly from backend response
+            initial[col.identifier] = col.mapping;
+          }
+        });
+        setLocalMapping(initial);
+        setColumnMapping(initial);
+        checkLocationMapping(initial);
+      }
     }
   }, [uploadResponse]);
 
