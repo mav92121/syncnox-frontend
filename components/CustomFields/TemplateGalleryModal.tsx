@@ -96,33 +96,34 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
         onCancel={onClose}
         footer={null}
         centered
-        width={760}
+        width={860}
+        styles={{
+          container: { padding: "24px", borderRadius: "0px" },
+          body: { paddingTop: "12px" },
+        }}
         title={
-          <div className="flex items-center justify-between border-b border-gray-100 pb-3 pr-6">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-[#003220]/10 border border-[#003220]/20 flex items-center justify-center rounded-none">
-                <LayoutTemplate className="w-4 h-4 text-[#003220]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 m-0">
-                  Custom Field Templates — {getEntityLabel(entityType)}
-                </h3>
-                <p className="text-[11px] text-gray-500 font-normal m-0 mt-0.5">
-                  Pick a pre-configured template tailored to your industry use case. You can customize fields after applying.
-                </p>
-              </div>
+          <div className="flex items-center gap-3 pb-3 border-b border-gray-100 pr-6 font-sans">
+            <div className="w-9 h-9 bg-[#003220]/10 border border-[#003220]/20 flex items-center justify-center rounded-none shrink-0">
+              <LayoutTemplate className="w-5 h-5 text-[#003220]" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900 m-0 tracking-tight">
+                Custom Field Templates — {getEntityLabel(entityType)}
+              </h3>
+              <p className="text-xs text-gray-500 font-normal m-0 mt-0.5">
+                Pick a pre-configured template tailored to your industry use case. You can customize fields after applying.
+              </p>
             </div>
           </div>
         }
       >
-
-        <div className="py-4 custom-scrollbar max-h-[70vh] overflow-y-auto pr-1 font-sans text-xs">
+        <div className="py-2 custom-scrollbar max-h-[72vh] overflow-y-auto font-sans text-xs pr-0.5">
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <Spin size="default" />
             </div>
           ) : templates.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 border border-dashed border-gray-200">
+            <div className="text-center py-14 bg-gray-50/50 border border-dashed border-gray-200">
               <Layers className="w-8 h-8 text-gray-400 mx-auto mb-2" />
               <p className="text-gray-600 font-semibold text-xs m-0">No templates available for {entityType}</p>
             </div>
@@ -134,32 +135,32 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                 return (
                   <div
                     key={tpl.id}
-                    className={`border transition-all rounded-none bg-white ${
+                    className={`border transition-all duration-200 bg-white ${
                       isExpanded
-                        ? "border-[#003220] shadow-sm"
+                        ? "border-[#003220] ring-1 ring-[#003220]/20 shadow-sm"
                         : "border-gray-200 hover:border-gray-300"
                     }`}
                   >
                     {/* Header bar of template card */}
-                    <div className="p-4 flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-3.5 flex-1">
-                        <div className="p-2.5 bg-gray-50 border border-gray-200 shrink-0">
+                    <div className="p-4 flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                        <div className="p-2.5 bg-gray-50 border border-gray-200/80 shrink-0">
                           {getIconComponent(tpl.icon)}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="text-sm font-bold text-gray-900 m-0">{tpl.name}</h4>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <h4 className="text-sm font-bold text-gray-900 m-0 tracking-tight">{tpl.name}</h4>
                             {tpl.category && (
-                              <Tag className="m-0 text-[10px] uppercase tracking-wider font-semibold border-emerald-200 text-[#003220] bg-emerald-50 rounded-none">
+                              <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#003220] bg-emerald-50 border border-emerald-200">
                                 {tpl.category}
-                              </Tag>
+                              </span>
                             )}
-                            <Tag className="m-0 text-[10px] font-mono border-gray-200 text-gray-600 bg-gray-50 rounded-none">
+                            <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 border border-gray-200">
                               {tpl.fields.length} Fields
-                            </Tag>
+                            </span>
                           </div>
 
-                          <p className="text-xs text-gray-600 mt-1 mb-0 leading-relaxed">
+                          <p className="text-xs text-gray-500 m-0 leading-relaxed truncate">
                             {tpl.description || "Pre-configured industry fields ready for immediate use."}
                           </p>
                         </div>
@@ -168,21 +169,21 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => setExpandedTemplateId(isExpanded ? null : tpl.id)}
-                          className="inline-flex items-center gap-1 border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold px-2.5 py-1.5 rounded-none transition-colors cursor-pointer bg-white"
+                          className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-semibold px-3 py-1.5 rounded-none transition-colors cursor-pointer bg-white"
                         >
-                          <span>Preview</span>
+                          <span>{isExpanded ? "Collapse" : "Preview"}</span>
                           {isExpanded ? (
-                            <ChevronUp className="w-3.5 h-3.5" />
+                            <ChevronUp className="w-3.5 h-3.5 text-gray-500" />
                           ) : (
-                            <ChevronDown className="w-3.5 h-3.5" />
+                            <ChevronDown className="w-3.5 h-3.5 text-gray-500" />
                           )}
                         </button>
 
                         <button
                           onClick={() => setSelectedTemplateForApply(tpl)}
-                          className="inline-flex items-center gap-1.5 bg-[#003220] hover:bg-[#002417] text-white text-xs font-semibold px-3.5 py-1.5 rounded-none transition-colors cursor-pointer border-none"
+                          className="inline-flex items-center gap-1.5 bg-[#003220] hover:bg-[#002417] text-white text-xs font-semibold px-4 py-1.5 rounded-none transition-colors cursor-pointer border-none shadow-xs"
                         >
-                          <Sparkles className="w-3.5 h-3.5" />
+                          {/* <Sparkles className="w-3.5 h-3.5" /> */}
                           <span>Use Template</span>
                         </button>
                       </div>
@@ -190,30 +191,30 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
 
                     {/* Expandable Preview Section */}
                     {isExpanded && (
-                      <div className="border-t border-gray-100 bg-gray-50/60 p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-700">
-                            Included Custom Fields ({tpl.fields.length})
+                      <div className="border-t border-gray-200 bg-gray-50/50 p-4">
+                        <div className="flex items-center justify-between mb-2.5">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-[#003220]">
+                            INCLUDED CUSTOM FIELDS ({tpl.fields.length})
                           </span>
                         </div>
 
-                        <div className="border border-gray-200 bg-white overflow-hidden rounded-none">
+                        <div className="border border-gray-200 bg-white overflow-hidden">
                           <table className="w-full text-left text-xs border-collapse">
                             <thead>
-                              <tr className="bg-gray-50 border-b border-gray-200 text-[10px] uppercase font-bold text-gray-500 tracking-wider">
-                                <th className="py-2 px-3">Field Label</th>
-                                <th className="py-2 px-3">Field Key</th>
-                                <th className="py-2 px-3">Data Type</th>
-                                <th className="py-2 px-3">Required</th>
-                                <th className="py-2 px-3">Description / Note</th>
+                              <tr className="bg-gray-50/80 border-b border-gray-200 text-[10px] uppercase font-bold text-gray-500 tracking-wider">
+                                <th className="py-2.5 px-3.5">Field Label</th>
+                                <th className="py-2.5 px-3.5">Field Key</th>
+                                <th className="py-2.5 px-3.5">Data Type</th>
+                                <th className="py-2.5 px-3.5">Required</th>
+                                <th className="py-2.5 px-3.5">Description / Note</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100 text-gray-800">
                               {tpl.fields.map((f, idx) => (
-                                <tr key={idx} className="hover:bg-gray-50/50">
-                                  <td className="py-2 px-3 font-semibold text-gray-900">{f.label}</td>
-                                  <td className="py-2 px-3 font-mono text-[11px] text-gray-500">{f.field_key}</td>
-                                  <td className="py-2 px-3 capitalize font-mono text-[11px] text-gray-600">
+                                <tr key={idx} className="hover:bg-gray-50/60 transition-colors">
+                                  <td className="py-2.5 px-3.5 font-semibold text-gray-900">{f.label}</td>
+                                  <td className="py-2.5 px-3.5 font-mono text-[11px] text-gray-500">{f.field_key}</td>
+                                  <td className="py-2.5 px-3.5 capitalize font-mono text-[11px] text-gray-700">
                                     {f.data_type}
                                     {f.data_type === "select" && f.options && (
                                       <span className="text-gray-400 font-sans ml-1 text-[10px]">
@@ -221,16 +222,18 @@ export const TemplateGalleryModal: React.FC<TemplateGalleryModalProps> = ({
                                       </span>
                                     )}
                                   </td>
-                                  <td className="py-2 px-3">
+                                  <td className="py-2.5 px-3.5">
                                     {f.is_required ? (
-                                      <span className="text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 px-1.5 py-0.5">
+                                      <span className="inline-block text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-0.5">
                                         Required
                                       </span>
                                     ) : (
-                                      <span className="text-[10px] text-gray-400">Optional</span>
+                                      <span className="inline-block text-[10px] text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5">
+                                        Optional
+                                      </span>
                                     )}
                                   </td>
-                                  <td className="py-2 px-3 text-gray-500 text-[11px]">
+                                  <td className="py-2.5 px-3.5 text-gray-500 text-[11px]">
                                     {f.description || "-"}
                                   </td>
                                 </tr>

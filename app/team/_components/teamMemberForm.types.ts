@@ -8,6 +8,8 @@ export type MenuKey = "basic" | "skillsAndCost" | "mobileApp" | "serviceZones";
 export interface TeamMemberFormProps {
   initialData?: any;
   onSubmit?: () => void;
+  isInline?: boolean;
+  showSubmitButton?: boolean;
 }
 
 export const MENU_ITEMS = [

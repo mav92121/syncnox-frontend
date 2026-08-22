@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Modal, Steps } from "antd";
 import { useBulkUploadStore } from "@/store/bulkUpload.store";
 import FileUploadStep from "./bulk-upload/FileUploadStep";
@@ -8,12 +9,23 @@ import DataPreviewStep from "./bulk-upload/DataPreviewStep";
 
 interface BulkUploadModalProps {
   open: boolean;
+  templateType?: string;
   onClose?: () => void;
   onCancel?: () => void;
 }
 
-const BulkUploadModal = ({ open, onClose, onCancel }: BulkUploadModalProps) => {
-  const { currentStep, setCurrentStep, reset } = useBulkUploadStore();
+const BulkUploadModal = ({ open, templateType, onClose, onCancel }: BulkUploadModalProps) => {
+  const { currentStep, setCurrentStep, reset, setTemplateType } = useBulkUploadStore();
+
+  useEffect(() => {
+    if (open) {
+      const activeTpl =
+        templateType ||
+        localStorage.getItem("activeJobTemplate") ||
+        "worker_shuttle";
+      setTemplateType(activeTpl);
+    }
+  }, [open, templateType, setTemplateType]);
 
   const handleClose = () => {
     reset();

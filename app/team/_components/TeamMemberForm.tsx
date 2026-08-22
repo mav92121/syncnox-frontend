@@ -22,8 +22,9 @@ const TeamMemberForm = ({
   initialData = null,
   onSubmit,
   isInline = false,
+  showSubmitButton = false,
   form: externalForm,
-}: TeamMemberFormProps & { isInline?: boolean; form?: any }) => {
+}: TeamMemberFormProps & { form?: any }) => {
   const [messageApi, contextHolder] = message.useMessage();
   const { createTeamAction, updateTeamAction, isLoading } = useTeamStore();
   const { depots } = useDepotStore();
@@ -416,8 +417,8 @@ const TeamMemberForm = ({
           </Form>
         </Flex>
 
-        {/* Fixed Button at Bottom (hidden when inline, as save button is in top header) */}
-        {!isInline && (
+        {/* Fixed Button at Bottom */}
+        {(!isInline || showSubmitButton) && (
           <Flex style={{ paddingTop: "12px" }}>
             <Button
               loading={isLoading}
@@ -427,7 +428,7 @@ const TeamMemberForm = ({
               icon={<PlusCircleOutlined />}
               onClick={() => form.submit()}
             >
-              {initialData ? "Save" : "Add"}
+              {initialData ? "Save" : "Add Driver"}
             </Button>
           </Flex>
         )}

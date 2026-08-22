@@ -31,6 +31,7 @@ interface VehicleFormProps {
   initialData?: Vehicle | null;
   onSubmit?: () => void;
   isInline?: boolean;
+  showSubmitButton?: boolean;
 }
 
 const VEHICLE_TYPES: { value: VehicleType; label: string }[] = [
@@ -103,8 +104,9 @@ const VehicleForm = ({
   initialData = null,
   onSubmit,
   isInline = false,
+  showSubmitButton = false,
   form: externalForm,
-}: VehicleFormProps & { isInline?: boolean; form?: any }) => {
+}: VehicleFormProps & { form?: any }) => {
   const [messageApi, contextHolder] = message.useMessage();
   const [internalForm] = Form.useForm();
   const form = externalForm || internalForm;
@@ -530,8 +532,8 @@ const VehicleForm = ({
           </Form>
         </Flex>
 
-        {/* Fixed Button at Bottom (hidden when inline, as save button is in top header) */}
-        {!isInline && (
+        {/* Fixed Button at Bottom */}
+        {(!isInline || showSubmitButton) && (
           <Flex style={{ paddingTop: 16 }}>
             <Button
               loading={isLoading}

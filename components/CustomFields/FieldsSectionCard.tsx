@@ -16,10 +16,10 @@ interface FieldsSectionCardProps {
   baseItems: BaseFieldDefinition[];
   customItems: CustomFieldDefinition[];
   hiddenBaseFields: string[];
-  baseFieldOverrides: Record<string, { is_required?: boolean; surfaces?: FieldSurfaces }>;
+  baseFieldOverrides: Record<string, { is_required?: boolean; surfaces?: FieldSurfaces | null }>;
   onToggleBaseRequired: (key: string, currentRequired: boolean, label: string) => void;
   onToggleCustomRequired: (field: CustomFieldDefinition) => void;
-  onOpenEditBaseModal: (bf: BaseFieldDefinition, currentRequired: boolean, currentSurfaces?: FieldSurfaces) => void;
+  onOpenEditBaseModal: (bf: BaseFieldDefinition, currentRequired: boolean, currentSurfaces?: FieldSurfaces | null) => void;
   onOpenEditCustomModal: (field: CustomFieldDefinition) => void;
   onDeleteBaseField: (key: string, label: string, isReq: boolean) => void;
   onDeleteCustomField: (id: number, label: string) => void;

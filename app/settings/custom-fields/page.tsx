@@ -25,19 +25,71 @@ import {
   EntityTab,
   BaseFieldDefinition,
   DEFAULT_BASE_FIELDS,
+  TEMPLATE_BASE_FIELDS,
   DEFAULT_SURFACES,
 } from "@/components/CustomFields/custom-fields.constants";
 import { CustomFieldFormModal } from "@/components/CustomFields/CustomFieldFormModal";
 import { FieldsSectionCard } from "@/components/CustomFields/FieldsSectionCard";
+import { Select } from "antd";
+import { STANDARD_JOB_FIELD_KEYS } from "@/utils/jobs.utils";
 
 export default function CustomFieldsSettingsPage() {
   const [selectedEntity, setSelectedEntity] = useState<EntityTab>("job");
+  const [activeJobTemplate, setActiveJobTemplate] = useState<string>("pickup_delivery_job");
   const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>([]);
   const [hiddenBaseFields, setHiddenBaseFields] = useState<string[]>([]);
   const [baseFieldOverrides, setBaseFieldOverrides] = useState<
-    Record<string, { is_required?: boolean; surfaces?: FieldSurfaces }>
+    Record<string, { is_required?: boolean; surfaces?: FieldSurfaces | null }>
   >({});
   const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    const syncActiveTemplate = () => {
+      const stored = localStorage.getItem("syncnox_active_job_template");
+      if (stored) {
+        setActiveJobTemplate(stored);
+      }
+    };
+
+    syncActiveTemplate();
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("syncnox_active_template_changed", syncActiveTemplate);
+      return () => {
+        window.removeEventListener("syncnox_active_template_changed", syncActiveTemplate);
+      };
+    }
+  }, []);
+
+  const isBaseField = (f: CustomFieldDefinition) => {
+    return f.group === "optimization";
+  };
+
+  const baseItemsFromApi: BaseFieldDefinition[] = customFields
+    .filter(isBaseField)
+    .map((f) => {
+      const override = baseFieldOverrides[f.field_key];
+      return {
+        field_key: f.field_key,
+        label: f.label,
+        data_type: f.data_type,
+        is_required: override?.is_required ?? f.is_required,
+        description: f.description || "",
+        group: (f.group as any) || "optimization",
+        surfaces: override?.surfaces ?? f.surfaces,
+      };
+    });
+
+  const fallbackBaseFields =
+    selectedEntity === "job"
+      ? TEMPLATE_BASE_FIELDS[activeJobTemplate] || DEFAULT_BASE_FIELDS.job
+      : DEFAULT_BASE_FIELDS[selectedEntity];
+
+  const currentBaseFields: BaseFieldDefinition[] =
+    customFields.length > 0 ? baseItemsFromApi : fallbackBaseFields;
+
+  const baseFieldKeys = new Set(currentBaseFields.map((f) => f.field_key));
+  const filteredCustomFields = customFields.filter((f) => !isBaseField(f) && !baseFieldKeys.has(f.field_key));
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -120,6 +172,11 @@ export default function CustomFieldsSettingsPage() {
       return;
     }
 
+    if (!editingField && !editingBaseFieldKey && baseFieldKeys.has(fieldKey.trim())) {
+      message.warning(`"${fieldKey.trim()}" is already a system Base Field.`);
+      return;
+    }
+
     try {
       const optionsArr =
         dataType === "select"
@@ -144,7 +201,7 @@ export default function CustomFieldsSettingsPage() {
           data_type: dataType,
           default_value: defaultValue.trim() || undefined,
           is_required: isRequired,
-          is_visible_in_list: isVisibleInList,
+          is_visible_in_list: Boolean(surfacesState.disp),
           options: optionsArr,
           description: description.trim() || undefined,
           group: groupSection,
@@ -159,7 +216,7 @@ export default function CustomFieldsSettingsPage() {
           data_type: dataType,
           default_value: defaultValue.trim() || undefined,
           is_required: isRequired,
-          is_visible_in_list: isVisibleInList,
+          is_visible_in_list: Boolean(surfacesState.disp),
           options: optionsArr,
           description: description.trim() || undefined,
           group: groupSection,
@@ -195,7 +252,7 @@ export default function CustomFieldsSettingsPage() {
   const handleOpenEditBaseModal = (
     bf: BaseFieldDefinition,
     currentRequired: boolean,
-    currentSurfaces?: FieldSurfaces
+    currentSurfaces?: FieldSurfaces | null
   ) => {
     setEditingBaseFieldKey(bf.field_key);
     setEditingField(null);
@@ -233,27 +290,9 @@ export default function CustomFieldsSettingsPage() {
     });
   };
 
-  const handleDeleteBaseField = (fieldKey: string, fieldLabel: string, isReq: boolean) => {
-    if (isReq) {
-      message.warning(`'${fieldLabel}' is a required base field and cannot be deleted.`);
-      return;
-    }
-
-    Modal.confirm({
-      title: "Delete Optional Field",
-      content: `Are you sure you want to delete optional field "${fieldLabel}"? This field will be removed from field settings and forms.`,
-      okText: "Delete",
-      okType: "danger",
-      cancelText: "Cancel",
-      okButtonProps: { danger: true, style: { borderRadius: 0 } },
-      cancelButtonProps: { style: { borderRadius: 0 } },
-      onOk: () => {
-        const updated = [...hiddenBaseFields, fieldKey];
-        setHiddenBaseFields(updated);
-        localStorage.setItem(`syncnox_hidden_base_fields_${selectedEntity}`, JSON.stringify(updated));
-        message.success(`Field '${fieldLabel}' deleted`);
-      },
-    });
+  const handleDeleteBaseField = (fieldKey: string, fieldLabel: string) => {
+    message.warning(`Base field '${fieldLabel}' cannot be deleted.`);
+    return;
   };
 
   const handleToggleBaseField = (key: string) => {
@@ -316,7 +355,6 @@ export default function CustomFieldsSettingsPage() {
     { key: "depot", label: "Depots", icon: <Building className="w-4 h-4" /> },
   ];
 
-  const currentBaseFields = DEFAULT_BASE_FIELDS[selectedEntity] || [];
 
   return (
     <div className="flex flex-col h-full overflow-hidden font-sans">
@@ -325,10 +363,29 @@ export default function CustomFieldsSettingsPage() {
         <div>
           <h1 className="text-lg font-bold text-gray-900 m-0">Custom Fields & Field Settings</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            Configure dynamic custom fields, visibility across apps, or reset configurations for Jobs, Vehicles, Team Members, and Depots.
+            Configure dynamic custom fields, visibility across apps
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* {selectedEntity === "job" && (
+            <Select
+              value={activeJobTemplate}
+              onChange={(val) => {
+                setActiveJobTemplate(val);
+                localStorage.setItem("syncnox_active_job_template", val);
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new Event("syncnox_active_template_changed"));
+                }
+                message.success(`Active Job Schema set to ${val === "worker_shuttle" ? "Worker Shuttle" : "Pickup Delivery"}`);
+              }}
+              style={{ width: 190, height: 34 }}
+              options={[
+                { value: "pickup_delivery_job", label: "Pickup Delivery Job" },
+                { value: "worker_shuttle", label: "Worker Shuttle" },
+              ]}
+            />
+          )} */}
+
           <button
             onClick={() => setIsTemplateGalleryOpen(true)}
             className="inline-flex items-center gap-1.5 border border-[#003220] text-[#003220] hover:bg-emerald-50 text-xs font-semibold px-3 py-2 rounded-none transition-colors cursor-pointer bg-white"
@@ -395,7 +452,7 @@ export default function CustomFieldsSettingsPage() {
               categoryTag="OPTIMIZATION"
               description="Hard-coded into route optimization — map each to a solver role, hide unused, but these can't be deleted."
               baseItems={currentBaseFields.filter((f) => f.group === "optimization")}
-              customItems={customFields.filter((f) => f.group === "optimization")}
+              customItems={filteredCustomFields.filter((f) => f.group === "optimization")}
               hiddenBaseFields={hiddenBaseFields}
               baseFieldOverrides={baseFieldOverrides}
               onToggleBaseRequired={handleToggleBaseRequired}
@@ -418,7 +475,7 @@ export default function CustomFieldsSettingsPage() {
                 setIsModalOpen(true);
               }}
               baseItems={currentBaseFields.filter((f) => !f.group || f.group === "additional")}
-              customItems={customFields.filter((f) => !f.group || f.group === "additional")}
+              customItems={filteredCustomFields.filter((f) => !f.group || f.group === "additional")}
               hiddenBaseFields={hiddenBaseFields}
               baseFieldOverrides={baseFieldOverrides}
               onToggleBaseRequired={handleToggleBaseRequired}
@@ -441,7 +498,7 @@ export default function CustomFieldsSettingsPage() {
                 setIsModalOpen(true);
               }}
               baseItems={currentBaseFields.filter((f) => f.group === "pod")}
-              customItems={customFields.filter((f) => f.group === "pod")}
+              customItems={filteredCustomFields.filter((f) => f.group === "pod")}
               hiddenBaseFields={hiddenBaseFields}
               baseFieldOverrides={baseFieldOverrides}
               onToggleBaseRequired={handleToggleBaseRequired}
@@ -463,7 +520,7 @@ export default function CustomFieldsSettingsPage() {
               setIsModalOpen(true);
             }}
             baseItems={currentBaseFields}
-            customItems={customFields}
+            customItems={filteredCustomFields}
             hiddenBaseFields={hiddenBaseFields}
             baseFieldOverrides={baseFieldOverrides}
             onToggleBaseRequired={handleToggleBaseRequired}

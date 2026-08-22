@@ -95,6 +95,8 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
         readyToImport++;
       }
 
+      const customFieldVals = row.original_data?.custom_fields || {};
+
       return {
         id: index,
         address: row.geocode_result.address,
@@ -107,6 +109,7 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
         validationErrors: row.validation_errors || [],
         status,
         statusMessage,
+        ...customFieldVals,
         ...row.original_data,
       };
     });
@@ -255,22 +258,40 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
       scheduled_date: "Date",
     };
 
+    const uploadCols = useBulkUploadStore.getState().uploadResponse?.columns || [];
+
     // Add dynamic columns for mapped fields
     Object.keys(columnMapping).forEach((identifier) => {
       if (identifier !== "address_formatted" && columnMapping[identifier]) {
+        const colMeta = uploadCols.find((c) => c.identifier === identifier);
+        const headerText =
+          fieldLabels[identifier] ||
+          colMeta?.description?.replace(/\s*\*$/, "") ||
+          identifier
+            .split("_")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ");
+
         columns.push({
-          headerName: fieldLabels[identifier] || identifier,
+          headerName: headerText,
           field: identifier,
-          width: 120,
+          width: 130,
           editable: true,
-          valueGetter: (params) => params.data?.[identifier] || "",
+          valueGetter: (params) =>
+            params.data?.[identifier] ??
+            params.data?.custom_fields?.[identifier] ??
+            "",
           valueSetter: (params) => {
             if (params.data) {
               params.data[identifier] = params.newValue;
+              if (!params.data.custom_fields) {
+                params.data.custom_fields = {};
+              }
+              params.data.custom_fields[identifier] = params.newValue;
               return true;
             }
             return false;
-          }
+          },
         });
       }
     });
@@ -315,11 +336,18 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
         };
         updatedRow.is_duplicate = false;
       } else if (field) {
-        // Update original_data for dynamic columns
-        updatedRow.original_data = {
+        // Update original_data for dynamic columns (both top-level and custom_fields if present)
+        const updatedOriginal = {
           ...updatedRow.original_data,
           [field]: newValue,
         };
+        if (updatedOriginal.custom_fields) {
+          updatedOriginal.custom_fields = {
+            ...updatedOriginal.custom_fields,
+            [field]: newValue,
+          };
+        }
+        updatedRow.original_data = updatedOriginal;
       }
 
       // Instead of wiping all validation errors, filter out errors related to the edited field
@@ -376,9 +404,15 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
           (!row.validation_errors || row.validation_errors.length === 0)
       );
 
+      const activeTemplate =
+        useBulkUploadStore.getState().templateType ||
+        localStorage.getItem("activeJobTemplate") ||
+        "worker_shuttle";
+
       const jobs = validRows.map((row) => {
         const jobData: JobCreate = {
           ...row.original_data,
+          template_type: activeTemplate,
           location: {
             lat: row.geocode_result.lat!,
             lng: row.geocode_result.lng!,

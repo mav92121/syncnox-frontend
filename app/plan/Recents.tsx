@@ -47,8 +47,8 @@ const Recents = () => {
     .map((job, index) => ({
       id: job.id,
       position: {
-        lat: job.location.lat,
-        lng: job.location.lng,
+        lat: job.location!.lat,
+        lng: job.location!.lng,
       },
       description: job.address_formatted || "No address",
       duration: job.service_duration,

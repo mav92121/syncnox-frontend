@@ -49,11 +49,18 @@ const LOCATION_FIELDS: SystemFieldDefinition[] = [
 
 
 
+function matchesDay(clean: string, fullDay: string, shortDay: string): boolean {
+  if (clean.includes(fullDay)) return true;
+  const regex = new RegExp(`\\b${shortDay}\\b`, "i");
+  return regex.test(clean);
+}
+
 function autoMatchField(header: string, entityType: "vehicle" | "driver" | "location"): string | undefined {
+  if (!header) return undefined;
   const clean = header.trim().toLowerCase();
 
   if (entityType === "vehicle") {
-    if (["vehicle", "name", "vehicule", "vehicle name", "title"].includes(clean)) return "name";
+    if (["vehicle", "name", "vehicule", "vehicle name", "title"].includes(clean) || clean.includes("vehicle name")) return "name";
     if (clean.includes("capacity") || clean.includes("passenger") || clean.includes("seats")) return "capacity";
     if (clean.includes("weight") || clean.includes("poids") || clean.includes("kg") || clean.includes("lbs")) return "weight";
     if (clean.includes("volume") || clean.includes("vlm") || clean.includes("m3")) return "volume";
@@ -65,18 +72,18 @@ function autoMatchField(header: string, entityType: "vehicle" | "driver" | "loca
     if (clean.includes("make") || clean.includes("brand")) return "make";
     if (clean.includes("model")) return "model";
   } else if (entityType === "driver") {
-    if (["name", "driver", "driver name", "full name", "team member"].includes(clean)) return "name";
+    if (["name", "driver", "driver name", "full name", "team member"].includes(clean) || clean.includes("driver name")) return "name";
     if (clean.includes("email")) return "email";
     if (clean.includes("phone") || clean.includes("mobile") || clean.includes("contact")) return "phone_number";
     if (clean.includes("license") || clean.includes("skills") || clean.includes("driving")) return "skills";
     if (clean.includes("role")) return "role_type";
-    if (["monday", "mon"].includes(clean)) return "monday";
-    if (["tuesday", "tue", "tues"].includes(clean)) return "tuesday";
-    if (["wednesday", "wed"].includes(clean)) return "wednesday";
-    if (["thursday", "thu", "thur", "thurs"].includes(clean)) return "thursday";
-    if (["friday", "fri"].includes(clean)) return "friday";
-    if (["saturday", "sat"].includes(clean)) return "saturday";
-    if (["sunday", "sun"].includes(clean)) return "sunday";
+    if (matchesDay(clean, "monday", "mon")) return "monday";
+    if (matchesDay(clean, "tuesday", "tue") || matchesDay(clean, "tuesday", "tues")) return "tuesday";
+    if (matchesDay(clean, "wednesday", "wed")) return "wednesday";
+    if (matchesDay(clean, "thursday", "thu") || matchesDay(clean, "thursday", "thur") || matchesDay(clean, "thursday", "thurs")) return "thursday";
+    if (matchesDay(clean, "friday", "fri")) return "friday";
+    if (matchesDay(clean, "saturday", "sat")) return "saturday";
+    if (matchesDay(clean, "sunday", "sun")) return "sunday";
   } else {
     if (clean === "location" || clean === "addr" || clean.includes("address") || clean.includes("street") || clean.includes("formatted") || clean.includes("location address") || clean.includes("full address")) return "address";
     if (clean.includes("code") || clean.includes("alias") || clean.includes("stn") || clean.includes("station id") || clean === "id") return "code";
@@ -121,7 +128,16 @@ export default function BulkImportColumnMappingStep({
     }
     const initial: Record<string, string> = {};
     rawHeaders.forEach((header) => {
-      const matched = autoMatchField(header, entityType);
+      let matched = autoMatchField(header, entityType);
+
+      // Fallback: If header is empty/generic (e.g., __EMPTY) or unmatched, check the first sample row value
+      if (!matched && rawRows && rawRows.length > 0) {
+        const sampleVal = rawRows[0]?.[header];
+        if (typeof sampleVal === "string" && sampleVal.trim()) {
+          matched = autoMatchField(sampleVal, entityType);
+        }
+      }
+
       if (matched) {
         initial[header] = matched;
       }
@@ -206,7 +222,7 @@ export default function BulkImportColumnMappingStep({
   const previewDataSource = displayedRows.map((row, idx) => ({ ...row, key: idx }));
 
   return (
-    <div className="flex flex-col h-full space-y-3 py-1">
+    <div className="flex flex-col flex-1 min-h-0 space-y-3 py-1">
       {!isNameMapped && (
         <Alert
           type="warning"
@@ -215,7 +231,7 @@ export default function BulkImportColumnMappingStep({
         />
       )}
 
-      <div className="flex items-center justify-between text-xs text-gray-600 font-medium">
+      <div className="flex items-center justify-between text-xs text-gray-600 font-medium shrink-0">
         <span>Map Excel headers to system fields ({rawHeaders.length} columns detected)</span>
         <div className="flex items-center gap-4">
           <Checkbox
@@ -229,7 +245,7 @@ export default function BulkImportColumnMappingStep({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 relative mb-3 border border-gray-200 overflow-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb:hover]:bg-gray-400 [scrollbar-width:thin] [scrollbar-color:#c1c1c1_#f1f1f1] [&_.ant-table-thead>tr>th]:sticky [&_.ant-table-thead>tr>th]:top-0 [&_.ant-table-thead>tr>th]:z-10 [&_.ant-table-thead>tr>th]:!bg-gray-50 [&_.ant-table-container]:!overflow-visible [&_.ant-table-content]:!overflow-visible [&_.ant-table-cell-fix-left]:!sticky [&_.ant-table-cell-fix-left]:!z-11 [&_.ant-table-thead>tr>.ant-table-cell-fix-left]:!z-20 [&_.ant-table-thead>tr>.ant-table-cell-fix-left]:!top-0">
+      <div className="flex-1 min-h-0 relative border border-gray-200 overflow-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-track]:bg-gray-100 [&::-webkit-scrollbar-track]:rounded [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb:hover]:bg-gray-400 [scrollbar-width:thin] [scrollbar-color:#c1c1c1_#f1f1f1] [&_.ant-table-thead>tr>th]:sticky [&_.ant-table-thead>tr>th]:top-0 [&_.ant-table-thead>tr>th]:z-10 [&_.ant-table-thead>tr>th]:!bg-gray-50 [&_.ant-table-container]:!overflow-visible [&_.ant-table-content]:!overflow-visible [&_.ant-table-cell-fix-left]:!sticky [&_.ant-table-cell-fix-left]:!z-11 [&_.ant-table-thead>tr>.ant-table-cell-fix-left]:!z-20 [&_.ant-table-thead>tr>.ant-table-cell-fix-left]:!top-0">
         <Table
           columns={columns}
           dataSource={previewDataSource}
@@ -239,9 +255,14 @@ export default function BulkImportColumnMappingStep({
         />
       </div>
 
-      <div className="flex justify-between items-center pt-2 border-t mt-auto">
-        <Button onClick={onBack}>Back</Button>
-        <Button type="primary" disabled={!isNameMapped} onClick={() => onMappingConfirmed(mapping)}>
+      <div className="flex justify-between items-center pt-2 border-t shrink-0">
+        <Button onClick={onBack} className="rounded-none">Back</Button>
+        <Button
+          type="primary"
+          disabled={!isNameMapped}
+          onClick={() => onMappingConfirmed(mapping)}
+          className="rounded-none bg-[#003220] hover:bg-[#003220]/90"
+        >
           Continue to Preview
         </Button>
       </div>

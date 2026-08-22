@@ -28,7 +28,7 @@ interface JobsState {
   fetchJobsByStatus: (status: JobStatus) => Promise<void>;
   fetchAllJobs: () => Promise<void>;
   setSelectedDate: (date: string | null) => void;
-  createJobAction: (job: Job) => Promise<Job>;
+  createJobAction: (job: any) => Promise<any>;
   updateJobAction: (job: Job) => Promise<Job>;
   deleteJobAction: (jobId: number) => Promise<void>;
   deleteJobsAction: (jobIds: number[], status: JobStatus) => Promise<void>;
@@ -197,24 +197,25 @@ export const useJobsStore = create<JobsState>()(
       },
 
       // Create job and refresh
-      createJobAction: async (job: Job) => {
+      createJobAction: async (job: any) => {
         set((state) => {
           state.isLoading = true;
           state.error = null;
         });
 
         try {
-          const newJob = await createJob(job);
+          const res = await createJob(job);
+          const firstJob = Array.isArray(res) ? res[0] : res;
 
           // Refresh all jobs so allStores remain in sync
           await get().fetchAllJobs();
 
           // Auto-select scheduled_date of the newly created job
-          if (newJob.scheduled_date) {
-            get().setSelectedDate(newJob.scheduled_date);
+          if (firstJob && firstJob.scheduled_date) {
+            get().setSelectedDate(firstJob.scheduled_date);
           }
 
-          return newJob;
+          return res;
         } catch (error) {
           set((state) => {
             state.isLoading = false;
