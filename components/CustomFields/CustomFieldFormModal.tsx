@@ -190,7 +190,7 @@ export const CustomFieldFormModal: React.FC<CustomFieldFormModalProps> = ({
           <label className="block text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">
             Visibility Across Apps
           </label>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="flex items-center space-x-2 border border-gray-200 px-2.5 py-1.5 bg-white">
               <Checkbox
                 checked={Boolean(surfacesState.disp)}
@@ -223,44 +223,15 @@ export const CustomFieldFormModal: React.FC<CustomFieldFormModalProps> = ({
                 <span className="text-xs text-gray-800 font-medium">Customer Tracking (C)</span>
               </Checkbox>
             </div>
-
-            <div className="flex items-center space-x-2 border border-gray-200 px-2.5 py-1.5 bg-white">
-              <Checkbox
-                checked={Boolean(surfacesState.exp)}
-                onChange={(e) =>
-                  setSurfacesState({ ...surfacesState, exp: e.target.checked })
-                }
-              >
-                <span className="text-xs text-gray-800 font-medium">Exports (E)</span>
-              </Checkbox>
-            </div>
-
-            <div className="flex items-center space-x-2 border border-gray-200 px-2.5 py-1.5 bg-white col-span-2">
-              <Checkbox
-                checked={Boolean(surfacesState.api)}
-                onChange={(e) =>
-                  setSurfacesState({ ...surfacesState, api: e.target.checked })
-                }
-              >
-                <span className="text-xs text-gray-800 font-medium">API (A)</span>
-              </Checkbox>
-            </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-6 pt-3 border-t border-gray-100">
+        <div className="pt-3 border-t border-gray-100">
           <Checkbox
             checked={isRequired}
             onChange={(e) => setIsRequired(e.target.checked)}
           >
             <span className="text-xs text-gray-700 font-semibold">Field is Required</span>
-          </Checkbox>
-
-          <Checkbox
-            checked={isVisibleInList}
-            onChange={(e) => setIsVisibleInList(e.target.checked)}
-          >
-            <span className="text-xs text-gray-700 font-semibold">Show Column in Table</span>
           </Checkbox>
         </div>
       </div>

@@ -27,8 +27,8 @@ export const fetchJobs = async (params?: FetchJobsParams): Promise<Job[]> => {
   return response.data;
 };
 
-export const createJob = async (job: Job): Promise<Job> => {
-  const response = await apiClient.post<Job>("/jobs", job);
+export const createJob = async (job: any): Promise<Job | Job[]> => {
+  const response = await apiClient.post<Job | Job[]>("/jobs", job);
   return response.data;
 };
 

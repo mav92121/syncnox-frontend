@@ -52,7 +52,7 @@ interface MarkerData {
   duration?: number;
   timeWindowStart?: string;
   timeWindowEnd?: string;
-  jobType?: JobType;
+  jobType?: JobType | string;
   jobData?: Pick<Job, "id" | "address_formatted" | "status" | "location"> | Job | any;
   sequenceNumber?: number;
   color?: string;

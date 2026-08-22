@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Tooltip } from "antd";
-import { Edit2, Trash2, Eye, EyeOff } from "lucide-react";
+import { Edit2, Trash2 } from "lucide-react";
 import { CustomFieldDefinition, FieldSurfaces } from "@/apis/custom-fields.api";
 import { BaseFieldDefinition } from "./custom-fields.constants";
 import { SurfacesBadges } from "./SurfacesBadges";
@@ -11,10 +11,10 @@ interface FieldsTableProps {
   baseItems: BaseFieldDefinition[];
   customItems: CustomFieldDefinition[];
   hiddenBaseFields: string[];
-  baseFieldOverrides: Record<string, { is_required?: boolean; surfaces?: FieldSurfaces }>;
+  baseFieldOverrides: Record<string, { is_required?: boolean; surfaces?: FieldSurfaces | null }>;
   onToggleBaseRequired: (key: string, currentRequired: boolean, label: string) => void;
   onToggleCustomRequired: (field: CustomFieldDefinition) => void;
-  onOpenEditBaseModal: (bf: BaseFieldDefinition, currentRequired: boolean, currentSurfaces?: FieldSurfaces) => void;
+  onOpenEditBaseModal: (bf: BaseFieldDefinition, currentRequired: boolean, currentSurfaces?: FieldSurfaces | null) => void;
   onOpenEditCustomModal: (field: CustomFieldDefinition) => void;
   onDeleteBaseField: (key: string, label: string, isReq: boolean) => void;
   onDeleteCustomField: (id: number, label: string) => void;
@@ -103,28 +103,12 @@ export const FieldsTable: React.FC<FieldsTableProps> = ({
                   </button>
                 </Tooltip>
 
-                <Tooltip title={effectiveRequired ? "Required base fields cannot be deleted" : "Delete Optional Field"}>
+                <Tooltip title="Base fields cannot be deleted">
                   <button
-                    onClick={() => onDeleteBaseField(bf.field_key, bf.label, effectiveRequired)}
-                    disabled={effectiveRequired}
-                    className={`p-1.5 rounded-none transition-colors border-none bg-transparent ${
-                      effectiveRequired
-                        ? "text-gray-300 cursor-not-allowed opacity-50"
-                        : "text-gray-400 hover:text-red-600 hover:bg-red-50 cursor-pointer"
-                    }`}
+                    disabled={true}
+                    className="p-1.5 rounded-none transition-colors border-none bg-transparent text-gray-300 cursor-not-allowed opacity-40"
                   >
                     <Trash2 size={15} />
-                  </button>
-                </Tooltip>
-
-                <Tooltip title={isHidden ? "Restore Base Field" : "Hide from Dispatch Grid"}>
-                  <button
-                    onClick={() => onToggleBaseVisibility(bf.field_key)}
-                    className={`p-1.5 transition-colors cursor-pointer border-none bg-transparent ${
-                      isHidden ? "text-blue-600 hover:text-blue-800" : "text-gray-400 hover:text-red-600"
-                    }`}
-                  >
-                    {isHidden ? <Eye size={15} /> : <EyeOff size={15} />}
                   </button>
                 </Tooltip>
               </td>

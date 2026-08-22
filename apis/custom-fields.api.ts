@@ -4,8 +4,6 @@ export interface FieldSurfaces {
   disp?: boolean;
   driver?: boolean;
   track?: boolean;
-  exp?: boolean;
-  api?: boolean;
 }
 
 export interface CustomFieldDefinition {

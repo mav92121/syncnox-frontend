@@ -18,7 +18,7 @@ interface OnboardingListStepProps<T extends { id: number }> {
   itemLabelPlural: string;
   entityType?: "vehicle" | "driver";
   Icon: LucideIcon;
-  FormComponent: React.ComponentType<{ onSubmit: () => void; isInline?: boolean }>;
+  FormComponent: React.ComponentType<{ onSubmit: () => void; isInline?: boolean; showSubmitButton?: boolean }>;
 
   getItemDisplay: (item: T) => { name: string; secondary?: string };
   onNext: () => void;
@@ -134,7 +134,7 @@ const OnboardingListStep = <T extends { id: number }>({
               )}
             </div>
             <div className="p-4">
-              <FormComponent onSubmit={handleItemAdded} isInline />
+              <FormComponent onSubmit={handleItemAdded} isInline showSubmitButton />
             </div>
           </div>
         ) : null}

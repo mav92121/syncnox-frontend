@@ -33,8 +33,9 @@ import {
 import { useJobsStore } from "@/store/jobs.store";
 import { filterCountryOptions } from "@/utils/jobs.utils";
 import { useTeamStore } from "@/store/team.store";
-import { CustomFieldDefinition, getCustomFields } from "@/apis/custom-fields.api";
+import { CustomFieldDefinition } from "@/apis/custom-fields.api";
 import { DynamicCustomFieldsForm } from "@/components/DynamicCustomFieldsForm";
+import { useFieldConfig } from "@/hooks/useFieldConfig";
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -45,20 +46,28 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   const [messageApi, contextHolder] = message.useMessage();
   const { isLoading, createJobAction, updateJobAction } = useJobsStore();
   const { teams } = useTeamStore();
-  const [customFieldDefs, setCustomFieldDefs] = useState<CustomFieldDefinition[]>([]);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, any>>({});
 
+  const [activeTemplate, setActiveTemplate] = useState<string>("pickup_delivery_job");
+
   useEffect(() => {
-    getCustomFields("job")
-      .then((defs) => setCustomFieldDefs(defs))
-      .catch((err) => console.error("Failed to load job custom fields", err));
+    const storedTemplate = localStorage.getItem("syncnox_active_job_template");
+    if (storedTemplate) {
+      setActiveTemplate(storedTemplate);
+    }
   }, []);
+
+  const { getFieldConfig, customFields: customFieldDefs } = useFieldConfig("job", activeTemplate);
 
   const [form] = Form.useForm();
 
   const onFinish = async (values: any) => {
     // Transform the form values to match API requirements
-    const transformedValues: any = { ...values, id: initialData?.id };
+    const transformedValues: any = {
+      ...values,
+      id: initialData?.id,
+      template_type: activeTemplate,
+    };
 
     // 1. Transform scheduled_date: dayjs object -> local date string (YYYY-MM-DD)
     if (values.scheduled_date) {
@@ -82,11 +91,10 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
     // 3. Transform phone: object {countryCode, number} -> string phone_number
     if (values.phone && values.phone.number) {
       const { countryCode, number } = values.phone;
-      // Extract just the code part (e.g., "+1" from "🇺🇸 +1")
       const codeOnly = countryCode.match(/\+\d+/)?.[0] || "";
       transformedValues.phone_number = `${codeOnly}-${number}`;
+      transformedValues.client_phone = `${codeOnly}-${number}`;
     }
-    // Remove phone object from payload regardless
     delete transformedValues.phone;
 
     // 4. Attach dynamic custom fields
@@ -104,7 +112,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
         messageApi.success("Job created successfully");
         form.resetFields();
         setCustomFieldValues({});
-        onSubmit?.(newJob);
+        onSubmit?.(Array.isArray(newJob) ? newJob[0] : newJob);
       }
     } catch (e: any) {
       const error = e;
@@ -179,269 +187,589 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
             priority_level: "medium",
             recurrence_type: "one_time",
             payment_status: "paid",
-            job_type: "pickup",
+            job_type: activeTemplate === "worker_shuttle" ? "round_trip" : "pickup",
             service_duration: 5,
+            reach_before_minutes: -15,
           }}
         >
-          {/* Date and Job Type */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Date"
-                name="scheduled_date"
-                rules={[{ required: true, message: "Date is required" }]}
-              >
-                <DatePicker format="DD-MM-YYYY" className="w-full" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Job Type"
-                name="job_type"
-                rules={[{ required: true, message: "Type is required" }]}
-              >
-                <Select placeholder="Select" options={JOB_TYPES} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Priority and Assign Drivers */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Priority" name="priority_level">
-                <Select placeholder="Select" options={PRIORITY_OPTIONS} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Assign Drivers" name="assigned_to">
-                <Select placeholder="Select" allowClear>
-                  {teams.map((team) => (
-                    <Select.Option key={team.id} value={team.id}>
-                      {team.name}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Address */}
-          <Form.Item
-            label="Address"
-            name="address_formatted"
-            rules={[{ required: true, message: "Address is required" }]}
-          >
-            <AddressAutocomplete
-              value={form.getFieldValue("address_formatted")}
-              placeholder="Type to search address"
-              onChange={(value: string) => {
-                // Always clear form fields when user is typing
-                // Fields will only be set when user selects from dropdown
-                form.setFieldsValue({
-                  address_formatted: undefined,
-                  location: undefined,
-                });
-              }}
-              onSelect={(addressData: AddressData) => {
-                // Update form with location data only when user selects from dropdown
-                form.setFieldsValue({
-                  address_formatted: addressData.address_formatted,
-                  location: addressData.location,
-                });
-              }}
-            />
-          </Form.Item>
-
-          {/* Lat / Lng */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Latitude"
-                name={["location", "lat"]}
-                rules={[
-                  {
-                    validator: (_, value) =>
-                      value === undefined ||
-                      value === null ||
-                      value === "" ||
-                      (!isNaN(Number(value)) &&
-                        Number(value) >= -90 &&
-                        Number(value) <= 90)
-                        ? Promise.resolve()
-                        : Promise.reject("Enter a valid latitude (-90 to 90)"),
-                  },
-                ]}
-              >
-                <Input type="number" placeholder="e.g. 37.7749" step="any" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Longitude"
-                name={["location", "lng"]}
-                rules={[
-                  {
-                    validator: (_, value) =>
-                      value === undefined ||
-                      value === null ||
-                      value === "" ||
-                      (!isNaN(Number(value)) &&
-                        Number(value) >= -180 &&
-                        Number(value) <= 180)
-                        ? Promise.resolve()
-                        : Promise.reject(
-                            "Enter a valid longitude (-180 to 180)",
-                          ),
-                  },
-                ]}
-              >
-                <Input type="number" placeholder="e.g. -122.4194" step="any" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Phone Number */}
-          <Form.Item label="Phone Number">
-            <Row gutter={8}>
-              <Col span={8}>
-                <Form.Item
-                  name={["phone", "countryCode"]}
-                  noStyle
-                  initialValue={`🇺🇸 +1`}
-                >
-                  <Select
-                    showSearch
-                    className="w-full"
-                    filterOption={filterCountryOptions}
+          {activeTemplate === "worker_shuttle" ? (
+            <>
+              {/* Worker Shuttle Header Row: Date & Job Type */}
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    label="Scheduled Date"
+                    name="scheduled_date"
+                    rules={[{ required: true, message: "Date is required" }]}
                   >
-                    {COUNTRY_CODES.map((item) => (
-                      <Select.Option
-                        key={`${item.country}-${item.code}`}
-                        value={`${item.flag} ${item.code}`}
-                      >
-                        {item.flag} {item.code} &nbsp; {item.name}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-              <Col span={16}>
-                <Form.Item name={["phone", "number"]} noStyle>
-                  <Input
-                    type="number"
-                    placeholder="8023456789"
-                    maxLength={15}
+                    <DatePicker format="DD-MM-YYYY" className="w-full" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="Trip Type"
+                    name="job_type"
+                    rules={[{ required: true, message: "Trip type is required" }]}
+                  >
+                    <Select
+                      placeholder="Select Trip Type"
+                      options={[
+                        { value: "one_way", label: "One Way (Pick Up Only)" },
+                        { value: "return_only", label: "Return Only (Drop Off)" },
+                        { value: "round_trip", label: "Round Trip (Creates 2 Jobs)" },
+                      ]}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {/* Quant ID & Assign Drivers */}
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="Quant / Shift Ref ID" name="quant_id">
+                    <Input placeholder="e.g. SHIFT-101" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="Assign Driver / Team" name="assigned_to">
+                    <Select placeholder="Select" allowClear>
+                      {teams.map((team) => (
+                        <Select.Option key={team.id} value={team.id}>
+                          {team.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {/* Driver Reach Time & Reach Window */}
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="Driver Reach Time" name="driver_reach_time">
+                    <TimePicker format="HH:mm" className="w-full" needConfirm={false} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="Reach Window (mins)"
+                    name="reach_before_minutes"
+                    tooltip="Negative value allows arrival buffer (e.g. -15 mins for 6:00pm allows 6:00pm - 6:15pm)"
+                  >
+                    <Input type="number" placeholder="e.g. -15" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {/* Client Pick Up Time */}
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="Client Pick Up Time" name="client_pick_up_time">
+                    <TimePicker format="HH:mm" className="w-full" needConfirm={false} />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="Client / Worker ID" name="client_id">
+                    <Input placeholder="e.g. EMP-992" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {/* Pick Up Address */}
+              <Form.Item
+                label="Pick Up Address"
+                name="pick_up_address"
+                rules={[{ required: true, message: "Pick up address is required" }]}
+              >
+                <AddressAutocomplete
+                  value={form.getFieldValue("pick_up_address")}
+                  placeholder="Type to search pickup address"
+                  onChange={() => {
+                    form.setFieldsValue({ pick_up_address: undefined, pick_up_location: undefined });
+                  }}
+                  onSelect={(addressData: AddressData) => {
+                    form.setFieldsValue({
+                      pick_up_address: addressData.address_formatted,
+                      pick_up_location: addressData.location,
+                    });
+                  }}
+                />
+              </Form.Item>
+
+              {/* Drop Off Address */}
+              <Form.Item
+                label="Drop Off Address"
+                name="drop_off_address"
+                rules={[{ required: true, message: "Drop off address is required" }]}
+              >
+                <AddressAutocomplete
+                  value={form.getFieldValue("drop_off_address")}
+                  placeholder="Type to search dropoff address"
+                  onChange={() => {
+                    form.setFieldsValue({ drop_off_address: undefined, drop_off_location: undefined });
+                  }}
+                  onSelect={(addressData: AddressData) => {
+                    form.setFieldsValue({
+                      drop_off_address: addressData.address_formatted,
+                      drop_off_location: addressData.location,
+                    });
+                  }}
+                />
+              </Form.Item>
+
+              {/* Client Name & Phone */}
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item label="Passenger Name" name="client_name">
+                    <Input placeholder="Client / Passenger Name" />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="Passenger Phone" name="client_phone">
+                    <Input placeholder="Customer Phone Number" />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {/* Shuttle Notes */}
+              <Form.Item label="Shuttle Notes" name="notes">
+                <Input.TextArea rows={3} placeholder="Special instructions or pickup details" />
+              </Form.Item>
+            </>
+          ) : (
+            <>
+              {/* Date and Job Type */}
+              <Row gutter={16}>
+                {getFieldConfig("scheduled_date").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("scheduled_date").label}
+                      name="scheduled_date"
+                      required={getFieldConfig("scheduled_date").isRequired}
+                      rules={
+                        getFieldConfig("scheduled_date").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("scheduled_date").label} is required` }]
+                          : []
+                      }
+                    >
+                      <DatePicker format="DD-MM-YYYY" className="w-full" />
+                    </Form.Item>
+                  </Col>
+                )}
+                {getFieldConfig("job_type").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("job_type").label}
+                      name="job_type"
+                      required={getFieldConfig("job_type").isRequired}
+                      rules={
+                        getFieldConfig("job_type").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("job_type").label} is required` }]
+                          : []
+                      }
+                    >
+                      <Select placeholder="Select" options={JOB_TYPES} />
+                    </Form.Item>
+                  </Col>
+                )}
+              </Row>
+
+              {/* Priority and Assign Drivers */}
+              <Row gutter={16}>
+                {getFieldConfig("priority_level").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("priority_level").label}
+                      name="priority_level"
+                      required={getFieldConfig("priority_level").isRequired}
+                      rules={
+                        getFieldConfig("priority_level").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("priority_level").label} is required` }]
+                          : []
+                      }
+                    >
+                      <Select placeholder="Select" options={PRIORITY_OPTIONS} />
+                    </Form.Item>
+                  </Col>
+                )}
+                <Col span={12}>
+                  <Form.Item label="Assign Drivers" name="assigned_to">
+                    <Select placeholder="Select" allowClear>
+                      {teams.map((team) => (
+                        <Select.Option key={team.id} value={team.id}>
+                          {team.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              {/* Address */}
+              {getFieldConfig("address_formatted").isVisible && (
+                <Form.Item
+                  label={getFieldConfig("address_formatted").label}
+                  name="address_formatted"
+                  required={getFieldConfig("address_formatted").isRequired}
+                  rules={
+                    getFieldConfig("address_formatted").isRequired
+                      ? [{ required: true, message: `${getFieldConfig("address_formatted").label} is required` }]
+                      : []
+                  }
+                >
+                  <AddressAutocomplete
+                    value={form.getFieldValue("address_formatted")}
+                    placeholder="Type to search address"
+                    onChange={(value: string) => {
+                      form.setFieldsValue({
+                        address_formatted: undefined,
+                        location: undefined,
+                      });
+                    }}
+                    onSelect={(addressData: AddressData) => {
+                      form.setFieldsValue({
+                        address_formatted: addressData.address_formatted,
+                        location: addressData.location,
+                      });
+                    }}
                   />
                 </Form.Item>
-              </Col>
-            </Row>
-          </Form.Item>
+              )}
 
-          {/* First Name and Last Name */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="First Name" name="first_name">
-                <Input placeholder="First Name" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Last Name" name="last_name">
-                <Input placeholder="Last Name" />
-              </Form.Item>
-            </Col>
-          </Row>
+              {/* Lat / Lng */}
+              {getFieldConfig("location").isVisible && (
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      label="Latitude"
+                      name={["location", "lat"]}
+                      required={getFieldConfig("location").isRequired}
+                      rules={[
+                        ...(getFieldConfig("location").isRequired
+                          ? [{ required: true, message: "Latitude is required" }]
+                          : []),
+                        {
+                          validator: (_, value) =>
+                            value === undefined ||
+                            value === null ||
+                            value === "" ||
+                            (!isNaN(Number(value)) &&
+                              Number(value) >= -90 &&
+                              Number(value) <= 90)
+                              ? Promise.resolve()
+                              : Promise.reject("Enter a valid latitude (-90 to 90)"),
+                        },
+                      ]}
+                    >
+                      <Input type="number" placeholder="e.g. 37.7749" step="any" />
+                    </Form.Item>
+                  </Col>
+                  <Col span={12}>
+                    <Form.Item
+                      label="Longitude"
+                      name={["location", "lng"]}
+                      required={getFieldConfig("location").isRequired}
+                      rules={[
+                        ...(getFieldConfig("location").isRequired
+                          ? [{ required: true, message: "Longitude is required" }]
+                          : []),
+                        {
+                          validator: (_, value) =>
+                            value === undefined ||
+                            value === null ||
+                            value === "" ||
+                            (!isNaN(Number(value)) &&
+                              Number(value) >= -180 &&
+                              Number(value) <= 180)
+                              ? Promise.resolve()
+                              : Promise.reject(
+                                  "Enter a valid longitude (-180 to 180)",
+                                ),
+                        },
+                      ]}
+                    >
+                      <Input type="number" placeholder="e.g. -122.4194" step="any" />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              )}
 
-          {/* Email and Business Name */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Email" name="email">
-                <Input type="email" placeholder="Email" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Business Name" name="business_name">
-                <Input placeholder="Business Name" />
-              </Form.Item>
-            </Col>
-          </Row>
+              {/* Phone Number */}
+              {getFieldConfig("phone_number").isVisible && (
+                <Form.Item
+                  label={getFieldConfig("phone_number").label}
+                  required={getFieldConfig("phone_number").isRequired}
+                  rules={
+                    getFieldConfig("phone_number").isRequired
+                      ? [
+                          {
+                            validator: (_, __) => {
+                              const phoneObj = form.getFieldValue("phone");
+                              if (!phoneObj || !phoneObj.number) {
+                                return Promise.reject(
+                                  `${getFieldConfig("phone_number").label} is required`
+                                );
+                              }
+                              return Promise.resolve();
+                            },
+                          },
+                        ]
+                      : []
+                  }
+                >
+                  <Row gutter={8}>
+                    <Col span={8}>
+                      <Form.Item
+                        name={["phone", "countryCode"]}
+                        noStyle
+                        initialValue={`🇺🇸 +1`}
+                      >
+                        <Select
+                          showSearch
+                          className="w-full"
+                          filterOption={filterCountryOptions}
+                        >
+                          {COUNTRY_CODES.map((item) => (
+                            <Select.Option
+                              key={`${item.country}-${item.code}`}
+                              value={`${item.flag} ${item.code}`}
+                            >
+                              {item.flag} {item.code} &nbsp; {item.name}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                    <Col span={16}>
+                      <Form.Item name={["phone", "number"]} noStyle>
+                        <Input
+                          type="number"
+                          placeholder="8023456789"
+                          maxLength={15}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </Form.Item>
+              )}
 
-          {/* Time From, To, and Duration */}
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                label="From"
-                name="time_window_start"
-                rules={[validateTimeWindowStart(form)]}
-              >
-                <TimePicker
-                  needConfirm={false}
-                  className="w-full"
-                  format="HH:mm"
-                  onChange={() => {
-                    // Trigger validation on end time when start time changes
-                    form.validateFields(["time_window_end"]);
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="To"
-                name="time_window_end"
-                rules={[validateTimeWindowEnd(form)]}
-              >
-                <TimePicker
-                  needConfirm={false}
-                  className="w-full"
-                  format="HH:mm"
-                  onChange={() => {
-                    // Trigger validation on start time when end time changes
-                    form.validateFields(["time_window_start"]);
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                label="Job Duration"
-                name="service_duration"
-                rules={[validateJobDuration()]}
-              >
-                <Input
-                  type="number"
-                  placeholder="Enter duration"
-                  className="w-full"
-                  addonAfter="mins"
-                  max={540}
-                  min={0}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+              {/* First Name and Last Name */}
+              <Row gutter={16}>
+                {getFieldConfig("first_name").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("first_name").label}
+                      name="first_name"
+                      required={getFieldConfig("first_name").isRequired}
+                      rules={
+                        getFieldConfig("first_name").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("first_name").label} is required` }]
+                          : []
+                      }
+                    >
+                      <Input placeholder="First Name" />
+                    </Form.Item>
+                  </Col>
+                )}
+                {getFieldConfig("last_name").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("last_name").label}
+                      name="last_name"
+                      required={getFieldConfig("last_name").isRequired}
+                      rules={
+                        getFieldConfig("last_name").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("last_name").label} is required` }]
+                          : []
+                      }
+                    >
+                      <Input placeholder="Last Name" />
+                    </Form.Item>
+                  </Col>
+                )}
+              </Row>
 
-          {/* Customer Preferences */}
-          <Form.Item label="Customer Preferences" name="customer_preferences">
-            <Input.TextArea rows={3} placeholder="Type" />
-          </Form.Item>
+              {/* Email and Business Name */}
+              <Row gutter={16}>
+                {getFieldConfig("email").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("email").label}
+                      name="email"
+                      required={getFieldConfig("email").isRequired}
+                      rules={
+                        getFieldConfig("email").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("email").label} is required` }]
+                          : []
+                      }
+                    >
+                      <Input type="email" placeholder="Email" />
+                    </Form.Item>
+                  </Col>
+                )}
+                {getFieldConfig("business_name").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("business_name").label}
+                      name="business_name"
+                      required={getFieldConfig("business_name").isRequired}
+                      rules={
+                        getFieldConfig("business_name").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("business_name").label} is required` }]
+                          : []
+                      }
+                    >
+                      <Input placeholder="Business Name" />
+                    </Form.Item>
+                  </Col>
+                )}
+              </Row>
 
-          {/* Notes */}
-          <Form.Item label="Notes" name="additional_notes">
-            <Input.TextArea rows={3} placeholder="Type" />
-          </Form.Item>
+              {/* Time From, To, and Duration */}
+              <Row gutter={16}>
+                {getFieldConfig("time_window_start").isVisible && (
+                  <Col span={8}>
+                    <Form.Item
+                      label={getFieldConfig("time_window_start").label}
+                      name="time_window_start"
+                      required={getFieldConfig("time_window_start").isRequired}
+                      rules={[
+                        ...(getFieldConfig("time_window_start").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("time_window_start").label} is required` }]
+                          : []),
+                        validateTimeWindowStart(form),
+                      ]}
+                    >
+                      <TimePicker
+                        needConfirm={false}
+                        className="w-full"
+                        format="HH:mm"
+                        onChange={() => {
+                          form.validateFields(["time_window_end"]);
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
+                )}
+                {getFieldConfig("time_window_end").isVisible && (
+                  <Col span={8}>
+                    <Form.Item
+                      label={getFieldConfig("time_window_end").label}
+                      name="time_window_end"
+                      required={getFieldConfig("time_window_end").isRequired}
+                      rules={[
+                        ...(getFieldConfig("time_window_end").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("time_window_end").label} is required` }]
+                          : []),
+                        validateTimeWindowEnd(form),
+                      ]}
+                    >
+                      <TimePicker
+                        needConfirm={false}
+                        className="w-full"
+                        format="HH:mm"
+                        onChange={() => {
+                          form.validateFields(["time_window_start"]);
+                        }}
+                      />
+                    </Form.Item>
+                  </Col>
+                )}
+                {getFieldConfig("service_duration").isVisible && (
+                  <Col span={8}>
+                    <Form.Item
+                      label={getFieldConfig("service_duration").label}
+                      name="service_duration"
+                      required={getFieldConfig("service_duration").isRequired}
+                      rules={[
+                        ...(getFieldConfig("service_duration").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("service_duration").label} is required` }]
+                          : []),
+                        validateJobDuration(),
+                      ]}
+                    >
+                      <Input
+                        type="number"
+                        placeholder="Enter duration"
+                        className="w-full"
+                        addonAfter="mins"
+                        max={540}
+                        min={0}
+                      />
+                    </Form.Item>
+                  </Col>
+                )}
+              </Row>
 
-          {/* Single/Recurring and Payment Status */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Single or Recurring" name="recurrence_type">
-                <Select placeholder="Select" options={RECURRENCE_OPTIONS} />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Paid/Unpaid" name="payment_status">
-                <Select placeholder="Select" options={PAYMENT_STATUS_OPTIONS} />
-              </Form.Item>
-            </Col>
-          </Row>
+              {/* Customer Preferences */}
+              {getFieldConfig("customer_preferences").isVisible && (
+                <Form.Item
+                  label={getFieldConfig("customer_preferences").label}
+                  name="customer_preferences"
+                  required={getFieldConfig("customer_preferences").isRequired}
+                  rules={
+                    getFieldConfig("customer_preferences").isRequired
+                      ? [{ required: true, message: `${getFieldConfig("customer_preferences").label} is required` }]
+                      : []
+                  }
+                >
+                  <Input.TextArea rows={3} placeholder="Type" />
+                </Form.Item>
+              )}
+
+              {/* Notes */}
+              {getFieldConfig("additional_notes").isVisible && (
+                <Form.Item
+                  label={getFieldConfig("additional_notes").label}
+                  name="additional_notes"
+                  required={getFieldConfig("additional_notes").isRequired}
+                  rules={
+                    getFieldConfig("additional_notes").isRequired
+                      ? [{ required: true, message: `${getFieldConfig("additional_notes").label} is required` }]
+                      : []
+                  }
+                >
+                  <Input.TextArea rows={3} placeholder="Type" />
+                </Form.Item>
+              )}
+
+              {/* Single/Recurring and Payment Status */}
+              <Row gutter={16}>
+                {getFieldConfig("recurrence_type").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("recurrence_type").label}
+                      name="recurrence_type"
+                      required={getFieldConfig("recurrence_type").isRequired}
+                      rules={
+                        getFieldConfig("recurrence_type").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("recurrence_type").label} is required` }]
+                          : []
+                      }
+                    >
+                      <Select placeholder="Select" options={RECURRENCE_OPTIONS} />
+                    </Form.Item>
+                  </Col>
+                )}
+                {getFieldConfig("payment_status").isVisible && (
+                  <Col span={12}>
+                    <Form.Item
+                      label={getFieldConfig("payment_status").label}
+                      name="payment_status"
+                      required={getFieldConfig("payment_status").isRequired}
+                      rules={
+                        getFieldConfig("payment_status").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("payment_status").label} is required` }]
+                          : []
+                      }
+                    >
+                      <Select placeholder="Select" options={PAYMENT_STATUS_OPTIONS} />
+                    </Form.Item>
+                  </Col>
+                )}
+              </Row>
+            </>
+          )}
 
           {/* Dynamic Tenant Custom Fields */}
           <DynamicCustomFieldsForm

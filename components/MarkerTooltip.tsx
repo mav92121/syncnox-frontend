@@ -7,7 +7,7 @@ const { Text } = Typography;
 
 interface MarkerTooltipProps {
   jobData?: Job;
-  jobType?: JobType;
+  jobType?: JobType | string;
   address?: string;
   duration?: number;
   timeWindowStart?: string;
@@ -15,14 +15,19 @@ interface MarkerTooltipProps {
   onEdit?: () => void;
 }
 
-const JOB_TYPE_CONFIG: Record<
-  JobType,
-  { color: string; label: string; bg: string; icon: string }
+const JOB_TYPE_CONFIG: Partial<
+  Record<
+    JobType | string,
+    { color: string; label: string; bg: string; icon: string }
+  >
 > = {
   delivery: { color: "#1677ff", label: "Delivery", bg: "#e6f4ff", icon: "📦" },
   pickup: { color: "#52c41a", label: "Pickup", bg: "#ecfdf5", icon: "📍" },
   service: { color: "#fa8c16", label: "Service", bg: "#fff7e6", icon: "🔧" },
   transport: { color: "#059669", label: "Transport", bg: "#ecfdf5", icon: "🚌" },
+  one_way: { color: "#13c2c2", label: "One Way", bg: "#e6fffb", icon: "➡️" },
+  return_only: { color: "#722ed1", label: "Return Only", bg: "#f9f0ff", icon: "↩️" },
+  round_trip: { color: "#eb2f96", label: "Round Trip", bg: "#fff0f6", icon: "🔄" },
 };
 
 const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
@@ -39,7 +44,10 @@ const MarkerTooltip: React.FC<MarkerTooltipProps> = ({
   };
 
   const timeWindow = formatTimeWindow();
-  const config = jobType ? JOB_TYPE_CONFIG[jobType] : null;
+  const config =
+    jobType && jobType in JOB_TYPE_CONFIG
+      ? JOB_TYPE_CONFIG[jobType as JobType]
+      : null;
 
   return (
     <div

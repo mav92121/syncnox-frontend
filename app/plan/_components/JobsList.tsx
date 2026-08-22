@@ -33,7 +33,7 @@ import BaseTable from "@/components/Table/BaseTable";
 import JobForm from "@/components/Jobs/JobForm";
 import GoogleMaps from "@/components/GoogleMaps";
 import MarkerTooltip from "@/components/MarkerTooltip";
-import { createJobTableColumns } from "@/utils/jobs.utils";
+import { createJobTableColumns, STANDARD_JOB_FIELD_KEYS } from "@/utils/jobs.utils";
 import { createActionsColumn } from "@/components/Table/ActionsColumn";
 import CreateRouteModal from "@/app/plan/_components/CreateRouteModal";
 import DraftJobsDatePicker from "@/components/Jobs/DraftJobsDatePicker";
@@ -147,27 +147,48 @@ export default function JobsList() {
         .filter((d): d is string => Boolean(d))
     )
   );
-
   const displayedJobs = selectedDate
     ? statusFilteredJobs.filter((j) => j.scheduled_date === selectedDate)
     : statusFilteredJobs;
 
   const activeMarkers = displayedJobs
-    .filter((job: Job) => job.location?.lat && job.location?.lng)
-    .map((job: Job, index: number) => ({
-      id: job.id,
-      position: { lat: job.location.lat, lng: job.location.lng },
-      description: job.address_formatted || "No address",
-      duration: job.service_duration,
-      timeWindowStart: job.time_window_start,
-      timeWindowEnd: job.time_window_end,
-      jobType: job.job_type,
-      jobData: job,
-      sequenceNumber: index + 1,
-    }));
+    .map((job: Job, index: number) => {
+      const loc = job?.location || job?.pick_up_location || job?.drop_off_location;
+      if (
+        !loc ||
+        typeof loc.lat !== "number" ||
+        typeof loc.lng !== "number" ||
+        isNaN(loc.lat) ||
+        isNaN(loc.lng)
+      ) {
+        return null;
+      }
+      return {
+        id: job.id,
+        position: { lat: loc.lat, lng: loc.lng },
+        description:
+          job.address_formatted ||
+          job.pick_up_address ||
+          job.drop_off_address ||
+          "No address",
+        duration: job.service_duration,
+        timeWindowStart: job.time_window_start || job.client_pick_up_time,
+        timeWindowEnd: job.time_window_end || job.driver_reach_time,
+        jobType: job.job_type,
+        jobData: job,
+        sequenceNumber: index + 1,
+      };
+    })
+    .filter((marker): marker is NonNullable<typeof marker> => marker !== null);
 
-  // Build Dynamic Custom Field Columns for AG Grid
-  const customFieldColumns: ColDef<Job>[] = customFields.map((f) => ({
+  const additionalCustomFields = customFields.filter(
+    (f) =>
+      !STANDARD_JOB_FIELD_KEYS.has(f.field_key) &&
+      f.surfaces?.disp !== false &&
+      f.is_visible_in_list !== false
+  );
+
+  const customFieldColumns: ColDef<Job>[] = additionalCustomFields.map((f) => ({
     field: `custom_fields.${f.field_key}` as any,
     headerName: f.label,
     valueGetter: (params) => {
@@ -180,17 +201,36 @@ export default function JobsList() {
     width: 150,
   }));
 
-  // Base Table Columns (includes Status Header Dropdown)
+  const [activeTemplate, setActiveTemplate] = useState<string>("pickup_delivery_job");
+
+  useEffect(() => {
+    const stored = localStorage.getItem("syncnox_active_job_template");
+    if (stored) {
+      setActiveTemplate(stored);
+    }
+  }, []);
+
   const baseColumns = createJobTableColumns({
+    templateType: activeTemplate,
     viewColumnRenderer: (params: any) => (
       <button
         type="button"
         onClick={() => {
-          if (params.data.location?.lat && params.data.location?.lng) {
+          const loc =
+            params.data?.location ||
+            params.data?.pick_up_location ||
+            params.data?.drop_off_location;
+          if (
+            loc &&
+            typeof loc.lat === "number" &&
+            typeof loc.lng === "number" &&
+            !isNaN(loc.lat) &&
+            !isNaN(loc.lng)
+          ) {
             setIsMapOpen(true);
             setMapCenter({
-              lat: params.data.location.lat,
-              lng: params.data.location.lng,
+              lat: loc.lat,
+              lng: loc.lng,
             });
             setSelectedMarkerId(params.data.id);
           }
@@ -201,7 +241,6 @@ export default function JobsList() {
       </button>
     ),
     teamsMap: getTeamsMap(),
-    jobStatus: selectedJobTab === "all" ? undefined : selectedJobTab,
     statusHeaderProps: {
       selectedJobTab,
       handleJobStatusChange,

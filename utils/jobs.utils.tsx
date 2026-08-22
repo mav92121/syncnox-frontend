@@ -27,6 +27,7 @@ export const STATUS_COLORS: Record<JobStatus, string> = {
   draft: "#808080", // gray
   assigned: "#1677ff",
   in_progress: "#fa8c16",
+  in_transit: "#13c2c2",
   completed: "#52c41a",
   cancelled: "#ff4d4f",
   failed: "#ff4d4f",
@@ -38,6 +39,53 @@ export const priorityStyleMap: Record<string, string> = {
   high: "bg-red-100 text-red-800 border border-red-200",
   default: "bg-gray-100 text-gray-700 border border-gray-200",
 };
+
+export const STANDARD_JOB_FIELD_KEYS = new Set([
+  "id",
+  "scheduled_date",
+  "date",
+  "job_type",
+  "type",
+  "status",
+  "priority_level",
+  "priority",
+  "assigned_to",
+  "assigned_driver",
+  "driver_id",
+  "team",
+  "team_id",
+  "address_formatted",
+  "address",
+  "delivery_address",
+  "location",
+  "lat",
+  "lng",
+  "latitude",
+  "longitude",
+  "phone_number",
+  "phone",
+  "customer_phone",
+  "first_name",
+  "last_name",
+  "email",
+  "customer_email",
+  "business_name",
+  "time_window",
+  "time_window_start",
+  "time_window_end",
+  "from",
+  "to",
+  "service_duration",
+  "job_duration",
+  "duration",
+  "customer_preferences",
+  "additional_notes",
+  "notes",
+  "special_notes",
+  "recurrence_type",
+  "single_or_recurring",
+  "payment_status",
+]);
 
 export const paymentStyleMap: Record<string, string> = {
   paid: "bg-green-100 text-green-700 border border-green-200",
@@ -144,13 +192,158 @@ export const createJobTableColumns = (options?: {
   onIdClick?: (job: Job) => void;
   teamsMap?: Record<number, string>;
   jobStatus?: JobStatus;
+  templateType?: string;
   statusHeaderProps?: {
     selectedJobTab: string;
     handleJobStatusChange: (e: any) => void;
   };
 }): ColDef<Job>[] => {
-  const allColumns: ColDef<Job>[] = [
+  const isWorkerShuttle = options?.templateType === "worker_shuttle";
 
+  if (isWorkerShuttle) {
+    const shuttleColumns: ColDef<Job>[] = [
+      {
+        field: "id",
+        headerName: "ID",
+        width: 100,
+        minWidth: 80,
+        cellRenderer: (params: any) => {
+          const idVal = params.value;
+          if (!idVal) return "-";
+          if (options?.viewColumnRenderer) {
+            return options.viewColumnRenderer(params);
+          }
+          if (options?.onIdClick) {
+            return (
+              <button
+                type="button"
+                className="text-blue-600 hover:underline font-medium cursor-pointer"
+                onClick={() => options.onIdClick!(params.data)}
+              >
+                {idVal}
+              </button>
+            );
+          }
+          return <span className="font-medium text-gray-700">{idVal}</span>;
+        },
+      },
+      {
+        field: "scheduled_date",
+        headerName: "Scheduled Date",
+        width: 140,
+      },
+      {
+        field: "status",
+        headerName: "Status",
+        ...(options?.statusHeaderProps && {
+          headerComponent: JobStatusHeader,
+          headerComponentParams: options.statusHeaderProps,
+        }),
+        cellRenderer: (params: any) => (
+          <StatusBadge value={params.value} styleMap={statusStyleMap} />
+        ),
+        width: 160,
+      },
+      {
+        field: "quant_id",
+        headerName: "Quant ID",
+        width: 130,
+      },
+      {
+        field: "job_type",
+        headerName: "Job Type",
+        width: 130,
+        cellRenderer: (params: any) => (
+          <span className="capitalize font-medium text-gray-800">
+            {String(params.value || "-").replace("_", " ")}
+          </span>
+        ),
+      },
+      {
+        field: "pick_up_address",
+        headerName: "Pick Up Address",
+        width: 250,
+      },
+      {
+        field: "drop_off_address",
+        headerName: "Drop Off Address",
+        width: 250,
+      },
+      {
+        field: "driver_reach_time",
+        headerName: "Driver Reach Time",
+        width: 160,
+      },
+      {
+        field: "reach_before_minutes",
+        headerName: "Reach Window",
+        width: 150,
+        valueGetter: (params: any) => {
+          const mins = params.data?.reach_before_minutes;
+          const reach = params.data?.driver_reach_time;
+          if (mins === undefined || mins === null || !reach) return "-";
+          return `${reach} (${mins > 0 ? "+" : ""}${mins}m)`;
+        },
+      },
+      {
+        field: "client_pick_up_time",
+        headerName: "Client Pickup Time",
+        width: 160,
+      },
+      {
+        field: "client_name",
+        headerName: "Client Name",
+        width: 150,
+        valueGetter: (params: any) => params.data?.client_name || params.data?.first_name || "-",
+      },
+      {
+        field: "client_phone",
+        headerName: "Client Phone",
+        width: 150,
+        valueGetter: (params: any) => params.data?.client_phone || params.data?.phone_number || "-",
+      },
+      {
+        headerName: "Team",
+        field: "assigned_to",
+        valueFormatter: (params: any) => {
+          if (!params.value) return "";
+          return options?.teamsMap?.[params.value] || "Unknown";
+        },
+      },
+      {
+        field: "route_name",
+        headerName: "Route Name",
+        width: 150,
+        cellRenderer: (params: any) => {
+          if (!params.data.optimization_id || !params.value) {
+            return params.value || "-";
+          }
+          return (
+            <Link
+              href={`/route/${params.data.optimization_id}`}
+              className="text-blue-600 hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {params.value}
+            </Link>
+          );
+        },
+      },
+      {
+        field: "notes",
+        headerName: "Notes",
+        width: 160,
+      },
+    ];
+
+    if (options?.jobStatus === "draft") {
+      return shuttleColumns.filter((col) => col.field !== "route_name");
+    }
+
+    return shuttleColumns;
+  }
+
+  const allColumns: ColDef<Job>[] = [
     {
       field: "id",
       headerName: "ID",
