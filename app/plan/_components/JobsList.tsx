@@ -192,11 +192,17 @@ export default function JobsList() {
     field: `custom_fields.${f.field_key}` as any,
     headerName: f.label,
     valueGetter: (params) => {
+      const topVal = params.data?.[f.field_key as keyof Job];
+      const shuttleVal = params.data?.worker_shuttle_detail?.[f.field_key as keyof NonNullable<typeof params.data.worker_shuttle_detail>];
+      const pickupVal = params.data?.pickup_delivery_detail?.[f.field_key as keyof NonNullable<typeof params.data.pickup_delivery_detail>];
       const customData = params.data?.custom_fields;
-      if (!customData || customData[f.field_key] === undefined || customData[f.field_key] === null) {
+      const customVal = customData?.[f.field_key];
+
+      const val = topVal ?? shuttleVal ?? pickupVal ?? customVal;
+      if (val === undefined || val === null || val === "") {
         return "-";
       }
-      return String(customData[f.field_key]);
+      return String(val);
     },
     width: 150,
   }));

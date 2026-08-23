@@ -85,6 +85,26 @@ export const STANDARD_JOB_FIELD_KEYS = new Set([
   "recurrence_type",
   "single_or_recurring",
   "payment_status",
+  "client_id",
+  "candidate_id",
+  "quant_id",
+  "quart_id",
+  "client_name",
+  "client_phone",
+  "candidate_phone",
+  "client_pick_up_time",
+  "start_hour",
+  "end_hour",
+  "pickup_type",
+  "dress_code",
+  "go_pickup_point",
+  "return_dropoff_point",
+  "candidate_address",
+  "client_address",
+  "driver_reach_time",
+  "reach_before_minutes",
+  "pick_up_address",
+  "drop_off_address",
 ]);
 
 export const paymentStyleMap: Record<string, string> = {
@@ -246,8 +266,15 @@ export const createJobTableColumns = (options?: {
       },
       {
         field: "quant_id",
-        headerName: "Quant ID",
-        width: 130,
+        headerName: "Quart / Shift Ref",
+        width: 140,
+        valueGetter: (params: any) =>
+          params.data?.quant_id ||
+          params.data?.quart_id ||
+          params.data?.worker_shuttle_detail?.quant_id ||
+          params.data?.custom_fields?.quant_id ||
+          params.data?.custom_fields?.quart_id ||
+          "-",
       },
       {
         field: "job_type",
@@ -289,18 +316,45 @@ export const createJobTableColumns = (options?: {
         field: "client_pick_up_time",
         headerName: "Client Pickup Time",
         width: 160,
+        valueGetter: (params: any) =>
+          params.data?.client_pick_up_time ||
+          params.data?.start_hour ||
+          params.data?.worker_shuttle_detail?.client_pick_up_time ||
+          params.data?.custom_fields?.start_hour ||
+          "-",
+      },
+      {
+        field: "client_id",
+        headerName: "Client ID",
+        width: 130,
+        valueGetter: (params: any) =>
+          params.data?.client_id ||
+          params.data?.worker_shuttle_detail?.client_id ||
+          params.data?.custom_fields?.client_id ||
+          params.data?.custom_fields?.candidate_id ||
+          "-",
       },
       {
         field: "client_name",
         headerName: "Client Name",
-        width: 150,
-        valueGetter: (params: any) => params.data?.client_name || params.data?.first_name || "-",
+        width: 160,
+        valueGetter: (params: any) =>
+          params.data?.client_name ||
+          params.data?.first_name ||
+          params.data?.custom_fields?.client_name ||
+          params.data?.custom_fields?.first_name ||
+          "-",
       },
       {
         field: "client_phone",
         headerName: "Client Phone",
         width: 150,
-        valueGetter: (params: any) => params.data?.client_phone || params.data?.phone_number || "-",
+        valueGetter: (params: any) =>
+          params.data?.client_phone ||
+          params.data?.phone_number ||
+          params.data?.custom_fields?.client_phone ||
+          params.data?.custom_fields?.phone_number ||
+          "-",
       },
       {
         headerName: "Team",
@@ -333,6 +387,14 @@ export const createJobTableColumns = (options?: {
         field: "notes",
         headerName: "Notes",
         width: 160,
+        valueGetter: (params: any) =>
+          params.data?.notes ||
+          params.data?.additional_notes ||
+          params.data?.worker_shuttle_detail?.notes ||
+          params.data?.custom_fields?.notes ||
+          params.data?.custom_fields?.additional_notes ||
+          params.data?.custom_fields?.dress_code ||
+          "-",
       },
     ];
 
