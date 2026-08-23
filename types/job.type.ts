@@ -27,6 +27,46 @@ export interface Location {
   lng: number;
 }
 
+export interface WorkerShuttleDetail {
+  quant_id?: string;
+  reach_before_minutes?: number;
+  client_id?: string;
+  client_phone?: string;
+  candidate_id?: string;
+  candidate_name?: string;
+  candidate_phone?: string;
+  notes?: string;
+  pick_up_address?: string;
+  pick_up_location?: Location;
+  drop_off_address?: string;
+  drop_off_location?: Location;
+  client_pick_up_time?: string;
+  [key: string]: any;
+}
+
+export interface PickupDeliveryDetail {
+  location?: Location;
+  address_formatted?: string;
+  time_window_start?: string;
+  time_window_end?: string;
+  service_duration?: number;
+  priority_level?: PriorityLevel;
+  first_name?: string;
+  last_name?: string;
+  client_name?: string;
+  client_email?: string;
+  email?: string;
+  business_name?: string;
+  phone_number?: string;
+  customer_preferences?: string;
+  additional_notes?: string;
+  recurrence_type?: RecurrenceType;
+  documents?: Record<string, unknown>[];
+  payment_status?: PaymentStatus;
+  pod_notes?: string;
+  [key: string]: any;
+}
+
 export interface Job {
   id: number;
   tenant_id: number;
@@ -61,16 +101,22 @@ export interface Job {
 
   // Worker Shuttle Fields
   quant_id?: string;
-  driver_reach_time?: string;
   reach_before_minutes?: number;
   client_id?: string;
   client_phone?: string;
+  candidate_id?: string;
+  candidate_name?: string;
+  candidate_phone?: string;
   notes?: string;
   pick_up_address?: string;
   pick_up_location?: Location;
   drop_off_address?: string;
   drop_off_location?: Location;
   client_pick_up_time?: string;
+
+  // Nested details from backend API
+  worker_shuttle_detail?: WorkerShuttleDetail;
+  pickup_delivery_detail?: PickupDeliveryDetail;
 
   route_name?: string;
   optimization_id?: number;
@@ -84,3 +130,4 @@ export interface FetchJobsParams {
   date?: string;
   job_ids?: string;
 }
+

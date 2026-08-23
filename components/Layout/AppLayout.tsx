@@ -3,6 +3,7 @@ import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import { Suspense, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { Spin } from "antd";
 import { useIndexStore } from "@/store/index.store";
 import { useJobsStore } from "@/store/jobs.store";
 import { useTeamStore } from "@/store/team.store";
@@ -22,13 +23,13 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   const hasInitialized = useRef(false);
 
   useDispatchSocket();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const { setUser, clearUser } = useIndexStore();
   const { initializeTeams } = useTeamStore();
   const { initializeRoutes } = useRouteStore();
   const { initializeDepots } = useDepotStore();
   const { initializeVehicles } = useVehicleStore();
-  const { setOnboarding, fetchOnboardingStatus, onboarding } = useOnboardingStore();
+  const { fetchOnboardingStatus, onboarding, hasFetchedStatus } = useOnboardingStore();
 
   // Register AG Grid modules on client side only to prevent hydration issues
   useEffect(() => {
@@ -36,8 +37,7 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
   }, []);
   useAutoSyncTab();
 
-  // Sync session with user store and onboarding store
-
+  // Sync session with user store and fetch onboarding status once on mount / page refresh
   const hasFetchedOnboardingRef = useRef(false);
 
   useEffect(() => {
@@ -47,23 +47,17 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         email: session.user.email,
         tenant_id: session.user.tenant_id.toString(),
       });
-      // Immediately populate store from sign-in response onboarding payload if available
-      if (session.user.onboarding && !onboarding) {
-        setOnboarding(session.user.onboarding);
-      }
+      
       // Fetch latest onboarding status from backend DB once on mount / page refresh
       if (!hasFetchedOnboardingRef.current) {
         hasFetchedOnboardingRef.current = true;
         fetchOnboardingStatus().catch(() => {});
       }
-    } else if (!session && !isSignInPage) {
+    } else if (!session && sessionStatus !== "loading" && !isSignInPage) {
       // Session expired or user logged out
       clearUser();
     }
-  }, [session, isSignInPage, setUser, clearUser, setOnboarding, fetchOnboardingStatus, onboarding]);
-
-
-
+  }, [session, sessionStatus, isSignInPage, setUser, clearUser, fetchOnboardingStatus]);
 
   // Initialize jobs and resources for authenticated pages
   const { initializeJobs } = useJobsStore();
@@ -75,18 +69,24 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
       initializeRoutes();
       initializeDepots();
       initializeVehicles();
-      if (!session?.user?.onboarding) {
-        fetchOnboardingStatus();
-      }
     }
-  }, [isSignInPage, initializeJobs, initializeTeams, fetchOnboardingStatus, session]);
-
+  }, [isSignInPage, initializeJobs, initializeTeams, initializeRoutes, initializeDepots, initializeVehicles]);
 
   if (isSignInPage) {
     return <>{children}</>;
   }
 
-  const currentOnboarding = onboarding || session?.user?.onboarding;
+  // Show loading spinner while session is loading or while initial onboarding status API call is in-flight
+  if (sessionStatus === "loading" || (session?.user && !hasFetchedStatus)) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen w-screen bg-gray-50">
+        <Spin size="large" />
+        <span className="mt-3 text-xs font-semibold text-gray-500 tracking-wider uppercase">
+          Loading...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -97,8 +97,8 @@ const AppLayout = ({ children }: { children: React.ReactNode }) => {
         </Suspense>
         <main className="flex-1 overflow-y-auto p-2 px-4 pb-4 relative">{children}</main>
       </div>
-      {/* Onboarding overlay — full-page, includes completion screen at step 5 */}
-      {currentOnboarding && !currentOnboarding.is_completed && <OnboardingModal />}
+      {/* Onboarding overlay — full-page, shown only after status API has loaded and if not completed */}
+      {onboarding && !onboarding.is_completed && <OnboardingModal />}
     </div>
   );
 };

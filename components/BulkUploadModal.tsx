@@ -28,7 +28,6 @@ const BulkUploadModal = ({ open, templateType, onClose, onCancel }: BulkUploadMo
   }, [open, templateType, setTemplateType]);
 
   const handleClose = () => {
-    reset();
     if (onClose) onClose();
     if (onCancel) onCancel();
   };
@@ -56,6 +55,7 @@ const BulkUploadModal = ({ open, templateType, onClose, onCancel }: BulkUploadMo
       title={<span className="text-xl font-semibold">Bulk Upload Jobs</span>}
       open={open}
       onCancel={handleClose}
+      afterClose={reset}
       maskClosable={false}
       footer={null}
       width={getModalWidth()}

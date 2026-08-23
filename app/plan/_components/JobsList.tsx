@@ -173,7 +173,7 @@ export default function JobsList() {
           "No address",
         duration: job.service_duration,
         timeWindowStart: job.time_window_start || job.client_pick_up_time,
-        timeWindowEnd: job.time_window_end || job.driver_reach_time,
+        timeWindowEnd: job.time_window_end || job.client_pick_up_time,
         jobType: job.job_type,
         jobData: job,
         sequenceNumber: index + 1,

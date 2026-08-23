@@ -76,16 +76,26 @@ const OnboardingListStep = <T extends { id: number }>({
         <div className="text-[11px] font-bold tracking-widest uppercase text-[#003220] mb-1.5">
           {kicker}
         </div>
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight leading-snug mb-4 flex items-center gap-2">
-          <span>{title}</span>
-          {subtitle && (
-            <Tooltip title={subtitle} placement="right" getPopupContainer={() => document.body}>
-              <Info size={16} className="text-gray-400 hover:text-[#003220] cursor-pointer shrink-0 transition-colors" />
-            </Tooltip>
+        <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight leading-snug flex items-center gap-2">
+            <span>{title}</span>
+            {subtitle && (
+              <Tooltip title={subtitle} placement="right" getPopupContainer={() => document.body}>
+                <Info size={16} className="text-gray-400 hover:text-[#003220] cursor-pointer shrink-0 transition-colors" />
+              </Tooltip>
+            )}
+          </h1>
+
+          {entityType && (
+            <button
+              className="px-3.5 py-1.5 bg-white text-gray-800 border border-gray-300 rounded-none text-xs font-medium hover:border-[#003220] hover:bg-[#ecfdf5] hover:text-[#003220] transition-all cursor-pointer flex items-center gap-2 shrink-0"
+              onClick={() => setBulkModalOpen(true)}
+            >
+              <FileSpreadsheet size={15} />
+              Import Excel / CSV
+            </button>
           )}
-        </h1>
-
-
+        </div>
 
         {/* Added items */}
         {items.length > 0 && (
@@ -139,9 +149,9 @@ const OnboardingListStep = <T extends { id: number }>({
           </div>
         ) : null}
 
-        {/* Buttons row — Add & Import side by side */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {!showForm && (
+        {/* Buttons row — Add button */}
+        {!showForm && (
+          <div className="flex items-center gap-2.5 flex-wrap">
             <button
               className="px-4 py-2 bg-white text-gray-800 border border-gray-300 rounded-none text-xs font-medium hover:border-[#003220] hover:bg-[#ecfdf5] hover:text-[#003220] transition-all cursor-pointer flex items-center gap-2"
               onClick={() => setShowForm(true)}
@@ -150,18 +160,8 @@ const OnboardingListStep = <T extends { id: number }>({
               <Plus size={15} />
               Add {items.length > 0 ? "another" : "a"} {itemLabelSingular}
             </button>
-          )}
-
-          {entityType && (
-            <button
-              className="px-4 py-2 bg-white text-gray-800 border border-gray-300 rounded-none text-xs font-medium hover:border-[#003220] hover:bg-[#ecfdf5] hover:text-[#003220] transition-all cursor-pointer flex items-center gap-2"
-              onClick={() => setBulkModalOpen(true)}
-            >
-              <FileSpreadsheet size={15} />
-              Import Excel / CSV
-            </button>
-          )}
-        </div>
+          </div>
+        )}
 
 
 

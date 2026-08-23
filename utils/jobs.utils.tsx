@@ -87,6 +87,7 @@ export const STANDARD_JOB_FIELD_KEYS = new Set([
   "payment_status",
   "client_id",
   "candidate_id",
+  "candidate_name",
   "quant_id",
   "quart_id",
   "client_name",
@@ -101,7 +102,6 @@ export const STANDARD_JOB_FIELD_KEYS = new Set([
   "return_dropoff_point",
   "candidate_address",
   "client_address",
-  "driver_reach_time",
   "reach_before_minutes",
   "pick_up_address",
   "drop_off_address",
@@ -297,42 +297,77 @@ export const createJobTableColumns = (options?: {
         width: 250,
       },
       {
-        field: "driver_reach_time",
-        headerName: "Driver Reach Time",
-        width: 160,
-      },
-      {
         field: "reach_before_minutes",
         headerName: "Reach Window",
         width: 150,
         valueGetter: (params: any) => {
           const mins = params.data?.reach_before_minutes;
-          const reach = params.data?.driver_reach_time;
-          if (mins === undefined || mins === null || !reach) return "-";
-          return `${reach} (${mins > 0 ? "+" : ""}${mins}m)`;
+          if (mins === undefined || mins === null) return "-";
+          return `${mins > 0 ? "+" : ""}${mins}m`;
         },
+      },
+      {
+        field: "candidate_id",
+        headerName: "Candidate ID",
+        width: 130,
+        valueGetter: (params: any) =>
+          params.data?.candidate_id ||
+          params.data?.worker_shuttle_detail?.candidate_id ||
+          params.data?.custom_fields?.candidate_id ||
+          params.data?.client_id ||
+          "-",
+      },
+      {
+        field: "candidate_name",
+        headerName: "Candidate Name",
+        width: 160,
+        valueGetter: (params: any) =>
+          params.data?.candidate_name ||
+          params.data?.worker_shuttle_detail?.candidate_name ||
+          params.data?.custom_fields?.candidate_name ||
+          "-",
+      },
+      {
+        field: "candidate_phone",
+        headerName: "Candidate Phone",
+        width: 150,
+        valueGetter: (params: any) =>
+          params.data?.candidate_phone ||
+          params.data?.worker_shuttle_detail?.candidate_phone ||
+          params.data?.custom_fields?.candidate_phone ||
+          "-",
       },
       {
         field: "client_pick_up_time",
         headerName: "Client Pickup Time",
         width: 160,
-        valueGetter: (params: any) =>
-          params.data?.client_pick_up_time ||
-          params.data?.start_hour ||
-          params.data?.worker_shuttle_detail?.client_pick_up_time ||
-          params.data?.custom_fields?.start_hour ||
-          "-",
-      },
-      {
-        field: "client_id",
-        headerName: "Client ID",
-        width: 130,
-        valueGetter: (params: any) =>
-          params.data?.client_id ||
-          params.data?.worker_shuttle_detail?.client_id ||
-          params.data?.custom_fields?.client_id ||
-          params.data?.custom_fields?.candidate_id ||
-          "-",
+        valueGetter: (params: any) => {
+          const isReturn = params.data?.job_type === "return_only";
+          if (isReturn) {
+            return (
+              params.data?.end_hour ||
+              params.data?.worker_shuttle_detail?.end_hour ||
+              params.data?.custom_fields?.end_hour ||
+              params.data?.client_pick_up_time ||
+              params.data?.worker_shuttle_detail?.client_pick_up_time ||
+              params.data?.start_hour ||
+              params.data?.worker_shuttle_detail?.start_hour ||
+              params.data?.custom_fields?.start_hour ||
+              "-"
+            );
+          }
+          return (
+            params.data?.client_pick_up_time ||
+            params.data?.worker_shuttle_detail?.client_pick_up_time ||
+            params.data?.start_hour ||
+            params.data?.worker_shuttle_detail?.start_hour ||
+            params.data?.custom_fields?.start_hour ||
+            params.data?.end_hour ||
+            params.data?.worker_shuttle_detail?.end_hour ||
+            params.data?.custom_fields?.end_hour ||
+            "-"
+          );
+        },
       },
       {
         field: "client_name",
@@ -340,20 +375,9 @@ export const createJobTableColumns = (options?: {
         width: 160,
         valueGetter: (params: any) =>
           params.data?.client_name ||
-          params.data?.first_name ||
+          params.data?.worker_shuttle_detail?.client_name ||
           params.data?.custom_fields?.client_name ||
-          params.data?.custom_fields?.first_name ||
-          "-",
-      },
-      {
-        field: "client_phone",
-        headerName: "Client Phone",
-        width: 150,
-        valueGetter: (params: any) =>
-          params.data?.client_phone ||
-          params.data?.phone_number ||
-          params.data?.custom_fields?.client_phone ||
-          params.data?.custom_fields?.phone_number ||
+          params.data?.first_name ||
           "-",
       },
       {
