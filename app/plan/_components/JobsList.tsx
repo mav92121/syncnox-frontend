@@ -173,7 +173,7 @@ export default function JobsList() {
           "No address",
         duration: job.service_duration,
         timeWindowStart: job.time_window_start || job.client_pick_up_time,
-        timeWindowEnd: job.time_window_end || job.driver_reach_time,
+        timeWindowEnd: job.time_window_end || job.client_pick_up_time,
         jobType: job.job_type,
         jobData: job,
         sequenceNumber: index + 1,
@@ -192,11 +192,17 @@ export default function JobsList() {
     field: `custom_fields.${f.field_key}` as any,
     headerName: f.label,
     valueGetter: (params) => {
+      const topVal = params.data?.[f.field_key as keyof Job];
+      const shuttleVal = params.data?.worker_shuttle_detail?.[f.field_key as keyof NonNullable<typeof params.data.worker_shuttle_detail>];
+      const pickupVal = params.data?.pickup_delivery_detail?.[f.field_key as keyof NonNullable<typeof params.data.pickup_delivery_detail>];
       const customData = params.data?.custom_fields;
-      if (!customData || customData[f.field_key] === undefined || customData[f.field_key] === null) {
+      const customVal = customData?.[f.field_key];
+
+      const val = topVal ?? shuttleVal ?? pickupVal ?? customVal;
+      if (val === undefined || val === null || val === "") {
         return "-";
       }
-      return String(customData[f.field_key]);
+      return String(val);
     },
     width: 150,
   }));

@@ -48,7 +48,6 @@ export default function BulkImportModal({
   };
 
   const handleClose = () => {
-    handleReset();
     onClose();
   };
 
@@ -80,6 +79,7 @@ export default function BulkImportModal({
     <Modal
       open={open}
       onCancel={handleClose}
+      afterClose={handleReset}
       maskClosable={false}
       footer={null}
       zIndex={zIndex}

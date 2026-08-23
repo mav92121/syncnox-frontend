@@ -245,7 +245,9 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
     const fieldLabels: Record<string, string> = {
       first_name: "First Name",
       last_name: "Last Name",
+      client_name: "Client Name",
       phone_number: "Phone",
+      client_phone: "Client Phone",
       email: "Email",
       business_name: "Business",
       time_window_start: "Time Start",
@@ -256,6 +258,18 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
       priority_level: "Priority",
       job_type: "Job Type",
       scheduled_date: "Date",
+      pickup_type: "Pickup Type",
+      quart_id: "Quart / Shift Ref",
+      quant_id: "Quant ID",
+      client_id: "Client ID",
+      candidate_id: "Candidate ID",
+      start_hour: "Shift Start Time",
+      end_hour: "Shift End Time",
+      dress_code: "Dress Code",
+      go_pickup_point: "GO Pickup Point",
+      return_dropoff_point: "RETURN Dropoff Point",
+      candidate_address: "Candidate Address",
+      client_address: "Client Address",
     };
 
     const uploadCols = useBulkUploadStore.getState().uploadResponse?.columns || [];
@@ -272,15 +286,26 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
             .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
             .join(" ");
 
-        columns.push({
+        const colDef: ColDef = {
           headerName: headerText,
           field: identifier,
-          width: 130,
+          width: 150,
           editable: true,
-          valueGetter: (params) =>
-            params.data?.[identifier] ??
-            params.data?.custom_fields?.[identifier] ??
-            "",
+          valueGetter: (params) => {
+            const d = params.data;
+            if (!d) return "";
+            let val = d[identifier] ?? d.custom_fields?.[identifier];
+            if ((val === undefined || val === null || val === "") && identifier === "client_name") {
+              val = d.first_name ?? d.custom_fields?.first_name;
+            }
+            if ((val === undefined || val === null || val === "") && identifier === "first_name") {
+              val = d.client_name ?? d.custom_fields?.client_name;
+            }
+            if ((val === undefined || val === null || val === "") && (identifier === "client_phone" || identifier === "phone_number")) {
+              val = d.client_phone ?? d.phone_number ?? d.custom_fields?.client_phone ?? d.custom_fields?.phone_number;
+            }
+            return val ?? "";
+          },
           valueSetter: (params) => {
             if (params.data) {
               params.data[identifier] = params.newValue;
@@ -292,7 +317,26 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
             }
             return false;
           },
-        });
+        };
+
+        if (identifier === "pickup_type") {
+          colDef.cellEditor = "agSelectCellEditor";
+          colDef.cellEditorParams = {
+            values: ["Round trip", "One-way (go)", "One-way (return)"],
+          };
+        } else if (identifier === "job_type") {
+          colDef.cellEditor = "agSelectCellEditor";
+          colDef.cellEditorParams = {
+            values: ["one_way", "return_only", "round_trip", "delivery", "pickup", "service"],
+          };
+        } else if (identifier === "priority_level") {
+          colDef.cellEditor = "agSelectCellEditor";
+          colDef.cellEditorParams = {
+            values: ["low", "medium", "high", "urgent"],
+          };
+        }
+
+        columns.push(colDef);
       }
     });
 
@@ -360,12 +404,13 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
           email: "Email",
           priority_level: "Priority Level",
           job_type: "Job Type",
+          pickup_type: "Pickup Type",
         };
         
         const errorKeyword = fieldToErrorKeyword[field];
         if (errorKeyword) {
           updatedRow.validation_errors = updatedRow.validation_errors.filter(
-            (err) => !err.startsWith(errorKeyword)
+            (err) => !err.startsWith(errorKeyword) && !err.includes("Pickup Type")
           );
         }
       }

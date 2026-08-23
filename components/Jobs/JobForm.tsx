@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+dayjs.extend(customParseFormat);
 import {
   Form,
   Input,
@@ -36,6 +38,26 @@ import { useTeamStore } from "@/store/team.store";
 import { CustomFieldDefinition } from "@/apis/custom-fields.api";
 import { DynamicCustomFieldsForm } from "@/components/DynamicCustomFieldsForm";
 import { useFieldConfig } from "@/hooks/useFieldConfig";
+
+const parseTimeToDayjs = (timeVal: any) => {
+  if (!timeVal) return undefined;
+  if (dayjs.isDayjs(timeVal)) return timeVal;
+  if (typeof timeVal === "string") {
+    const parsed = dayjs(timeVal, ["HH:mm:ss", "HH:mm", "HH:mm A"]);
+    if (parsed.isValid()) return parsed;
+    const fallback = dayjs(`2000-01-01 ${timeVal}`);
+    if (fallback.isValid()) return fallback;
+  }
+  const d = dayjs(timeVal);
+  return d.isValid() ? d : undefined;
+};
+
+const parseDateToDayjs = (dateVal: any) => {
+  if (!dateVal) return undefined;
+  if (dayjs.isDayjs(dateVal)) return dateVal;
+  const d = dayjs(dateVal);
+  return d.isValid() ? d : undefined;
+};
 
 interface JobFormProps {
   initialData?: Job | null;
@@ -107,7 +129,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
       );
     }
 
-    // 2. Transform time windows: dayjs object -> local time string (HH:mm:ss)
+    // 2. Transform time windows: dayjs object -> local time string (HH:mm)
     if (values.time_window_start) {
       transformedValues.time_window_start = dayjs(
         values.time_window_start,
@@ -117,6 +139,11 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
       transformedValues.time_window_end = dayjs(values.time_window_end).format(
         "HH:mm",
       );
+    }
+    if (values.client_pick_up_time) {
+      transformedValues.client_pick_up_time = dayjs(
+        values.client_pick_up_time,
+      ).format("HH:mm");
     }
 
     // 3. Transform phone: object {countryCode, number} -> string phone_number
@@ -155,25 +182,38 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   // Prefill form when initialData changes (for editing)
   useEffect(() => {
     if (initialData) {
-      const formValues: any = { ...initialData };
+      const detailObj =
+        initialData.worker_shuttle_detail ||
+        initialData.pickup_delivery_detail ||
+        {};
+
+      const formValues: any = {
+        ...detailObj,
+        ...initialData,
+      };
+
       if (initialData.custom_fields) {
         setCustomFieldValues(initialData.custom_fields);
       }
 
-      // 1. Transform scheduled_date: string (YYYY-MM-DD) -> dayjs object
-      if (formValues.scheduled_date) {
-        formValues.scheduled_date = dayjs(formValues.scheduled_date);
+      if (initialData.template_type) {
+        setActiveTemplate(initialData.template_type);
       }
 
-      // 2. Transform time windows: string (HH:mm) -> dayjs object
+      // 1. Transform scheduled_date: string (YYYY-MM-DD) -> dayjs object
+      if (formValues.scheduled_date) {
+        formValues.scheduled_date = parseDateToDayjs(formValues.scheduled_date);
+      }
+
+      // 2. Transform time windows & pickup time: string (HH:mm) -> dayjs object
       if (formValues.time_window_start) {
-        formValues.time_window_start = dayjs(
-          formValues.time_window_start,
-          "HH:mm",
-        );
+        formValues.time_window_start = parseTimeToDayjs(formValues.time_window_start);
       }
       if (formValues.time_window_end) {
-        formValues.time_window_end = dayjs(formValues.time_window_end, "HH:mm");
+        formValues.time_window_end = parseTimeToDayjs(formValues.time_window_end);
+      }
+      if (formValues.client_pick_up_time) {
+        formValues.client_pick_up_time = parseTimeToDayjs(formValues.client_pick_up_time);
       }
 
       // 3. Transform phone_number: string "+1-298372138" -> object {countryCode, number}
@@ -192,6 +232,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
       form.setFieldsValue(formValues);
     }
   }, [initialData]);
+
 
   return (
     <Flex vertical style={{ height: "100%", overflow: "hidden" }}>
@@ -220,7 +261,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
             payment_status: "paid",
             job_type: activeTemplate === "worker_shuttle" ? "one_way" : "pickup",
             service_duration: 5,
-            reach_before_minutes: -15,
+            reach_before_minutes: activeTemplate === "worker_shuttle" ? 10 : undefined,
           }}
         >
           {activeTemplate === "worker_shuttle" ? (
@@ -263,6 +304,13 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
                             { value: "return_only", label: "Return Only (Drop Off)" },
                             { value: "round_trip", label: "Round Trip (Creates 2 Jobs)" },
                           ]}
+                          onChange={(val) => {
+                            if (val === "return_only") {
+                              form.setFieldsValue({ reach_before_minutes: -15 });
+                            } else if (val === "one_way" || val === "round_trip") {
+                              form.setFieldsValue({ reach_before_minutes: 10 });
+                            }
+                          }}
                         />
                       </Form.Item>
                     </Col>
@@ -301,42 +349,24 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
                 </Col>
               </Row>
 
-              {/* Driver Reach Time & Reach Window */}
-              {(getFieldConfig("driver_reach_time").isVisible || getFieldConfig("reach_before_minutes").isVisible) && (
+              {/* Reach Window */}
+              {getFieldConfig("reach_before_minutes").isVisible && (
                 <Row gutter={16}>
-                  {getFieldConfig("driver_reach_time").isVisible && (
-                    <Col span={getFieldConfig("reach_before_minutes").isVisible ? 12 : 24}>
-                      <Form.Item
-                        label={getFieldConfig("driver_reach_time").label}
-                        name="driver_reach_time"
-                        required={getFieldConfig("driver_reach_time").isRequired}
-                        rules={
-                          getFieldConfig("driver_reach_time").isRequired
-                            ? [{ required: true, message: `${getFieldConfig("driver_reach_time").label} is required` }]
-                            : []
-                        }
-                      >
-                        <TimePicker format="HH:mm" className="w-full" needConfirm={false} />
-                      </Form.Item>
-                    </Col>
-                  )}
-                  {getFieldConfig("reach_before_minutes").isVisible && (
-                    <Col span={getFieldConfig("driver_reach_time").isVisible ? 12 : 24}>
-                      <Form.Item
-                        label={getFieldConfig("reach_before_minutes").label}
-                        name="reach_before_minutes"
-                        required={getFieldConfig("reach_before_minutes").isRequired}
-                        rules={
-                          getFieldConfig("reach_before_minutes").isRequired
-                            ? [{ required: true, message: `${getFieldConfig("reach_before_minutes").label} is required` }]
-                            : []
-                        }
-                        tooltip="Negative value allows arrival buffer (e.g. -15 mins for 6:00pm allows 6:00pm - 6:15pm)"
-                      >
-                        <Input type="number" placeholder="e.g. -15" />
-                      </Form.Item>
-                    </Col>
-                  )}
+                  <Col span={24}>
+                    <Form.Item
+                      label={getFieldConfig("reach_before_minutes").label}
+                      name="reach_before_minutes"
+                      required={getFieldConfig("reach_before_minutes").isRequired}
+                      rules={
+                        getFieldConfig("reach_before_minutes").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("reach_before_minutes").label} is required` }]
+                          : []
+                      }
+                      tooltip="Buffer in minutes before or after target time (e.g. 10 mins for one-way go, -15 mins for return only)"
+                    >
+                      <Input type="number" placeholder="e.g. 10 or -15" />
+                    </Form.Item>
+                  </Col>
                 </Row>
               )}
 

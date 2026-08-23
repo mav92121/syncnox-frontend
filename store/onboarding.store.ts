@@ -10,6 +10,8 @@ import { Onboarding, BasicInfoPayload } from "@/types/onboarding.type";
 interface OnboardingStore {
   onboarding: Onboarding | null;
   isLoading: boolean;
+  hasFetchedStatus: boolean;
+  isFetchingStatus: boolean;
   error: string | null;
   showCompletion: boolean;
 
@@ -26,6 +28,8 @@ interface OnboardingStore {
 export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
   onboarding: null,
   isLoading: false,
+  hasFetchedStatus: false,
+  isFetchingStatus: false,
   error: null,
   showCompletion: false,
 
@@ -34,17 +38,17 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
 
 
   fetchOnboardingStatus: async () => {
-    set({ isLoading: true, error: null });
+    set({ isFetchingStatus: true, error: null });
     try {
       const data = await getOnboardingStatus();
-      set({ onboarding: data, isLoading: false });
+      set({ onboarding: data, isFetchingStatus: false, hasFetchedStatus: true });
       return data;
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.detail ||
         error.message ||
         "Failed to fetch onboarding status";
-      set({ error: errorMessage, isLoading: false });
+      set({ error: errorMessage, isFetchingStatus: false, hasFetchedStatus: true });
       throw error;
     }
   },
@@ -97,6 +101,6 @@ export const useOnboardingStore = create<OnboardingStore>((set, get) => ({
   },
 
   clearOnboarding: () => {
-    set({ onboarding: null, error: null, isLoading: false });
+    set({ onboarding: null, error: null, isLoading: false, hasFetchedStatus: false, isFetchingStatus: false });
   },
 }));
