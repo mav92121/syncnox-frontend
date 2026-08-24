@@ -142,6 +142,13 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
 
   // Column definitions with enhanced styling
   const columnDefs: ColDef[] = useMemo(() => {
+    const activeTemplate =
+      useBulkUploadStore.getState().templateType ||
+      (typeof window !== "undefined" ? localStorage.getItem("activeJobTemplate") : null) ||
+      "worker_shuttle";
+
+    const isWorkerShuttle = activeTemplate === "worker_shuttle";
+
     const columns: ColDef[] = [
       {
         headerName: "",
@@ -196,50 +203,55 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
           }
         },
       },
-      {
-        headerName: "Address",
-        field: "address",
-        flex: 2,
-        minWidth: 200,
-        pinned: "left",
-        editable: true,
-        cellEditor: AddressCellEditor,
-        cellEditorPopup: true,
-      },
-      {
-        headerName: "Formatted Address",
-        field: "formattedAddress",
-        flex: 2,
-        minWidth: 200,
-        editable: true,
-        cellEditor: AddressCellEditor,
-        cellEditorPopup: true,
-      },
-      {
-        headerName: "Lat",
-        field: "lat",
-        width: 100,
-        editable: true,
-        valueParser: (params) => {
-          const val = parseFloat(params.newValue);
-          return isNaN(val) ? null : val;
-        },
-        valueFormatter: (params) =>
-          params.value != null ? Number(params.value).toFixed(5) : "-",
-      },
-      {
-        headerName: "Lng",
-        field: "lng",
-        width: 100,
-        editable: true,
-        valueParser: (params) => {
-          const val = parseFloat(params.newValue);
-          return isNaN(val) ? null : val;
-        },
-        valueFormatter: (params) =>
-          params.value != null ? Number(params.value).toFixed(5) : "-",
-      },
     ];
+
+    if (!isWorkerShuttle) {
+      columns.push(
+        {
+          headerName: "Address",
+          field: "address",
+          flex: 2,
+          minWidth: 200,
+          pinned: "left",
+          editable: true,
+          cellEditor: AddressCellEditor,
+          cellEditorPopup: true,
+        },
+        {
+          headerName: "Formatted Address",
+          field: "formattedAddress",
+          flex: 2,
+          minWidth: 200,
+          editable: true,
+          cellEditor: AddressCellEditor,
+          cellEditorPopup: true,
+        },
+        {
+          headerName: "Lat",
+          field: "lat",
+          width: 100,
+          editable: true,
+          valueParser: (params) => {
+            const val = parseFloat(params.newValue);
+            return isNaN(val) ? null : val;
+          },
+          valueFormatter: (params) =>
+            params.value != null ? Number(params.value).toFixed(5) : "-",
+        },
+        {
+          headerName: "Lng",
+          field: "lng",
+          width: 100,
+          editable: true,
+          valueParser: (params) => {
+            const val = parseFloat(params.newValue);
+            return isNaN(val) ? null : val;
+          },
+          valueFormatter: (params) =>
+            params.value != null ? Number(params.value).toFixed(5) : "-",
+        }
+      );
+    }
 
     // Field labels for dynamic columns
     const fieldLabels: Record<string, string> = {
@@ -277,6 +289,15 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
     // Add dynamic columns for mapped fields
     Object.keys(columnMapping).forEach((identifier) => {
       if (identifier !== "address_formatted" && columnMapping[identifier]) {
+        // Skip redundant first_name column if client_name is mapped or template is worker_shuttle
+        if (identifier === "first_name" && (isWorkerShuttle || columnMapping["client_name"])) {
+          return;
+        }
+        // Skip duplicate phone_number column if client_phone is mapped to same Excel column
+        if (identifier === "phone_number" && columnMapping["client_phone"] && columnMapping["phone_number"] === columnMapping["client_phone"]) {
+          return;
+        }
+
         const colMeta = uploadCols.find((c) => c.identifier === identifier);
         const headerText =
           fieldLabels[identifier] ||

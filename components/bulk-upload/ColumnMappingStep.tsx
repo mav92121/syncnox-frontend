@@ -226,6 +226,7 @@ const ColumnMappingStep = ({ onNext }: ColumnMappingStepProps) => {
       {/* Sticky Footer */}
       <div className="flex justify-between items-center pt-4 border-t bg-white shrink-0">
         <Checkbox
+          style={{visibility: 'hidden'}}
           checked={saveAsDefault}
           onChange={(e) => setSaveAsDefault(e.target.checked)}
         >

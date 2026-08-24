@@ -148,28 +148,26 @@ export default function BaseTable<TData = any>({
     });
   }, [columnDefs]);
 
-  // Ensure "select all" only selects current page when pagination is enabled
+  // Row selection configuration: default selectAll to "all" so header checkbox selects all pages
   const processedRowSelection = useMemo(() => {
     if (!rowSelection) return undefined;
 
     if (rowSelection === "multiple") {
       return {
         mode: "multiRow",
-        ...(pagination ? { selectAll: "currentPage" } : {}),
+        selectAll: "all",
       };
     }
 
     if (typeof rowSelection === "object" && rowSelection.mode === "multiRow") {
       return {
+        selectAll: "all",
         ...rowSelection,
-        ...(pagination && !rowSelection.selectAll
-          ? { selectAll: "currentPage" }
-          : {}),
       };
     }
 
     return rowSelection;
-  }, [rowSelection, pagination]);
+  }, [rowSelection]);
 
   const defaultGetRowId = useMemo(() => {
     if (getRowId) return getRowId;
