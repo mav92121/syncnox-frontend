@@ -62,7 +62,7 @@ const CreateRouteModal = ({
   const { depots, createDepot, isSaving: isDepotSaving } = useDepotStore();
   const { teams } = useTeamStore();
   const { routes, initializeRoutes, fetchRoutes, setSelectedStatus } = useRouteStore();
-  const { refreshDraftJobs } = useJobsStore();
+  const { jobs, draftJobs, allJobs, allDraftJobs, refreshDraftJobs, selectedDate } = useJobsStore();
   const {
     startOptimization,
     currentOptimization,
@@ -77,6 +77,29 @@ const CreateRouteModal = ({
   const [showTeamModal, setShowTeamModal] = useState(false);
 
   useOptimizationCleanup();
+
+  // Detect if selected jobs are Worker Shuttle
+  const allAvailableJobs = [
+    ...(allJobs || []),
+    ...(jobs || []),
+    ...(draftJobs || []),
+    ...(allDraftJobs || []),
+  ];
+  const selectedJobs = allAvailableJobs.filter((j) => selectedJobIds.includes(j.id));
+  const isWorkerShuttle =
+    selectedJobs.length > 0
+      ? selectedJobs.some(
+          (j) =>
+            j.template_type === "worker_shuttle" ||
+            Boolean(j.worker_shuttle_detail) ||
+            ["one_way", "return_only", "round_trip"].includes(j.job_type)
+        )
+      : allAvailableJobs.some(
+          (j) =>
+            j.template_type === "worker_shuttle" ||
+            Boolean(j.worker_shuttle_detail) ||
+            ["one_way", "return_only", "round_trip"].includes(j.job_type)
+        );
 
   // Prefill route name when modal opens: "route - {total_routes_for_that_tenant + 1}"
   useEffect(() => {
@@ -149,9 +172,14 @@ const CreateRouteModal = ({
   const handleFinish = async (values: any) => {
     setIsSubmitting(true);
 
+    const firstJobDate =
+      selectedJobs.length > 0 && selectedJobs[0]?.scheduled_date
+        ? dayjs(selectedJobs[0].scheduled_date).format("YYYY-MM-DD")
+        : null;
+
     const scheduledDate = values.scheduled_date
       ? dayjs(values.scheduled_date).format("YYYY-MM-DD")
-      : dayjs().format("YYYY-MM-DD");
+      : (firstJobDate || (selectedDate ? dayjs(selectedDate).format("YYYY-MM-DD") : dayjs().format("YYYY-MM-DD")));
 
     try {
       // If coming from the All tab, update all selected jobs' dates first
@@ -159,9 +187,11 @@ const CreateRouteModal = ({
         await bulkUpdateJobDate(selectedJobIds, scheduledDate);
       }
 
+      const depotId = isWorkerShuttle ? undefined : (values.depot_id || (depots && depots.length > 0 ? depots[0].id : undefined));
+
       await startOptimization({
         route_name: values.route_name,
-        depot_id: values.depot_id,
+        depot_id: depotId,
         job_ids: selectedJobIds,
         team_member_ids: values.team_ids,
         scheduled_date: scheduledDate,
@@ -338,7 +368,7 @@ const CreateRouteModal = ({
 
             {/* 2nd Row: Optimization Logic & Depot */}
             <Row gutter={16}>
-              <Col span={12}>
+              <Col span={isWorkerShuttle ? 24 : 12}>
                 <Form.Item
                   name="optimization_logic"
                   label="Optimization Logic"
@@ -359,49 +389,73 @@ const CreateRouteModal = ({
                   </Select>
                 </Form.Item>
               </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="depot_id"
-                  label="Select Depot"
-                  rules={[{ required: true, message: "Please select a depot" }]}
-                >
-                  <Select
-                    placeholder="Select depot"
-                    dropdownRender={(menu) => (
-                      <>
-                        {menu}
-                        <Divider style={{ margin: "8px 0" }} />
-                        <Space style={{ padding: "0 8px 8px" }}>
-                          <Button
-                            size="small"
-                            type="text"
-                            icon={<PlusOutlined />}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setShowDepotModal(true);
-                            }}
-                          >
-                            Add New Depot
-                          </Button>
-                        </Space>
-                      </>
-                    )}
+              {!isWorkerShuttle && (
+                <Col span={12}>
+                  <Form.Item
+                    name="depot_id"
+                    label="Select Depot"
+                    rules={[{ required: true, message: "Please select a depot" }]}
                   >
-                    {depots.map((depot) => (
-                      <Select.Option key={depot.id} value={depot.id}>
-                        {depot.name}
-                      </Select.Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
+                    <Select
+                      placeholder="Select depot"
+                      dropdownRender={(menu) => (
+                        <>
+                          {menu}
+                          <Divider style={{ margin: "8px 0" }} />
+                          <Space style={{ padding: "0 8px 8px" }}>
+                            <Button
+                              size="small"
+                              type="text"
+                              icon={<PlusOutlined />}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowDepotModal(true);
+                              }}
+                            >
+                              Add New Depot
+                            </Button>
+                          </Space>
+                        </>
+                      )}
+                    >
+                      {depots.map((depot) => (
+                        <Select.Option key={depot.id} value={depot.id}>
+                          {depot.name}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+              )}
             </Row>
 
             {/* 3rd Row: Assign Team */}
             <Form.Item
               name="team_ids"
-              label="Assign Team"
+              label={
+                <div className="flex justify-between items-center w-full">
+                  <span>Assign Team</span>
+                  <Button
+                    type="link"
+                    size="small"
+                    className="p-0 text-xs text-[#003220] font-semibold hover:underline ml-2"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      const currentSelected = form.getFieldValue("team_ids") || [];
+                      if (currentSelected.length === teams.length && teams.length > 0) {
+                        form.setFieldValue("team_ids", []);
+                      } else {
+                        form.setFieldValue("team_ids", teams.map((t) => t.id));
+                      }
+                    }}
+                  >
+                    {(form.getFieldValue("team_ids") || []).length === teams.length && teams.length > 0
+                      ? "Deselect All"
+                      : `Select All (${teams.length})`}
+                  </Button>
+                </div>
+              }
               rules={[
                 {
                   required: true,
@@ -415,6 +469,34 @@ const CreateRouteModal = ({
                 optionFilterProp="children"
                 dropdownRender={(menu) => (
                   <>
+                    <div className="px-3 py-2 border-b border-gray-100 flex justify-between items-center bg-gray-50/90">
+                      <Button
+                        size="small"
+                        type="link"
+                        className="p-0 text-xs font-semibold text-[#003220]"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          const allTeamIds = teams.map((t) => t.id);
+                          form.setFieldValue("team_ids", allTeamIds);
+                        }}
+                      >
+                        ✓ Select All Team Members ({teams.length})
+                      </Button>
+
+                      <Button
+                        size="small"
+                        type="link"
+                        className="p-0 text-xs text-gray-500 hover:text-red-600"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          form.setFieldValue("team_ids", []);
+                        }}
+                      >
+                        Clear Selection
+                      </Button>
+                    </div>
                     {menu}
                     <Divider style={{ margin: "8px 0" }} />
                     <Space style={{ padding: "0 8px 8px" }}>

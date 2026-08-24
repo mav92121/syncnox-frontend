@@ -13,7 +13,7 @@ export const fetchRoutes = async (status?: string, date?: string): Promise<AllRo
 
 export interface CreateOptimizationRequestPayload {
   route_name: string;
-  depot_id: number;
+  depot_id?: number;
   job_ids: number[];
   team_member_ids: number[];
   scheduled_date: string; // YYYY-MM-DD format

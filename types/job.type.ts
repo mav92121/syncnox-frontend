@@ -41,6 +41,7 @@ export interface WorkerShuttleDetail {
   drop_off_address?: string;
   drop_off_location?: Location;
   client_pick_up_time?: string;
+  candidate_pickup_eta?: string;
   [key: string]: any;
 }
 
@@ -113,6 +114,7 @@ export interface Job {
   drop_off_address?: string;
   drop_off_location?: Location;
   client_pick_up_time?: string;
+  candidate_pickup_eta?: string;
 
   // Nested details from backend API
   worker_shuttle_detail?: WorkerShuttleDetail;
