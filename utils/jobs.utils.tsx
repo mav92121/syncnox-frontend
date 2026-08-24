@@ -40,6 +40,41 @@ export const priorityStyleMap: Record<string, string> = {
   default: "bg-gray-100 text-gray-700 border border-gray-200",
 };
 
+export const formatJobTypeLabel = (rawType?: string): string => {
+  if (!rawType) return "-";
+  const val = String(rawType).toLowerCase().trim().replace(/-/g, "_");
+  if (val === "one_way" || val === "one way") return "One Way";
+  if (val === "return_only" || val === "return only" || val === "return") return "Return Only";
+  if (val === "round_trip" || val === "round trip") return "Round Trip";
+  return val.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+};
+
+export const jobTypeStyleMap: Record<string, string> = {
+  one_way: "bg-sky-50 text-sky-700 border border-sky-200",
+  return_only: "bg-amber-50 text-amber-800 border border-amber-200",
+  round_trip: "bg-teal-50 text-teal-700 border border-teal-200",
+  delivery: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+  pickup: "bg-indigo-50 text-indigo-700 border border-indigo-200",
+  service: "bg-purple-50 text-purple-700 border border-purple-200",
+  default: "bg-gray-50 text-gray-700 border border-gray-200",
+};
+
+export const JobTypeBadge = ({ value }: { value?: string }) => {
+  if (!value) return <span className="text-gray-400">-</span>;
+
+  const rawKey = String(value).toLowerCase().trim().replace(/-/g, "_");
+  const label = formatJobTypeLabel(value);
+  const style = jobTypeStyleMap[rawKey] || jobTypeStyleMap.default;
+
+  return (
+    <div className="flex text-center items-center justify-start h-full w-full">
+      <span className={`${style} px-2.5 py-0.5 text-xs font-semibold min-w-[85px] inline-block text-center`}>
+        {label}
+      </span>
+    </div>
+  );
+};
+
 export const STANDARD_JOB_FIELD_KEYS = new Set([
   "id",
   "scheduled_date",
@@ -279,12 +314,8 @@ export const createJobTableColumns = (options?: {
       {
         field: "job_type",
         headerName: "Job Type",
-        width: 130,
-        cellRenderer: (params: any) => (
-          <span className="capitalize font-medium text-gray-800">
-            {String(params.value || "-").replace("_", " ")}
-          </span>
-        ),
+        width: 140,
+        cellRenderer: (params: any) => <JobTypeBadge value={params.value} />,
       },
       {
         field: "pick_up_address",
