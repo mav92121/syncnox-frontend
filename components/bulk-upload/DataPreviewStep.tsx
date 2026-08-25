@@ -15,7 +15,7 @@ import {
 import { useBulkUploadStore } from "@/store/bulkUpload.store";
 import type { JobCreate } from "@/types/bulk-upload.type";
 import { useJobsStore } from "@/store/jobs.store";
-import { importBulkJobs } from "@/apis/bulk-upload.api";
+import { importBulkJobs, resolveBulkRow } from "@/apis/bulk-upload.api";
 import type { ColDef, RowClassParams, CellValueChangedEvent } from "ag-grid-community";
 import AddressCellEditor from "./AddressCellEditor";
 import {
@@ -27,6 +27,36 @@ interface DataPreviewStepProps {
   onFinish: () => void;
   onBack?: () => void;
 }
+
+// Row keys holding coordinates resolved by the backend rather than user input.
+// Mirrors BulkUploadService.RESOLVED_LOCATION_FIELDS in
+// syncnox-be/app/services/bulk_upload.py — keep the two in sync.
+const RESOLVED_LOCATION_FIELDS = [
+  "location",
+  "client_location",
+  "go_pickup_location",
+  "go_pickup_metro_id",
+  "return_dropoff_location",
+  "return_dropoff_metro_id",
+  "pick_up_location",
+  "drop_off_location",
+];
+
+// Editing any of these changes where a coordinate should come from, so the row
+// must be re-resolved server-side: a pickup/drop-off point may be a metro
+// station name or the candidate's home, which only the backend can resolve.
+const LOCATION_SOURCE_FIELDS = new Set([
+  "address",
+  "formattedAddress",
+  "client_address",
+  "candidate_address",
+  "go_pickup_point",
+  "pick_up_address",
+  "return_dropoff_point",
+  "drop_off_address",
+  "pickup_type",
+  "job_type",
+]);
 
 // Row status types for clarity
 type RowStatus =
@@ -53,6 +83,12 @@ interface ProcessedRow {
 const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
   const gridRef = useRef<AgGridReact>(null);
   const [isImporting, setIsImporting] = useState(false);
+
+  // Rows whose coordinates are being re-resolved after an address edit.
+  const [resolvingRows, setResolvingRows] = useState<Set<number>>(new Set());
+  // Latest re-resolve request per row, so a slow response can't overwrite a
+  // newer one.
+  const resolveSeqRef = useRef<Record<number, number>>({});
 
   const { geocodedData, columnMapping, saveAsDefault, defaultScheduledDate, updateGeocodedRow } =
     useBulkUploadStore();
@@ -368,6 +404,96 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
     return columns;
   }, [columnMapping]);
 
+  /**
+   * Re-resolve a row's coordinates from its current addresses.
+   *
+   * A grid edit only changes address text — the coordinates resolved in step 2
+   * still belong to the address that was there before. This asks the backend to
+   * resolve the row again and overlays the result.
+   */
+  const reResolveRow = useCallback(
+    async (rowIndex: number) => {
+      const seq = (resolveSeqRef.current[rowIndex] || 0) + 1;
+      resolveSeqRef.current[rowIndex] = seq;
+      setResolvingRows((prev) => new Set(prev).add(rowIndex));
+
+      const isStale = () => resolveSeqRef.current[rowIndex] !== seq;
+
+      try {
+        const rowAtRequest =
+          useBulkUploadStore.getState().geocodedData[rowIndex];
+        if (!rowAtRequest) return;
+
+        const known = rowAtRequest.geocode_result;
+        const resolved = await resolveBulkRow(
+          rowAtRequest.original_data || {},
+          known.address,
+          known.lat != null && known.lng != null
+            ? { lat: known.lat, lng: known.lng }
+            : null
+        );
+
+        // A newer edit already fired its own request; it will supply the row.
+        if (isStale()) return;
+
+        const latest = useBulkUploadStore.getState().geocodedData[rowIndex];
+        if (!latest) return;
+
+        // Overlay only the resolved keys, so an edit to another column made
+        // while this was in flight keeps its new value.
+        const updatedOriginal = { ...latest.original_data };
+        RESOLVED_LOCATION_FIELDS.forEach((key) => {
+          updatedOriginal[key] = resolved.resolved_fields[key] ?? null;
+        });
+
+        updateGeocodedRow(rowIndex, {
+          original_data: updatedOriginal,
+          geocode_result: resolved.geocode_result,
+          is_duplicate: false,
+        });
+
+        if (resolved.warnings.length > 0) {
+          message.warning(`Row ${rowIndex + 1}: ${resolved.warnings.join("; ")}`);
+        }
+      } catch (error: any) {
+        if (isStale()) return;
+
+        // Drop the coordinates rather than leave the old ones under the new
+        // address — a visible error beats a row that imports to the wrong spot.
+        const latest = useBulkUploadStore.getState().geocodedData[rowIndex];
+        if (latest) {
+          const clearedOriginal = { ...latest.original_data };
+          RESOLVED_LOCATION_FIELDS.forEach((key) => {
+            clearedOriginal[key] = null;
+          });
+          updateGeocodedRow(rowIndex, {
+            original_data: clearedOriginal,
+            geocode_result: {
+              ...latest.geocode_result,
+              lat: null,
+              lng: null,
+              error: "Could not resolve the updated address",
+            },
+          });
+        }
+
+        message.error(
+          error.response?.data?.detail ||
+            `Row ${rowIndex + 1}: could not resolve the updated address`
+        );
+      } finally {
+        if (!isStale()) {
+          setResolvingRows((prev) => {
+            const next = new Set(prev);
+            next.delete(rowIndex);
+            return next;
+          });
+        }
+      }
+    },
+    [updateGeocodedRow]
+  );
+
   // Handle cell edits
   const handleCellValueChanged = useCallback(
     (params: CellValueChangedEvent<ProcessedRow>) => {
@@ -397,11 +523,24 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
         }
         updatedRow.is_duplicate = false;
       } else if (field === "address" || field === "formattedAddress") {
+        // AddressCellEditor writes the coordinates for a picked address to the
+        // store before the cell commits, so geocode_result already names this
+        // value in that case and its coordinates are good. Free-typed text does
+        // not: those coordinates belong to the address being replaced, so they
+        // go, and the re-resolve below supplies new ones.
+        const coordinatesMatchNewAddress =
+          storeRow.geocode_result.address === newValue;
+
         updatedRow.geocode_result = {
           ...updatedRow.geocode_result,
           [field === "address" ? "address" : "formatted_address"]: newValue,
-          lat: null,
-          lng: null,
+          ...(coordinatesMatchNewAddress ? {} : { lat: null, lng: null }),
+        };
+        // original_data holds the address the re-resolve geocodes from, so keep
+        // it in step with what the grid shows.
+        updatedRow.original_data = {
+          ...updatedRow.original_data,
+          address_formatted: newValue,
         };
         updatedRow.is_duplicate = false;
       } else if (field) {
@@ -450,8 +589,14 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
       }
 
       updateGeocodedRow(rowIndex, updatedRow);
+
+      // An edited address needs its coordinates resolved again — the ones on
+      // the row belong to the address that was there a moment ago.
+      if (field && LOCATION_SOURCE_FIELDS.has(field)) {
+        void reResolveRow(rowIndex);
+      }
     },
-    [updateGeocodedRow]
+    [updateGeocodedRow, reResolveRow]
   );
 
   // Row styling based on status
@@ -472,6 +617,12 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
 
   // Import handler
   const handleImport = async () => {
+    // Guard against importing coordinates that are still being resolved.
+    if (resolvingRows.size > 0) {
+      message.warning("Still updating locations for edited rows — one moment.");
+      return;
+    }
+
     setIsImporting(true);
 
     try {
@@ -735,7 +886,11 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
       {/* Footer Actions */}
       <div className="flex items-center justify-between pt-4 border-t mt-4">
         <span className="text-sm text-gray-500">
-          {stats.readyToImport > 0
+          {resolvingRows.size > 0
+            ? `Updating locations for ${resolvingRows.size} edited row${
+                resolvingRows.size > 1 ? "s" : ""
+              }...`
+            : stats.readyToImport > 0
             ? `${stats.readyToImport} jobs will be imported`
             : "No valid jobs to import"}
         </span>
@@ -749,16 +904,24 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
           <Button onClick={onFinish} className="rounded-none">
             Cancel
           </Button>
-          <Button
-            type="primary"
-            onClick={handleImport}
-            loading={isImporting}
-            disabled={stats.readyToImport === 0}
-            className="rounded-none"
+          <Tooltip
+            title={
+              resolvingRows.size > 0
+                ? "Waiting for edited addresses to be resolved"
+                : ""
+            }
           >
-            Import{" "}
-            {stats.readyToImport > 0 ? `${stats.readyToImport} Jobs` : ""}
-          </Button>
+            <Button
+              type="primary"
+              onClick={handleImport}
+              loading={isImporting}
+              disabled={stats.readyToImport === 0 || resolvingRows.size > 0}
+              className="rounded-none"
+            >
+              Import{" "}
+              {stats.readyToImport > 0 ? `${stats.readyToImport} Jobs` : ""}
+            </Button>
+          </Tooltip>
         </div>
       </div>
     </div>

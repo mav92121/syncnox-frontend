@@ -5,6 +5,7 @@ import {
   BulkGeocodeResponse,
   BulkImportRequest,
   BulkImportResponse,
+  BulkResolveRowResponse,
   UserMappingConfig,
 } from "@/types/bulk-upload.type";
 
@@ -58,6 +59,34 @@ export const importBulkJobs = async (
   const response = await apiClient.post<BulkImportResponse>(
     "/jobs/bulk/import",
     request
+  );
+  return response.data;
+};
+
+/**
+ * Re-resolve a single edited row's coordinates.
+ *
+ * Grid edits change address text only — the lat/lng resolved during step 2
+ * still belong to the address that was there before. This returns freshly
+ * resolved coordinates to overlay onto the row.
+ *
+ * `knownClientAddress` / `knownClientLocation` let a coordinate the row already
+ * has (hand-typed into the Lat/Lng columns, or picked from autocomplete) survive
+ * an edit to an unrelated column. The backend only reuses it if the address it
+ * belongs to is still the row's address.
+ */
+export const resolveBulkRow = async (
+  rowData: Record<string, any>,
+  knownClientAddress?: string | null,
+  knownClientLocation?: { lat: number; lng: number } | null
+): Promise<BulkResolveRowResponse> => {
+  const response = await apiClient.post<BulkResolveRowResponse>(
+    "/jobs/bulk/resolve-row",
+    {
+      row_data: rowData,
+      known_client_address: knownClientAddress ?? null,
+      known_client_location: knownClientLocation ?? null,
+    }
   );
   return response.data;
 };
