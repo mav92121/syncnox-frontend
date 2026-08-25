@@ -18,6 +18,10 @@ import { useJobsStore } from "@/store/jobs.store";
 import { importBulkJobs } from "@/apis/bulk-upload.api";
 import type { ColDef, RowClassParams, CellValueChangedEvent } from "ag-grid-community";
 import AddressCellEditor from "./AddressCellEditor";
+import {
+  isTripValidationError,
+  validateTripRequirements,
+} from "@/utils/tripValidation";
 
 interface DataPreviewStepProps {
   onFinish: () => void;
@@ -415,8 +419,18 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
         updatedRow.original_data = updatedOriginal;
       }
 
-      // Instead of wiping all validation errors, filter out errors related to the edited field
-      if (field && updatedRow.validation_errors && updatedRow.validation_errors.length > 0) {
+      // Re-check the trip-type rules: an edit to pickup_type or to any of the
+      // addresses it requires can resolve (or introduce) these errors.
+      const keptErrors = (updatedRow.validation_errors || []).filter(
+        (err) => !isTripValidationError(err)
+      );
+      updatedRow.validation_errors = [
+        ...keptErrors,
+        ...validateTripRequirements(updatedRow.original_data || {}),
+      ];
+
+      // Other field errors clear when the field they refer to is edited
+      if (field && updatedRow.validation_errors.length > 0) {
         const fieldToErrorKeyword: Record<string, string> = {
           service_duration: "Service Duration",
           time_window_start: "Time Window",
@@ -425,13 +439,12 @@ const DataPreviewStep = ({ onFinish, onBack }: DataPreviewStepProps) => {
           email: "Email",
           priority_level: "Priority Level",
           job_type: "Job Type",
-          pickup_type: "Pickup Type",
         };
-        
+
         const errorKeyword = fieldToErrorKeyword[field];
         if (errorKeyword) {
           updatedRow.validation_errors = updatedRow.validation_errors.filter(
-            (err) => !err.startsWith(errorKeyword) && !err.includes("Pickup Type")
+            (err) => !err.startsWith(errorKeyword)
           );
         }
       }
