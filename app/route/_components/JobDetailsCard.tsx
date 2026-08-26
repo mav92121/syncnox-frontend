@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Tag, Typography, Button, App, message } from "antd";
+import { Tag, Button, App, message } from "antd";
 import {
   CloseOutlined,
   DeleteOutlined,
@@ -7,6 +7,7 @@ import {
 } from "@ant-design/icons";
 import {
   User,
+  Users,
   MapPin,
   Clock,
   Building2,
@@ -17,30 +18,94 @@ import {
   Timer,
   FileText,
   Activity,
+  Repeat,
+  Hash,
+  Navigation,
+  Fingerprint,
+  ArrowRightLeft,
+  Tag as TagIcon,
 } from "lucide-react";
 import dayjs from "dayjs";
 import type { Job, JobStatus } from "@/types/job.type";
-import { STATUS_COLORS } from "@/utils/jobs.utils";
+import { STATUS_COLORS, formatJobTypeLabel } from "@/utils/jobs.utils";
 import { updateJobStatus } from "@/apis/jobs.api";
 import { useJobsStore } from "@/store/jobs.store";
 import { useRouteStore } from "@/store/routes.store";
-
-const { Text } = Typography;
 
 interface JobDetailsCardProps {
   stopData: any | null;
   job: Job | null;
   stopIndex?: number;
   driverName?: string;
+  leg?: string;
   onClose: () => void;
   onRemoveJob?: () => void;
 }
+
+/** Pickup / drop-off / depot / break badge shown in the card header. */
+const STOP_TYPE_BADGES: Record<string, { label: string; className: string }> = {
+  pickup: {
+    label: "Pickup",
+    className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  },
+  dropoff: {
+    label: "Drop-off",
+    className: "bg-sky-50 text-sky-700 border-sky-200",
+  },
+  drop_off: {
+    label: "Drop-off",
+    className: "bg-sky-50 text-sky-700 border-sky-200",
+  },
+  depot: {
+    label: "Depot",
+    className: "bg-slate-100 text-slate-700 border-slate-200",
+  },
+  depot_start: {
+    label: "Depot Start",
+    className: "bg-slate-100 text-slate-700 border-slate-200",
+  },
+  depot_end: {
+    label: "Depot End",
+    className: "bg-slate-100 text-slate-700 border-slate-200",
+  },
+  break: {
+    label: "Break",
+    className: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+};
+
+const LEG_LABELS: Record<string, string> = {
+  GO: "Go",
+  RETURN: "Return",
+};
+
+const Field: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  valueClassName?: string;
+  children: React.ReactNode;
+}> = ({ icon, label, valueClassName, children }) => (
+  <div className="flex flex-col gap-0.5">
+    <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+      {icon}
+      <span>{label}</span>
+    </div>
+    <div
+      className={
+        valueClassName ?? "text-xs text-gray-600 font-medium truncate pl-4.5"
+      }
+    >
+      {children}
+    </div>
+  </div>
+);
 
 const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   stopData,
   job,
   stopIndex = 0,
   driverName,
+  leg,
   onClose,
   onRemoveJob,
 }) => {
@@ -52,16 +117,26 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   if (!stopData && !job) return null;
 
   const jobId = job?.id || stopData?.job_id;
-  const address =
-    job?.address_formatted ||
-    stopData?.address_formatted ||
-    "Address not specified";
   const status = job?.status || stopData?.status || "assigned";
   const priority = (
     job?.priority_level ||
     (job as any)?.priority ||
     "medium"
   ).toLowerCase();
+
+  const stopType = String(stopData?.stop_type || "").toLowerCase();
+  const isDepotStop = stopType.includes("depot");
+  const isPickupStop = stopType === "pickup";
+  const isDropoffStop = stopType === "dropoff" || stopType === "drop_off";
+  const stopBadge = STOP_TYPE_BADGES[stopType];
+
+  // Worker-shuttle jobs carry a different field set, and each job appears twice
+  // in the route (once as a pickup stop, once as a drop-off stop).
+  const isShuttle =
+    job?.template_type === "worker_shuttle" ||
+    Boolean(job?.worker_shuttle_detail) ||
+    isPickupStop ||
+    isDropoffStop;
 
   const arrivalTime = stopData?.arrival_time
     ? dayjs(stopData.arrival_time).format("hh:mm A")
@@ -76,7 +151,6 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   const phone = job?.phone_number || (job as any)?.customer_phone || "-";
   const email = job?.email || (job as any)?.customer_email || "-";
   const companyName = job?.business_name || "-";
-  const notes = job?.additional_notes || (job as any)?.notes || "-";
   const timeWindow =
     job?.time_window_start && job?.time_window_end
       ? `${job.time_window_start} - ${job.time_window_end}`
@@ -85,6 +159,93 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   const driverLabel = driverName
     ? driverName.split(" ")[0].toUpperCase()
     : "DR1";
+
+  /**
+   * Shuttle values arrive flattened on the job, nested under
+   * `worker_shuttle_detail`, or inside `custom_fields` depending on how the job
+   * was created (form, bulk upload, or written back by the optimizer).
+   */
+  const shuttleValue = (...keys: string[]): string | undefined => {
+    for (const key of keys) {
+      const candidates = [
+        (job as any)?.[key],
+        (job?.worker_shuttle_detail as any)?.[key],
+        (job?.custom_fields as any)?.[key],
+      ];
+      const hit = candidates.find(
+        (v) => v !== undefined && v !== null && v !== "",
+      );
+      if (hit !== undefined) return String(hit);
+    }
+    return undefined;
+  };
+
+  const dash = (value?: string | number | null) =>
+    value === undefined || value === null || value === "" ? "-" : String(value);
+
+  const tripType = job?.job_type || shuttleValue("pickup_type");
+  const isReturnTrip = String(tripType || "").toLowerCase() === "return_only";
+
+  const candidateName = shuttleValue("candidate_name");
+  const candidatePhone = shuttleValue("candidate_phone");
+  const candidateId = shuttleValue("candidate_id");
+  const passengerName = shuttleValue("client_name", "first_name");
+  const passengerPhone = shuttleValue("client_phone", "phone_number");
+  const clientId = shuttleValue("client_id");
+  const quantId = shuttleValue("quant_id", "quart_id");
+  const pickUpAddress = shuttleValue(
+    "pick_up_address",
+    "go_pickup_point",
+    "candidate_address",
+  );
+  const dropOffAddress = shuttleValue(
+    "drop_off_address",
+    "return_dropoff_point",
+    "client_address",
+  );
+  // Return trips are scheduled off the shift end hour, one-way/round trips off
+  // the start hour — mirrors the Client Pickup Time column on the jobs grid.
+  const clientPickUpTime = isReturnTrip
+    ? shuttleValue("end_hour", "client_pick_up_time", "start_hour")
+    : shuttleValue("client_pick_up_time", "start_hour", "end_hour");
+  const candidatePickupEta = shuttleValue(
+    "candidate_pickup_eta",
+    "go_pickup_time_output",
+    "return_pickup_time_output",
+  );
+  const reachBeforeMinutes =
+    job?.reach_before_minutes ??
+    (job?.worker_shuttle_detail as any)?.reach_before_minutes ??
+    (job?.custom_fields as any)?.reach_before_minutes;
+  const reachWindow =
+    reachBeforeMinutes === undefined || reachBeforeMinutes === null
+      ? "-"
+      : `${Number(reachBeforeMinutes) > 0 ? "+" : ""}${reachBeforeMinutes}m`;
+
+  const notes = isShuttle
+    ? dash(
+        shuttleValue("notes", "additional_notes", "dress_code") ||
+          job?.additional_notes,
+      )
+    : job?.additional_notes || (job as any)?.notes || "-";
+
+  // Prefer the address the optimizer resolved for this specific stop, so a
+  // drop-off stop shows the drop-off address rather than the pickup address.
+  const address =
+    (isShuttle
+      ? stopData?.address_formatted ||
+        (isPickupStop ? pickUpAddress : undefined) ||
+        (isDropoffStop ? dropOffAddress : undefined)
+      : job?.address_formatted || stopData?.address_formatted) ||
+    job?.address_formatted ||
+    stopData?.address_formatted ||
+    "Address not specified";
+
+  const stopAddressLabel = isPickupStop
+    ? "Pickup Address"
+    : isDropoffStop
+      ? "Drop-off Address"
+      : "Address";
 
   const getPriorityBadgeClass = (p: string) => {
     switch (p) {
@@ -130,17 +291,63 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
     });
   };
 
+  const statusField = (
+    <Field
+      icon={<Activity size={13} className="text-gray-400 shrink-0" />}
+      label="Status"
+      valueClassName="pl-4.5 pt-0.5"
+    >
+      <Tag
+        color={STATUS_COLORS[status as JobStatus] || "blue"}
+        className="capitalize font-semibold border-none text-[10.5px] px-2 py-0.5 m-0 rounded"
+      >
+        {(status || "assigned").replace("_", " ")}
+      </Tag>
+    </Field>
+  );
+
+  const arrivalField = (
+    <Field
+      icon={<Clock size={13} className="text-gray-400 shrink-0" />}
+      label="ETA / Arrival"
+      valueClassName="text-xs text-gray-900 font-bold pl-4.5"
+    >
+      {arrivalTime}
+    </Field>
+  );
+
+  const notesField = (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+        <FileText size={13} className="text-gray-400 shrink-0" />
+        <span>Notes</span>
+      </div>
+      <div className="text-xs text-gray-700 leading-relaxed break-words bg-gray-50/80 p-2.5 border border-gray-200 rounded text-[11.5px] ml-4.5">
+        {notes}
+      </div>
+    </div>
+  );
+
   return (
     <div className="absolute top-3 right-3 z-50 w-88 h-[calc(78%-24px)] max-h-[600px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col overflow-hidden text-xs transition-all animate-in fade-in slide-in-from-right-4 duration-200">
       {/* Header */}
       <div className="p-3.5 border-b border-gray-100 flex items-center justify-between bg-white shrink-0">
-        <div className="font-bold text-gray-900 text-sm">
-          {stopData?.stop_type === "depot"
-            ? "Depot Station"
-            : `Stop No - ${stopIndex + 1} (${driverLabel})`}
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="font-bold text-gray-900 text-sm truncate">
+            {isDepotStop
+              ? "Depot Station"
+              : `Stop No - ${stopIndex + 1} (${driverLabel})`}
+          </div>
+          {stopBadge && !isDepotStop && (
+            <span
+              className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 border rounded ${stopBadge.className}`}
+            >
+              {stopBadge.label}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
-          {onRemoveJob && stopData?.stop_type !== "depot" && (
+          {onRemoveJob && !isDepotStop && (
             <button
               onClick={onRemoveJob}
               title="Remove from Route"
@@ -161,146 +368,260 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
 
       {/* Scrollable Key-Value Grid */}
       <div className="p-3.5 space-y-3 flex-1 overflow-y-auto custom-scrollbar">
-        {/* Row 1: Contact Name & Status */}
-        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <User size={13} className="text-gray-400 shrink-0" />
-              <span>Contact Name</span>
-            </div>
-            <div className="text-xs text-gray-600 font-medium truncate pl-4.5">
-              {customerName}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <Activity size={13} className="text-gray-400 shrink-0" />
-              <span>Status</span>
-            </div>
-            <div className="pl-4.5 pt-0.5">
-              <Tag
-                color={STATUS_COLORS[status as JobStatus] || "blue"}
-                className="capitalize font-semibold border-none text-[10.5px] px-2 py-0.5 m-0 rounded"
+        {isShuttle ? (
+          <>
+            {/* Row 1: Candidate Name & Status */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<User size={13} className="text-gray-400 shrink-0" />}
+                label="Candidate Name"
               >
-                {(status || "assigned").replace("_", " ")}
-              </Tag>
+                {dash(candidateName)}
+              </Field>
+              {statusField}
             </div>
-          </div>
-        </div>
 
-        {/* Row 2: Address & ETA / Arrival */}
-        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <MapPin size={13} className="text-gray-400 shrink-0" />
-              <span>Address</span>
-            </div>
-            <div className="text-xs text-gray-600 font-medium leading-snug line-clamp-2 pl-4.5">
-              {address}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <Clock size={13} className="text-gray-400 shrink-0" />
-              <span>ETA / Arrival</span>
-            </div>
-            <div className="text-xs text-gray-900 font-bold pl-4.5">
-              {arrivalTime}
-            </div>
-          </div>
-        </div>
-
-        {/* Row 3: Company Name & Phone */}
-        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <Building2 size={13} className="text-gray-400 shrink-0" />
-              <span>Company Name</span>
-            </div>
-            <div className="text-xs text-gray-600 font-medium truncate pl-4.5">
-              {companyName}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <Phone size={13} className="text-gray-400 shrink-0" />
-              <span>Phone</span>
-            </div>
-            <div className="text-xs text-gray-600 font-medium truncate pl-4.5">
-              {phone}
-            </div>
-          </div>
-        </div>
-
-        {/* Row 4: Email & Priority */}
-        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <Mail size={13} className="text-gray-400 shrink-0" />
-              <span>Email</span>
-            </div>
-            <div className="text-xs text-gray-600 font-medium truncate pl-4.5" title={email}>
-              {email}
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <Flag size={13} className="text-gray-400 shrink-0" />
-              <span>Priority</span>
-            </div>
-            <div className="pl-4.5 pt-0.5">
-              <span
-                className={`inline-block text-[10.5px] font-bold capitalize px-2 py-0.5 border rounded ${getPriorityBadgeClass(
-                  priority,
-                )}`}
+            {/* Row 2: This stop's address & ETA / Arrival */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={
+                  isDropoffStop ? (
+                    <Flag size={13} className="text-gray-400 shrink-0" />
+                  ) : (
+                    <Navigation size={13} className="text-gray-400 shrink-0" />
+                  )
+                }
+                label={stopAddressLabel}
+                valueClassName="text-xs text-gray-600 font-medium leading-snug line-clamp-2 pl-4.5"
               >
-                {priority}
-              </span>
+                {address}
+              </Field>
+              {arrivalField}
             </div>
-          </div>
-        </div>
 
-        {/* Row 5: Time Window & Service Duration */}
-        <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <Calendar size={13} className="text-gray-400 shrink-0" />
-              <span>Time Window</span>
+            {/* Row 3: Candidate Phone & Candidate ID */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<Phone size={13} className="text-gray-400 shrink-0" />}
+                label="Candidate Phone"
+              >
+                {dash(candidatePhone)}
+              </Field>
+              <Field
+                icon={
+                  <Fingerprint size={13} className="text-gray-400 shrink-0" />
+                }
+                label="Candidate ID"
+              >
+                {dash(candidateId)}
+              </Field>
             </div>
-            <div className="text-xs text-gray-600 font-medium pl-4.5">
-              {timeWindow}
-            </div>
-          </div>
 
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-              <Timer size={13} className="text-gray-400 shrink-0" />
-              <span>Service Duration</span>
+            {/* Row 4: Passenger Name & Passenger Phone */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<Users size={13} className="text-gray-400 shrink-0" />}
+                label="Passenger Name"
+              >
+                {dash(passengerName)}
+              </Field>
+              <Field
+                icon={<Phone size={13} className="text-gray-400 shrink-0" />}
+                label="Passenger Phone"
+              >
+                {dash(passengerPhone)}
+              </Field>
             </div>
-            <div className="text-xs text-gray-600 font-medium pl-4.5">
-              {serviceDuration} min
-            </div>
-          </div>
-        </div>
 
-        {/* Row 6: Notes */}
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
-            <FileText size={13} className="text-gray-400 shrink-0" />
-            <span>Notes</span>
-          </div>
-          <div className="text-xs text-gray-700 leading-relaxed break-words bg-gray-50/80 p-2.5 border border-gray-200 rounded text-[11.5px] ml-4.5">
-            {notes}
-          </div>
-        </div>
+            {/* Row 5: Trip Type & Quant / Shift Ref */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<Repeat size={13} className="text-gray-400 shrink-0" />}
+                label="Trip Type"
+              >
+                {tripType ? formatJobTypeLabel(tripType) : "-"}
+              </Field>
+              <Field
+                icon={<Hash size={13} className="text-gray-400 shrink-0" />}
+                label="Quant / Shift Ref"
+              >
+                {dash(quantId)}
+              </Field>
+            </div>
+
+            {/* Row 6: Client Pick Up Time & Candidate Pickup ETA */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<Calendar size={13} className="text-gray-400 shrink-0" />}
+                label="Client Pick Up Time"
+              >
+                {dash(clientPickUpTime)}
+              </Field>
+              <Field
+                icon={<Clock size={13} className="text-gray-400 shrink-0" />}
+                label="Candidate Pickup ETA"
+              >
+                {dash(candidatePickupEta)}
+              </Field>
+            </div>
+
+            {/* Row 7: Reach Window & Client / Worker ID */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<Timer size={13} className="text-gray-400 shrink-0" />}
+                label="Reach Window"
+              >
+                {reachWindow}
+              </Field>
+              <Field
+                icon={<TagIcon size={13} className="text-gray-400 shrink-0" />}
+                label="Client / Worker ID"
+              >
+                {dash(clientId)}
+              </Field>
+            </div>
+
+            {/* Row 8: Full journey — Pick Up & Drop Off addresses */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={
+                  <Navigation size={13} className="text-gray-400 shrink-0" />
+                }
+                label="Pick Up Address"
+                valueClassName="text-xs text-gray-600 font-medium leading-snug line-clamp-2 pl-4.5"
+              >
+                {dash(pickUpAddress)}
+              </Field>
+              <Field
+                icon={<Flag size={13} className="text-gray-400 shrink-0" />}
+                label="Drop Off Address"
+                valueClassName="text-xs text-gray-600 font-medium leading-snug line-clamp-2 pl-4.5"
+              >
+                {dash(dropOffAddress)}
+              </Field>
+            </div>
+
+            {/* Row 9: Driver & Trip Leg */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<User size={13} className="text-gray-400 shrink-0" />}
+                label="Driver"
+              >
+                {dash(driverName)}
+              </Field>
+              <Field
+                icon={
+                  <ArrowRightLeft
+                    size={13}
+                    className="text-gray-400 shrink-0"
+                  />
+                }
+                label="Trip Leg"
+              >
+                {leg ? LEG_LABELS[leg.toUpperCase()] || leg : "-"}
+              </Field>
+            </div>
+
+            {/* Row 10: Notes */}
+            {notesField}
+          </>
+        ) : (
+          <>
+            {/* Row 1: Contact Name & Status */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<User size={13} className="text-gray-400 shrink-0" />}
+                label="Contact Name"
+              >
+                {customerName}
+              </Field>
+              {statusField}
+            </div>
+
+            {/* Row 2: Address & ETA / Arrival */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<MapPin size={13} className="text-gray-400 shrink-0" />}
+                label="Address"
+                valueClassName="text-xs text-gray-600 font-medium leading-snug line-clamp-2 pl-4.5"
+              >
+                {address}
+              </Field>
+              {arrivalField}
+            </div>
+
+            {/* Row 3: Company Name & Phone */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={
+                  <Building2 size={13} className="text-gray-400 shrink-0" />
+                }
+                label="Company Name"
+              >
+                {companyName}
+              </Field>
+              <Field
+                icon={<Phone size={13} className="text-gray-400 shrink-0" />}
+                label="Phone"
+              >
+                {phone}
+              </Field>
+            </div>
+
+            {/* Row 4: Email & Priority */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-gray-900">
+                  <Mail size={13} className="text-gray-400 shrink-0" />
+                  <span>Email</span>
+                </div>
+                <div
+                  className="text-xs text-gray-600 font-medium truncate pl-4.5"
+                  title={email}
+                >
+                  {email}
+                </div>
+              </div>
+
+              <Field
+                icon={<Flag size={13} className="text-gray-400 shrink-0" />}
+                label="Priority"
+                valueClassName="pl-4.5 pt-0.5"
+              >
+                <span
+                  className={`inline-block text-[10.5px] font-bold capitalize px-2 py-0.5 border rounded ${getPriorityBadgeClass(
+                    priority,
+                  )}`}
+                >
+                  {priority}
+                </span>
+              </Field>
+            </div>
+
+            {/* Row 5: Time Window & Service Duration */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<Calendar size={13} className="text-gray-400 shrink-0" />}
+                label="Time Window"
+              >
+                {timeWindow}
+              </Field>
+              <Field
+                icon={<Timer size={13} className="text-gray-400 shrink-0" />}
+                label="Service Duration"
+              >
+                {serviceDuration} min
+              </Field>
+            </div>
+
+            {/* Row 6: Notes */}
+            {notesField}
+          </>
+        )}
       </div>
 
       {/* Quick Action Footer */}
-      {stopData?.stop_type !== "depot" && (
+      {!isDepotStop && (
         <div className="p-3 bg-gray-50 border-t border-gray-100 flex gap-2 shrink-0">
           <Button
             type="primary"

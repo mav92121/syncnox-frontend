@@ -32,12 +32,15 @@ export const generateMapMarkers = (route: Route, jobs: Job[]) => {
   return route.result.routes.flatMap((routeItem, index) => {
     const color = getRouteColor(index);
     return routeItem.stops
+      // Keep the original stop index so marker ids stay aligned with the route's
+      // stop sequence even when a stop has no resolvable coordinates.
+      .map((stop: any, stopIndex: number) => ({ stop, stopIndex }))
       .filter(
-        (stop: any) =>
+        ({ stop }) =>
           typeof stop.latitude === "number" &&
           typeof stop.longitude === "number",
       )
-      .map((stop: any, stopIndex: number) => {
+      .map(({ stop, stopIndex }) => {
         let job: Job | MarkerJobData | undefined = stop.job_id
           ? jobsMap.get(Number(stop.job_id))
           : undefined;

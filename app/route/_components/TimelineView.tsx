@@ -413,7 +413,19 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                       const blockWidth = serviceDuration * pixelsPerMinute;
 
                       const isDepot = stop.stop_type === "depot";
-                      const isJob = stop.stop_type === "job";
+                      // Worker-shuttle routes use "pickup"/"dropoff" instead of
+                      // the generic "job" stop type.
+                      const isPickup = stop.stop_type === "pickup";
+                      const isDropoff =
+                        stop.stop_type === "dropoff" ||
+                        stop.stop_type === "drop_off";
+                      const isJob =
+                        stop.stop_type === "job" || isPickup || isDropoff;
+                      const stopTypeLabel = isPickup
+                        ? "Pickup"
+                        : isDropoff
+                          ? "Drop-off"
+                          : null;
 
                       let jobStatus = "assigned";
                       if (isJob) {
@@ -456,6 +468,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                                   {stop.address_formatted ||
                                     `Job #${stop.job_id}`}
                                 </div>
+                                {stopTypeLabel && (
+                                  <div className="text-xs font-semibold uppercase opacity-80">
+                                    {stopTypeLabel}
+                                  </div>
+                                )}
                                 <div className="text-xs">
                                   ETA:{" "}
                                   {arrivalTime.isValid()
@@ -509,6 +526,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                                   : stop.address_formatted ||
                                     `Job #${stop.job_id}`}
                               </div>
+                              {stopTypeLabel && (
+                                <div className="text-xs font-semibold uppercase text-gray-300">
+                                  {stopTypeLabel}
+                                </div>
+                              )}
                               <div className="text-xs text-gray-400">
                                 {arrivalTime.isValid()
                                   ? arrivalTime.format("HH:mm")
