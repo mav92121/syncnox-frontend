@@ -196,7 +196,7 @@ const CreateRouteModal = ({
         team_member_ids: values.team_ids,
         scheduled_date: scheduledDate,
         optimization_goal: values.optimization_logic,
-      });
+      });                                 
     } catch (err) {
       console.error("Optimization error:", err);
       setIsSubmitting(false);

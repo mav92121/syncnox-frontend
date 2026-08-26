@@ -26,6 +26,8 @@ export interface Routes {
   team_member_name: string;
   total_distance_meters: number;
   total_duration_seconds: number;
+  /** Worker-shuttle routes only: "GO" (home → client) or "RETURN". */
+  leg?: string;
 }
 
 export interface UnassignedJob {

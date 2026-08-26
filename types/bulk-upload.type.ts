@@ -44,6 +44,13 @@ export interface BulkGeocodeRequest {
   scheduled_date?: string;
 }
 
+/** Response from /jobs/bulk/resolve-row — resolver output only, no row text. */
+export interface BulkResolveRowResponse {
+  resolved_fields: Record<string, any>;
+  geocode_result: GeocodeResult;
+  warnings: string[];
+}
+
 export interface JobCreate {
   location: { lat: number; lng: number };
   address_formatted: string;

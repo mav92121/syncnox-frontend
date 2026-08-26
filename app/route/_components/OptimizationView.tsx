@@ -103,6 +103,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     stopData: any;
     job: Job | null;
     driverName?: string;
+    leg?: string;
     routeIndex?: number;
     stopIndex?: number;
   } | null>(null);
@@ -207,12 +208,14 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     // Find corresponding job object
     const jobId = stop.job_id || stop.id;
     const matchedJob = jobs.find((j) => j.id === jobId) || stop.job || null;
-    const driverName = route.result?.routes?.[routeIndex]?.team_member_name || `Driver ${routeIndex + 1}`;
+    const routeItem = route.result?.routes?.[routeIndex];
+    const driverName = routeItem?.team_member_name || `Driver ${routeIndex + 1}`;
 
     setSelectedDrawerJob({
       stopData: stop,
       job: matchedJob,
       driverName,
+      leg: routeItem?.leg,
       routeIndex,
       stopIndex,
     });
@@ -225,37 +228,30 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
       return;
     }
 
+    // Marker ids are `${routeIndex}-${stopIndex}`. Resolving the stop by index
+    // (rather than searching by job_id) keeps pickup and drop-off apart for
+    // shuttle jobs, which appear twice in the same route.
+    const [routeIndexStr, stopIndexStr] = String(markerId).split("-");
+    const routeIndex = Number(routeIndexStr);
+    const stopIndex = Number(stopIndexStr);
+    const routeItem = route.result?.routes?.[routeIndex];
+    const stop = routeItem?.stops?.[stopIndex];
+    if (!routeItem || !stop) return;
+
     const foundMarker = markers.find((m) => String(m.id) === String(markerId));
-    if (foundMarker && foundMarker.jobData && route.result?.routes) {
-      const jobId = (foundMarker.jobData as any).id || (foundMarker.jobData as any).job_id;
-      const matchedJob = jobs.find((j) => j.id === jobId) || (foundMarker.jobData as Job) || null;
+    const matchedJob =
+      jobs.find((j) => j.id === stop.job_id) ||
+      (foundMarker?.jobData as Job) ||
+      null;
 
-      let routeIndex = -1;
-      let stopIndex = 0;
-      let driverName = "Driver";
-
-      routeIndex = route.result.routes.findIndex((r) =>
-        r.stops?.some((s) => s.job_id === jobId)
-      );
-      if (routeIndex >= 0) {
-        driverName =
-          route.result.routes[routeIndex].team_member_name ||
-          `Driver ${routeIndex + 1}`;
-        const sIdx = route.result.routes[routeIndex].stops?.findIndex(
-          (s) => s.job_id === jobId);
-        if (sIdx !== undefined && sIdx >= 0) {
-          stopIndex = sIdx;
-        }
-      }
-
-      setSelectedDrawerJob({
-        stopData: foundMarker.jobData,
-        job: matchedJob,
-        driverName,
-        routeIndex,
-        stopIndex,
-      });
-    }
+    setSelectedDrawerJob({
+      stopData: stop,
+      job: matchedJob,
+      driverName: routeItem.team_member_name || `Driver ${routeIndex + 1}`,
+      leg: routeItem.leg,
+      routeIndex,
+      stopIndex,
+    });
   };
 
   const handleExportRoutes = () => {
@@ -538,6 +534,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             job={selectedDrawerJob.job}
             stopIndex={selectedDrawerJob.stopIndex}
             driverName={selectedDrawerJob.driverName}
+            leg={selectedDrawerJob.leg}
             onClose={() => setSelectedDrawerJob(null)}
             onRemoveJob={
               selectedDrawerJob.routeIndex !== undefined &&
