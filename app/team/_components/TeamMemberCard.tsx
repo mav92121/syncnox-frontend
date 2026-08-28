@@ -3,7 +3,6 @@ import { Checkbox } from "antd";
 
 interface TeamMemberCardProps {
   team: Team;
-  vehicleName?: string;
   isSelected: boolean;
   isChecked?: boolean;
   onToggleCheck?: (e: React.MouseEvent) => void;
@@ -32,13 +31,12 @@ const statusBgMap: Record<string, string> = {
 
 const TeamMemberCard = ({
   team,
-  vehicleName,
   isSelected,
   isChecked = false,
   onToggleCheck,
   onClick,
 }: TeamMemberCardProps) => {
-  const sub = [capitalize(team.role_type), vehicleName]
+  const sub = [capitalize(team.role_type)]
     .filter(Boolean)
     .join(" · ");
 

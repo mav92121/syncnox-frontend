@@ -503,13 +503,13 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
             <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
               <Field
                 icon={<Users size={13} className="text-gray-400 shrink-0" />}
-                label="Passenger Name"
+                label="Client Name"
               >
                 {dash(passengerName)}
               </Field>
               <Field
                 icon={<Phone size={13} className="text-gray-400 shrink-0" />}
-                label="Passenger Phone"
+                label="Client Phone"
               >
                 {dash(passengerPhone)}
               </Field>

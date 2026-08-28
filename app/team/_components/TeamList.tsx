@@ -5,7 +5,6 @@ import { Button, Spin, Form, Modal, message } from "antd";
 import { Search, Users, FileSpreadsheet, Plus, Trash2 } from "lucide-react";
 import { Team } from "@/types/team.type";
 import { useTeamStore } from "@/store/team.store";
-import { useVehicleStore } from "@/store/vehicle.store";
 import TeamMemberForm from "./TeamMemberForm";
 import AddTeamMemberModal from "./AddTeamMemberModal";
 import TeamMemberCard from "./TeamMemberCard";
@@ -13,7 +12,6 @@ import BulkImportModal from "@/components/BulkImport/BulkImportModal";
 
 const TeamList = () => {
   const { isLoading, teams, bulkDeleteTeamsAction } = useTeamStore();
-  const { vehicles } = useVehicleStore();
   const [form] = Form.useForm();
 
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
@@ -21,16 +19,6 @@ const TeamList = () => {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [search, setSearch] = useState("");
-
-  // Build a quick vehicle name lookup
-  const vehiclesMap = useMemo(
-    () =>
-      vehicles.reduce((acc, v) => {
-        acc[v.id] = v.name;
-        return acc;
-      }, {} as Record<number, string>),
-    [vehicles]
-  );
 
   // Auto-select first member on initial load
   useEffect(() => {
@@ -190,9 +178,6 @@ const TeamList = () => {
                 <TeamMemberCard
                   key={team.id}
                   team={team}
-                  vehicleName={
-                    team.vehicle_id ? vehiclesMap[team.vehicle_id] : undefined
-                  }
                   isSelected={selectedTeam?.id === team.id}
                   isChecked={checkedIds.includes(team.id)}
                   onToggleCheck={() => toggleCheck(team.id)}
@@ -219,9 +204,6 @@ const TeamList = () => {
                       selectedTeam.role_type
                         ? selectedTeam.role_type.charAt(0).toUpperCase() +
                           selectedTeam.role_type.slice(1)
-                        : null,
-                      selectedTeam.vehicle_id
-                        ? vehiclesMap[selectedTeam.vehicle_id]
                         : null,
                       selectedTeam.status
                         ? selectedTeam.status.charAt(0).toUpperCase() +
