@@ -654,7 +654,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                           }
                         }
 
-                        const currentOccupancy = occupancyMap.get(group.firstRawIndex) ?? 0;
+                        const lastRawIndex = group.firstRawIndex + group.candidateCount - 1;
+                        const currentOccupancy = occupancyMap.get(lastRawIndex) ?? 0;
 
                         // Build tooltip content — show all candidates if grouped with clickable links
                         const tooltipContent = (
@@ -683,7 +684,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                                 Occupancy: {currentOccupancy} {vehicleCapacity ? `/ ${vehicleCapacity}` : ""} seats
                               </div>
                             )}
-                            {count > 1 && (
+                            {isJob && group.rawStops.length > 0 && (
                               <div className="text-xs mt-1 max-h-36 overflow-y-auto space-y-0.5 custom-scrollbar pr-1">
                                 {group.rawStops.map((s: any, i: number) => {
                                   const candName = getCandidateName(s);
