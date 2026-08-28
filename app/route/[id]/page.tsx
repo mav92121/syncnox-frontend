@@ -18,7 +18,7 @@ const RoutePage = () => {
   const parsedId = rawId ? Number(rawId) : NaN;
   const id = Number.isFinite(parsedId) && parsedId > 0 ? parsedId : null;
 
-  const { fetchOptimization, currentOptimization, error } =
+  const { fetchOptimization, currentOptimization, clearOptimization, error } =
     useOptimizationStore();
   const [isLoading, setIsLoading] = useState(true);
   const [isUnassignedExpanded, setIsUnassignedExpanded] = useState(true);
@@ -50,8 +50,9 @@ const RoutePage = () => {
 
     return () => {
       cancelled = true;
+      clearOptimization();
     };
-  }, [id, fetchOptimization]);
+  }, [id, fetchOptimization, clearOptimization]);
 
   if (isLoading) {
     return (
