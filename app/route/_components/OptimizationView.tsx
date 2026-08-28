@@ -22,8 +22,11 @@ import {
   ShareAltOutlined,
   EditOutlined,
   LoadingOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
+
 import GoogleMaps from "@/components/GoogleMaps";
+import { X } from "lucide-react";
 import TimelineView from "./TimelineView";
 import AddJobsModal from "@/app/plan/AddJobsModal";
 import SwapDriverDrawer from "./SwapDriverDrawer";
@@ -34,12 +37,15 @@ import { useOptimizationStore } from "@/store/optimization.store";
 import { useRouteStore } from "@/store/routes.store";
 import { useIndexStore } from "@/store/index.store";
 import { useTeamStore } from "@/store/team.store";
+import { useVehicleStore } from "@/store/vehicle.store";
 import RouteInfoWindow from "./RouteInfoWindow";
 import RouteExportPreview from "./RouteExportPreview";
 import {
   generateRoutePolylines,
   generateMapMarkers,
+  getGroupedStopsCount,
 } from "./optimizationView.utils";
+import { getRouteColor } from "@/utils/timeline.utils";
 import ResizeHandle from "@/components/ResizeHandle";
 import Icon from "@ant-design/icons";
 import {
@@ -71,10 +77,12 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     stopPolling,
     isPolling,
     error,
+    reOptimize,
   } = useOptimizationStore();
   const { jobs, fetchJobsByDate, fetchJobsByIds } = useJobsStore();
   const { updateRoute } = useRouteStore();
   const { teams, initializeTeams } = useTeamStore();
+  const { vehicles, initializeVehicles } = useVehicleStore();
 
   useEffect(() => {
     if (route.job_ids && route.job_ids.length > 0) {
@@ -89,6 +97,11 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     initializeTeams();
   }, [initializeTeams]);
 
+  // Ensure vehicles are loaded for route vehicle info display
+  useEffect(() => {
+    initializeVehicles();
+  }, [initializeVehicles]);
+
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempRouteName, setTempRouteName] = useState(route.route_name);
   const [isSavingName, setIsSavingName] = useState(false);
@@ -97,6 +110,8 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const [shareResult, setShareResult] = useState<ShareRouteResponse | null>(
     null,
   );
+  // Tracks whether any job edits have been saved but re-optimization not yet run
+  const [hasUnsavedJobEdits, setHasUnsavedJobEdits] = useState(false);
 
   // Job Details Floating Card state
   const [selectedDrawerJob, setSelectedDrawerJob] = useState<{
@@ -108,6 +123,10 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     stopIndex?: number;
   } | null>(null);
 
+  const [selectedMarkerId, setSelectedMarkerId] = useState<
+    string | number | null
+  >(null);
+
   // Route operations modal state
   const [addStopRouteIndex, setAddStopRouteIndex] = useState<number | null>(
     null,
@@ -115,6 +134,38 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const [swapDriverRouteIndex, setSwapDriverRouteIndex] = useState<
     number | null
   >(null);
+
+  // Route focus: with 300+ stops across a dozen drivers the map is unreadable
+  // when everything is drawn at full strength. Clicking any stop (or a driver
+  // row) isolates that driver's route until focus is cleared.
+  const [focusedRouteIndex, setFocusedRouteIndex] = useState<number | null>(
+    null,
+  );
+
+  const clearFocus = useCallback(() => {
+    setFocusedRouteIndex(null);
+    setSelectedDrawerJob(null);
+    setSelectedMarkerId(null);
+  }, []);
+
+  // Escape clears focus.
+  useEffect(() => {
+    if (focusedRouteIndex === null) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") clearFocus();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [focusedRouteIndex, clearFocus]);
+
+  // Focus indices point into route.result.routes — drop focus if the route set
+  // changes underneath us (re-optimize, driver swap, stop add/remove).
+  useEffect(() => {
+    const routeCount = route.result?.routes?.length ?? 0;
+    if (focusedRouteIndex !== null && focusedRouteIndex >= routeCount) {
+      clearFocus();
+    }
+  }, [route.result?.routes, focusedRouteIndex, clearFocus]);
 
   useEffect(() => {
     setTempRouteName(route.route_name);
@@ -169,16 +220,24 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   };
 
   const routePolylines = useMemo(() => {
-    return generateRoutePolylines(route);
-  }, [route]);
+    return generateRoutePolylines(route, focusedRouteIndex);
+  }, [route, focusedRouteIndex]);
 
-  const markers = useMemo(() => {
+  const allMarkers = useMemo(() => {
     return generateMapMarkers(route, jobs);
   }, [route, jobs]);
 
+  // While a route is focused only its own stops stay on the map.
+  const markers = useMemo(() => {
+    if (focusedRouteIndex === null) return allMarkers;
+    return allMarkers.filter((m) => m.routeIndex === focusedRouteIndex);
+  }, [allMarkers, focusedRouteIndex]);
+
+  // Derived from the full marker set so focusing a route doesn't yank the map
+  // to a new default centre.
   const initialCenter = useMemo<google.maps.LatLngLiteral>(() => {
-    return markers[0]?.position ?? { lat: 37.7749, lng: -122.4194 };
-  }, [markers]);
+    return allMarkers[0]?.position ?? { lat: 37.7749, lng: -122.4194 };
+  }, [allMarkers]);
 
   const [center, setCenter] =
     useState<google.maps.LatLngLiteral>(initialCenter);
@@ -187,15 +246,30 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     setCenter(initialCenter);
   }, [initialCenter]);
 
-  const [selectedMarkerId, setSelectedMarkerId] = useState<
-    string | number | null
-  >(null);
+  const focusedRoute =
+    focusedRouteIndex !== null
+      ? route.result?.routes?.[focusedRouteIndex]
+      : undefined;
+
+  // Focusing from the timeline recenters the map on that route, otherwise the
+  // dispatcher can end up staring at an empty area with everything else gray.
+  const handleFocusRoute = (routeIndex: number) => {
+    setFocusedRouteIndex(routeIndex);
+    const firstStop = route.result?.routes?.[routeIndex]?.stops?.find(
+      (s) => typeof s.latitude === "number" && typeof s.longitude === "number",
+    );
+    if (firstStop) {
+      setCenter({ lat: firstStop.latitude, lng: firstStop.longitude });
+    }
+  };
 
   const handleStopClick = (
     stop: any,
     routeIndex: number,
     stopIndex: number,
   ) => {
+    setFocusedRouteIndex(routeIndex);
+
     if (
       typeof stop.latitude === "number" &&
       typeof stop.longitude === "number"
@@ -238,11 +312,18 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     const stop = routeItem?.stops?.[stopIndex];
     if (!routeItem || !stop) return;
 
-    const foundMarker = markers.find((m) => String(m.id) === String(markerId));
+    setFocusedRouteIndex(routeIndex);
+
+    const foundMarker = allMarkers.find(
+      (m) => String(m.id) === String(markerId),
+    );
     const matchedJob =
       jobs.find((j) => j.id === stop.job_id) ||
       (foundMarker?.jobData as Job) ||
       null;
+
+    const displayStopNumber =
+      foundMarker?.sequenceNumber ?? (stopIndex + 1);
 
     setSelectedDrawerJob({
       stopData: stop,
@@ -250,7 +331,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
       driverName: routeItem.team_member_name || `Driver ${routeIndex + 1}`,
       leg: routeItem.leg,
       routeIndex,
-      stopIndex,
+      stopIndex: displayStopNumber,
     });
   };
 
@@ -365,6 +446,27 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     startOperationPolling();
   }, [startOperationPolling]);
 
+  const handleReOptimizeAll = useCallback(async () => {
+    Modal.confirm({
+      title: "Re-Optimize Entire Route",
+      content:
+        "This will re-run the full optimization with updated job data. Old routes will be replaced. Continue?",
+      okText: "Re-Optimize",
+      okButtonProps: { style: { backgroundColor: "#003220", borderColor: "#003220" } },
+      onOk: async () => {
+        try {
+          await reOptimize(route.id);
+          setHasUnsavedJobEdits(false);
+          // Polling auto-starts inside reOptimize()
+        } catch (err: any) {
+          message.error(
+            err?.message || "Failed to re-optimize. Please try again.",
+          );
+        }
+      },
+    });
+  }, [reOptimize, route.id]);
+
   const getRouteData = (index: number | null) =>
     index !== null ? route.result?.routes?.[index] : null;
 
@@ -456,12 +558,24 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             </Text>
             <Text type="secondary">
               <TeamOutlined /> {totalVehicles}{" "}
-              {totalVehicles === 1 ? "team member" : "team members"}
+              {totalVehicles === 1 ? "route" : "routes"}
             </Text>
           </div>
 
           {/* Right: Action Buttons */}
           <div className="flex gap-2">
+            {/* Re-Optimize button — highlighted when job edits are pending */}
+            {route.status === "completed" && (
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={handleReOptimizeAll}
+                className={hasUnsavedJobEdits
+                  ? "border-amber-400 text-amber-700 bg-amber-50 font-semibold"
+                  : ""}
+              >
+                Re-Optimize
+              </Button>
+            )}
             <Button icon={<ExportOutlined />} onClick={handleExportRoutes}>
               Export
             </Button>
@@ -503,8 +617,39 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                 zoom={12}
                 selectedMarkerId={selectedMarkerId}
                 onMarkerSelect={handleMarkerSelect}
+                onMapClick={clearFocus}
                 showDirectionArrows={true}
               />
+
+              {/* Clear-focus chip — the only visible affordance telling the
+                  dispatcher why the rest of the plan went gray. */}
+              {focusedRouteIndex !== null && (
+                <div className="absolute top-3 left-3 z-40 flex items-center gap-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-full shadow-md pl-3 pr-1.5 py-1.5">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{
+                      backgroundColor: getRouteColor(focusedRouteIndex),
+                    }}
+                  />
+                  <span className="text-xs font-semibold text-gray-800 max-w-[180px] truncate">
+                    {focusedRoute?.team_member_name ||
+                      `Driver ${focusedRouteIndex + 1}`}
+                  </span>
+                  <span className="text-[11px] text-gray-400">
+                    {getGroupedStopsCount(focusedRoute?.stops)} stops
+                  </span>
+                  <Tooltip title="Clear focus (Esc)">
+                    <button
+                      type="button"
+                      onClick={clearFocus}
+                      aria-label="Clear route focus"
+                      className="flex items-center justify-center w-5 h-5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      <X size={13} />
+                    </button>
+                  </Tooltip>
+                </div>
+              )}
             </div>
           </Panel>
 
@@ -516,11 +661,14 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                 <TimelineView
                   routes={route.result?.routes || []}
                   jobs={jobs}
+                  vehicles={vehicles}
                   onStopClick={handleStopClick}
                   onAddStop={(idx) => setAddStopRouteIndex(idx)}
                   onSwapDriver={(idx) => setSwapDriverRouteIndex(idx)}
                   onReverseRoute={handleReverseRoute}
                   onReOptimize={handleReOptimize}
+                  focusedRouteIndex={focusedRouteIndex}
+                  onFocusRoute={handleFocusRoute}
                 />
               </div>
             </div>
@@ -535,7 +683,11 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             stopIndex={selectedDrawerJob.stopIndex}
             driverName={selectedDrawerJob.driverName}
             leg={selectedDrawerJob.leg}
-            onClose={() => setSelectedDrawerJob(null)}
+            onClose={() => {
+              setSelectedDrawerJob(null);
+              setSelectedMarkerId(null);
+            }}
+            onJobSaved={() => setHasUnsavedJobEdits(true)}
             onRemoveJob={
               selectedDrawerJob.routeIndex !== undefined &&
               selectedDrawerJob.routeIndex >= 0 &&

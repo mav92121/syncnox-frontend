@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
 import type { Job } from "@/types/job.type";
+import type { Vehicle } from "@/types/vehicle.type";
 import { Avatar, Tooltip, Select, Dropdown } from "antd";
 import type { MenuProps } from "antd";
 import {
@@ -22,14 +23,82 @@ import {
   getRouteColor,
 } from "@/utils/timeline.utils";
 
+// ─── Grouped stop type ────────────────────────────────────────────────────────
+/** A stop as rendered on the timeline — may represent 1 or more raw stops at
+ * the same location / stop_type. `rawStops` keeps the original items so the
+ * click handler can still target individual jobs. */
+interface GroupedStop {
+  /** Representative stop used for position / colour / tooltip. */
+  representative: any;
+  /** All raw stops collapsed into this group. */
+  rawStops: any[];
+  /** How many individual candidates share this location + type. */
+  candidateCount: number;
+  /** Index of the FIRST raw stop in the original stops array (used for click). */
+  firstRawIndex: number;
+}
+
+/**
+ * Collapse consecutive stops that share the same location and stop_type into
+ * a single GroupedStop.  This reduces visual clutter for shuttle routes where
+ * multiple workers are picked up / dropped off at the same coordinates.
+ *
+ * Two stops are merged when ALL of the following match:
+ *   • stop_type
+ *   • latitude  (rounded to 4 dp ≈ 11 m)
+ *   • longitude (rounded to 4 dp ≈ 11 m)
+ */
+function groupStopsByLocation(stops: any[]): GroupedStop[] {
+  if (!stops || stops.length === 0) return [];
+
+  const grouped: GroupedStop[] = [];
+
+  for (let i = 0; i < stops.length; i++) {
+    const stop = stops[i];
+    const lat  = typeof stop.latitude  === "number" ? stop.latitude.toFixed(4)  : null;
+    const lon  = typeof stop.longitude === "number" ? stop.longitude.toFixed(4) : null;
+    const type = stop.stop_type;
+
+    // Check if this stop can be merged with the previous group
+    const prev = grouped[grouped.length - 1];
+    if (
+      prev &&
+      lat !== null &&
+      lon !== null &&
+      lat === (typeof prev.representative.latitude  === "number" ? prev.representative.latitude.toFixed(4)  : null) &&
+      lon === (typeof prev.representative.longitude === "number" ? prev.representative.longitude.toFixed(4) : null) &&
+      type === prev.representative.stop_type
+    ) {
+      // Merge into the existing group
+      prev.rawStops.push(stop);
+      prev.candidateCount++;
+    } else {
+      // Start a new group
+      grouped.push({
+        representative: stop,
+        rawStops: [stop],
+        candidateCount: 1,
+        firstRawIndex: i,
+      });
+    }
+  }
+
+  return grouped;
+}
+
 interface TimelineViewProps {
   routes: any[];
   jobs?: Job[];
+  /** Vehicle list from vehicle store — used to show vehicle info per route. */
+  vehicles?: Vehicle[];
   onStopClick?: (stop: any, routeIndex: number, stopIndex: number) => void;
   onAddStop?: (routeIndex: number) => void;
   onSwapDriver?: (routeIndex: number) => void;
   onReverseRoute?: (routeIndex: number) => void;
   onReOptimize?: (routeIndex: number) => void;
+  /** Index of the route currently isolated on the map, or null for "show all". */
+  focusedRouteIndex?: number | null;
+  onFocusRoute?: (routeIndex: number) => void;
 }
 
 const INTERVAL_OPTIONS = [
@@ -81,11 +150,14 @@ const DRIVER_COLUMN_WIDTH = 265;
 const TimelineView: React.FC<TimelineViewProps> = ({
   routes,
   jobs = [],
+  vehicles = [],
   onStopClick,
   onAddStop,
   onSwapDriver,
   onReverseRoute,
   onReOptimize,
+  focusedRouteIndex = null,
+  onFocusRoute,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [intervalMinutes, setIntervalMinutes] = useState(30);
@@ -100,6 +172,34 @@ const TimelineView: React.FC<TimelineViewProps> = ({
     jobs.forEach(job => map.set(Number(job.id), job.status));
     return map;
   }, [jobs]);
+
+  const jobsByIdMap = useMemo(() => {
+    const map = new Map<number, Job>();
+    jobs.forEach(job => map.set(Number(job.id), job));
+    return map;
+  }, [jobs]);
+
+  const getCandidateName = (rawStop: any): string | null => {
+    const jobId = rawStop?.job_id;
+    const fullJob: any = jobId ? jobsByIdMap.get(Number(jobId)) : null;
+    const name =
+      fullJob?.worker_shuttle_detail?.candidate_name ||
+      fullJob?.candidate_name ||
+      fullJob?.custom_fields?.candidate_name ||
+      (fullJob?.first_name || fullJob?.last_name
+        ? `${fullJob.first_name || ""} ${fullJob.last_name || ""}`.trim()
+        : null) ||
+      rawStop?.candidate_name ||
+      rawStop?.job?.candidate_name;
+    return name ? String(name) : null;
+  };
+
+  /** Build a lookup map from vehicle_id → Vehicle for fast access. */
+  const vehiclesMap = useMemo(() => {
+    const map = new Map<number, Vehicle>();
+    vehicles.forEach(v => map.set(v.id, v));
+    return map;
+  }, [vehicles]);
 
   // Dynamic pixels per minute based on interval - smaller intervals get more spread
   const pixelsPerMinute = getPixelsPerMinute(intervalMinutes);
@@ -195,7 +295,31 @@ const TimelineView: React.FC<TimelineViewProps> = ({
             {routes.map((route, routeIndex) => {
               const routeColor = getRouteColor(routeIndex);
               const durationStr = getRouteDurationStr(route);
-              const totalStopsCount = route.stops?.length || 0;
+              // Compute grouped stops once for stop count and rendering
+              const groupedStops = groupStopsByLocation(route.stops || []);
+              const totalGroupedStopsCount = groupedStops.filter(
+                (g) => g.representative.stop_type !== "depot" &&
+                        g.representative.stop_type !== "depot_start" &&
+                        g.representative.stop_type !== "depot_end"
+              ).length;
+              // Rows outside the focus fade back but stay clickable, so the
+              // dispatcher can hop straight from one driver to another.
+              const isDimmed =
+                focusedRouteIndex !== null && focusedRouteIndex !== routeIndex;
+
+              // Look up vehicle details for this route
+              const routeVehicle = route.vehicle_id
+                ? vehiclesMap.get(Number(route.vehicle_id))
+                : undefined;
+              const vehicleLabel = routeVehicle
+                ? [
+                    routeVehicle.name,
+                    routeVehicle.type ? `(${routeVehicle.type.replace("_", " ")})` : null,
+                    routeVehicle.license_plate ? `· ${routeVehicle.license_plate}` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" ")
+                : null;
 
               return (
                 <div
@@ -205,46 +329,67 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                 >
                   {/* Sticky Driver Info */}
                   <div
-                    className="sticky left-0 z-10 bg-white border-r border-gray-200 px-3 flex items-center gap-2.5 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]"
+                    className="sticky left-0 z-10 bg-white border-r border-gray-200 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] cursor-pointer"
                     style={{ width: DRIVER_COLUMN_WIDTH, minWidth: DRIVER_COLUMN_WIDTH }}
+                    onClick={() => onFocusRoute?.(routeIndex)}
+                    title={
+                      focusedRouteIndex === routeIndex
+                        ? "Showing only this route — press Esc to show all"
+                        : "Show only this driver's route"
+                    }
                   >
-                    <Avatar
-                      icon={<UserOutlined />}
-                      style={{ backgroundColor: routeColor }}
-                      className="text-white shrink-0"
-                      size="default"
-                    />
-                    <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                      <span className="font-semibold truncate text-gray-800 text-xs">
-                        {route.team_member_name ||
-                          `Driver ${route.team_member_id}`}
-                      </span>
-                      <span className="text-[11px] text-gray-400 truncate">
-                        {Math.round(route.total_distance_meters / 1000)} km
-                        {durationStr ? ` • ${durationStr}` : ""}
-                        {` • ${totalStopsCount} stops`}
-                      </span>
-                    </div>
-
-                    {/* ••• Menu */}
-                    <Dropdown
-                      menu={{ items: getRouteMenuItems(routeIndex) }}
-                      trigger={["click"]}
-                      placement="bottomRight"
+                    {/* Opacity lives on an inner wrapper so the sticky column
+                        stays opaque over the timeline when scrolled sideways. */}
+                    <div
+                      className="h-full px-3 flex items-center gap-2.5 transition-opacity"
+                      style={{ opacity: isDimmed ? 0.4 : 1 }}
                     >
-                      <div
-                        className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer transition-colors shrink-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreOutlined className="text-gray-500 text-base" />
+                      <Avatar
+                        icon={<UserOutlined />}
+                        style={{ backgroundColor: routeColor }}
+                        className="text-white shrink-0"
+                        size="default"
+                      />
+                      <div className="flex flex-col overflow-hidden flex-1 min-w-0">
+                        <span className="font-semibold truncate text-gray-800 text-xs">
+                          {route.team_member_name ||
+                            `Driver ${route.team_member_id}`}
+                        </span>
+                        {vehicleLabel && (
+                          <span className="text-[10px] text-gray-900 font-medium truncate">
+                            {vehicleLabel}
+                          </span>
+                        )}
+                        <span className="text-[11px] text-gray-400 truncate">
+                          {Math.round(route.total_distance_meters / 1000)} km
+                          {durationStr ? ` • ${durationStr}` : ""}
+                          {` • ${totalGroupedStopsCount} stop${totalGroupedStopsCount !== 1 ? "s" : ""}`}
+                        </span>
                       </div>
-                    </Dropdown>
+
+                      {/* ••• Menu */}
+                      <Dropdown
+                        menu={{ items: getRouteMenuItems(routeIndex) }}
+                        trigger={["click"]}
+                        placement="bottomRight"
+                      >
+                        <div
+                          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer transition-colors shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreOutlined className="text-gray-500 text-base" />
+                        </div>
+                      </Dropdown>
+                    </div>
                   </div>
 
                   {/* Timeline Track */}
                   <div
-                    className="relative z-0"
-                    style={{ width: timelineWidth }}
+                    className="relative z-0 transition-opacity"
+                    style={{
+                      width: timelineWidth,
+                      opacity: isDimmed ? 0.3 : 1,
+                    }}
                   >
                     {/* Connection Lines (Segments) */}
                     {route.stops?.map((stop: any, index: number) => {
@@ -393,186 +538,219 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                       );
                     })}
 
-                    {/* Stops - Now with service duration width */}
-                    {route.stops.map((stop: any, stopIndex: number) => {
-                      const arrivalTime = dayjs(stop.arrival_time);
-                      const serviceDuration =
-                        stop.service_duration_minutes || 0;
-                      const departureTime = arrivalTime.add(
-                        serviceDuration,
-                        "minute",
-                      );
+                    {/* Stops — rendered from grouped stops to collapse co-located candidates */}
+                    {(() => {
+                      let jobStopCounter = 1;
 
-                      const left = getPosition(
-                        stop.arrival_time,
-                        startTime,
-                        pixelsPerMinute,
-                      );
+                      return groupedStops.map((group, groupIndex) => {
+                        const stop = group.representative;
+                        const count = group.candidateCount;
+                        const arrivalTime = dayjs(stop.arrival_time);
+                        const serviceDuration =
+                          stop.service_duration_minutes || 0;
+                        const departureTime = arrivalTime.add(
+                          serviceDuration,
+                          "minute",
+                        );
 
-                      // Calculate block width based on service duration
-                      const blockWidth = serviceDuration * pixelsPerMinute;
+                        const left = getPosition(
+                          stop.arrival_time,
+                          startTime,
+                          pixelsPerMinute,
+                        );
 
-                      const isDepot = stop.stop_type === "depot";
-                      // Worker-shuttle routes use "pickup"/"dropoff" instead of
-                      // the generic "job" stop type.
-                      const isPickup = stop.stop_type === "pickup";
-                      const isDropoff =
-                        stop.stop_type === "dropoff" ||
-                        stop.stop_type === "drop_off";
-                      const isJob =
-                        stop.stop_type === "job" || isPickup || isDropoff;
-                      const stopTypeLabel = isPickup
-                        ? "Pickup"
-                        : isDropoff
-                          ? "Drop-off"
-                          : null;
+                        // Calculate block width based on service duration
+                        const blockWidth = serviceDuration * pixelsPerMinute;
 
-                      let jobStatus = "assigned";
-                      if (isJob) {
-                        const mapStatus = stop.job_id ? jobsMap.get(Number(stop.job_id)) : undefined;
-                        jobStatus = mapStatus || stop.job?.status || stop.status || "assigned";
-                      }
+                        const isDepot = stop.stop_type === "depot" ||
+                                        stop.stop_type === "depot_start" ||
+                                        stop.stop_type === "depot_end";
 
-                      let blockBgColor = routeColor;
-                      let blockBorderColor = routeColor;
-                      let blockTextColor = "white";
-
-                      if (isJob) {
-                        if (jobStatus === "completed" || jobStatus === "success") {
-                          blockBgColor = routeColor;
-                          blockBorderColor = routeColor;
-                          blockTextColor = "white";
-                        } else if (jobStatus === "failed") {
-                          blockBgColor = "#f5222d"; // Red
-                          blockBorderColor = "#f5222d";
-                          blockTextColor = "white";
-                        } else if (jobStatus === "skipped") {
-                          blockBgColor = "#8c8c8c"; // Gray
-                          blockBorderColor = "#8c8c8c";
-                          blockTextColor = "white";
-                        } else {
-                          blockBgColor = "white";
-                          blockBorderColor = routeColor;
-                          blockTextColor = routeColor;
+                        let displayIndex = 0;
+                        if (!isDepot) {
+                          displayIndex = jobStopCounter++;
                         }
-                      }
 
-                      // For jobs with service duration, show as a bar
-                      if (isJob && serviceDuration > 0) {
-                        return (
-                          <Tooltip
-                            key={stopIndex}
-                            title={
-                              <div>
-                                <div className="font-semibold">
-                                  {stop.address_formatted ||
-                                    `Job #${stop.job_id}`}
-                                </div>
-                                {stopTypeLabel && (
-                                  <div className="text-xs font-semibold uppercase opacity-80">
-                                    {stopTypeLabel}
-                                  </div>
+                        // Worker-shuttle routes use "pickup"/"dropoff" instead of
+                        // the generic "job" stop type.
+                        const isPickup = stop.stop_type === "pickup";
+                        const isDropoff =
+                          stop.stop_type === "dropoff" ||
+                          stop.stop_type === "drop_off";
+                        const isJob =
+                          stop.stop_type === "job" || isPickup || isDropoff;
+                        const stopTypeLabel = isPickup
+                          ? "Pickup"
+                          : isDropoff
+                            ? "Drop-off"
+                            : null;
+
+                        let jobStatus = "assigned";
+                        if (isJob) {
+                          const mapStatus = stop.job_id ? jobsMap.get(Number(stop.job_id)) : undefined;
+                          jobStatus = mapStatus || stop.job?.status || stop.status || "assigned";
+                        }
+
+                        let blockBgColor = routeColor;
+                        let blockBorderColor = routeColor;
+                        let blockTextColor = "white";
+
+                        if (isJob) {
+                          if (jobStatus === "completed" || jobStatus === "success") {
+                            blockBgColor = routeColor;
+                            blockBorderColor = routeColor;
+                            blockTextColor = "white";
+                          } else if (jobStatus === "failed") {
+                            blockBgColor = "#f5222d"; // Red
+                            blockBorderColor = "#f5222d";
+                            blockTextColor = "white";
+                          } else if (jobStatus === "skipped") {
+                            blockBgColor = "#8c8c8c"; // Gray
+                            blockBorderColor = "#8c8c8c";
+                            blockTextColor = "white";
+                          } else {
+                            blockBgColor = "white";
+                            blockBorderColor = routeColor;
+                            blockTextColor = routeColor;
+                          }
+                        }
+
+                        // Build tooltip content — show all candidates if grouped with clickable links
+                        const tooltipContent = (
+                          <div className="pointer-events-auto select-none">
+                            <div className="font-semibold">
+                              {isDepot
+                                ? (stop.stop_type === "depot_start" ? "Depot (Start)" : stop.stop_type === "depot_end" ? "Depot (End)" : "Depot")
+                                : (() => {
+                                    const cName = getCandidateName(stop);
+                                    const titleStr = stop.address_formatted || `Job #${stop.job_id}`;
+                                    return cName ? `${titleStr} (${cName})` : titleStr;
+                                  })()}
+                            </div>
+                            {stopTypeLabel && (
+                              <div className="text-xs font-semibold uppercase opacity-80">
+                                {stopTypeLabel}
+                                {count > 1 && (
+                                  <span className="ml-1 bg-white/20 rounded px-1">
+                                    ×{count} candidates
+                                  </span>
                                 )}
-                                <div className="text-xs">
-                                  ETA:{" "}
-                                  {arrivalTime.isValid()
-                                    ? arrivalTime.format("HH:mm")
-                                    : "--:--"}
-                                </div>
+                              </div>
+                            )}
+                            {count > 1 && (
+                              <div className="text-xs mt-1 max-h-36 overflow-y-auto space-y-0.5 custom-scrollbar pr-1">
+                                {group.rawStops.map((s: any, i: number) => {
+                                  const candName = getCandidateName(s);
+                                  return (
+                                    <div
+                                      key={i}
+                                      className="cursor-pointer text-sky-200 hover:text-white hover:underline transition-colors py-0.5"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onStopClick?.(s, routeIndex, displayIndex);
+                                      }}
+                                    >
+                                      · Job #{s.job_id} {candName ? `(${candName})` : ""}
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            <div className="text-xs text-gray-400 mt-1">
+                              ETA: {arrivalTime.isValid() ? arrivalTime.format("HH:mm") : "--:--"}
+                            </div>
+                            {serviceDuration > 0 && (
+                              <>
                                 <div className="text-xs">
                                   Departure:{" "}
                                   {departureTime.isValid()
                                     ? departureTime.format("HH:mm")
                                     : "--:--"}
                                 </div>
-                                <div className="text-xs">
-                                  Service: {serviceDuration} min
-                                </div>
-                                <div className="text-xs uppercase mt-1 opacity-80">
-                                  Status: {jobStatus}
-                                </div>
+                                <div className="text-xs">Service: {serviceDuration} min</div>
+                              </>
+                            )}
+                            {isJob && (
+                              <div className="text-xs uppercase mt-1 opacity-80">
+                                Status: {jobStatus}
                               </div>
-                            }
+                            )}
+                          </div>
+                        );
+
+                        // For jobs with service duration, show as a bar
+                        if (isJob && serviceDuration > 0) {
+                          return (
+                            <Tooltip
+                              key={groupIndex}
+                              title={tooltipContent}
+                              overlayInnerStyle={{ pointerEvents: "auto" }}
+                            >
+                              <div
+                                className="absolute top-1/2 -translate-y-1/2 h-8 flex items-center justify-center shadow-md transition-all hover:scale-105 cursor-pointer z-10 border-2"
+                                style={{
+                                  left: left,
+                                  width: Math.max(blockWidth, 28),
+                                  backgroundColor: blockBgColor,
+                                  borderColor: blockBorderColor,
+                                }}
+                                onClick={() =>
+                                  onStopClick?.(
+                                    group.rawStops[0],
+                                    routeIndex,
+                                    displayIndex,
+                                  )
+                                }
+                              >
+                                <span className="text-xs font-bold" style={{ color: blockTextColor }}>
+                                  {displayIndex}
+                                </span>
+                              </div>
+                            </Tooltip>
+                          );
+                        }
+
+                        // For depot and jobs without service duration, show as marker
+                        return (
+                          <Tooltip
+                            key={groupIndex}
+                            title={tooltipContent}
+                            overlayInnerStyle={{ pointerEvents: "auto" }}
                           >
                             <div
-                              className="absolute top-1/2 -translate-y-1/2 h-8 flex items-center justify-center shadow-md transition-all hover:scale-105 cursor-pointer z-10 border-2"
+                              className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center border-2 shadow-md transition-all hover:scale-110 cursor-pointer ${
+                                isDepot
+                                  ? "w-8 h-8 rounded-lg bg-linear-to-br from-slate-700 to-slate-900 border-slate-600 z-10 shadow-lg text-white"
+                                  : "w-8 h-8 rounded z-0"
+                              }`}
                               style={{
-                                left: left,
-                                width: Math.max(blockWidth, 28), // Minimum width for visibility
-                                backgroundColor: blockBgColor,
-                                borderColor: blockBorderColor,
+                                left: left - 14,
+                                backgroundColor: isDepot ? undefined : blockBgColor,
+                                borderColor: isDepot ? undefined : blockBorderColor,
                               }}
                               onClick={() =>
-                                onStopClick?.(stop, routeIndex, stopIndex)
+                                onStopClick?.(
+                                  group.rawStops[0],
+                                  routeIndex,
+                                  displayIndex,
+                                )
                               }
                             >
-                              <span className="text-xs font-bold" style={{ color: blockTextColor }}>
-                                {stopIndex}
-                              </span>
+                              {isDepot ? (
+                                <HomeFilled className="text-white text-base" />
+                              ) : (
+                                <span
+                                  className="text-xs font-bold"
+                                  style={{ color: blockTextColor }}
+                                >
+                                  {displayIndex}
+                                </span>
+                              )}
                             </div>
                           </Tooltip>
                         );
-                      }
-
-                      // For depot and jobs without service duration, show as marker
-                      return (
-                        <Tooltip
-                          key={stopIndex}
-                          title={
-                            <div>
-                              <div>
-                                {isDepot
-                                  ? "Depot"
-                                  : stop.address_formatted ||
-                                    `Job #${stop.job_id}`}
-                              </div>
-                              {stopTypeLabel && (
-                                <div className="text-xs font-semibold uppercase text-gray-300">
-                                  {stopTypeLabel}
-                                </div>
-                              )}
-                              <div className="text-xs text-gray-400">
-                                {arrivalTime.isValid()
-                                  ? arrivalTime.format("HH:mm")
-                                  : "--:--"}
-                              </div>
-                              {isJob && (
-                                <div className="text-xs uppercase mt-1 opacity-80 text-gray-400">
-                                  Status: {jobStatus}
-                                </div>
-                              )}
-                            </div>
-                          }
-                        >
-                          <div
-                            className={`absolute top-1/2 -translate-y-1/2 flex items-center justify-center border-2 shadow-md transition-all hover:scale-110 cursor-pointer ${
-                              isDepot
-                                ? "w-8 h-8 rounded-lg bg-linear-to-br from-slate-700 to-slate-900 border-slate-600 z-10 shadow-lg text-white"
-                                : "w-8 h-8 rounded z-0"
-                            }`}
-                            style={{
-                              left: left - 14,
-                              backgroundColor: isDepot ? undefined : blockBgColor,
-                              borderColor: isDepot ? undefined : blockBorderColor,
-                            }}
-                            onClick={() =>
-                              onStopClick?.(stop, routeIndex, stopIndex)
-                            }
-                          >
-                            {isDepot ? (
-                              <HomeFilled className="text-white text-base" />
-                            ) : (
-                              <span
-                                className="text-xs font-bold"
-                                style={{ color: blockTextColor }}
-                              >
-                                {stopIndex}
-                              </span>
-                            )}
-                          </div>
-                        </Tooltip>
-                      );
-                    })}
+                      });
+                    })()}
                   </div>
                 </div>
               );

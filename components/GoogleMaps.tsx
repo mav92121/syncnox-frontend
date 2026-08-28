@@ -1,13 +1,12 @@
 "use client";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
   Marker,
-  Polyline,
   InfoWindow,
 } from "@react-google-maps/api";
-import { Button, Dropdown, Radio, Spin } from "antd";
+import { Button, Dropdown, Radio } from "antd";
 import { Layers } from "lucide-react";
 import { Job, JobType } from "@/types/job.type";
 import { createCustomMarkerIcon } from "@/utils/customMapMarker";
@@ -58,9 +57,12 @@ interface MarkerData {
   color?: string;
   isDepot?: boolean;
   draggable?: boolean;
+  /** Index of the route this marker belongs to, used for route focus filtering. */
+  routeIndex?: number;
 }
 
 interface PolylineData {
+  id?: string;
   path: google.maps.LatLngLiteral[];
   options?: google.maps.PolylineOptions;
 }
@@ -73,6 +75,8 @@ interface GoogleMapsProps {
   InfoWindowModal?: React.FC<{ marker: MarkerData }>;
   selectedMarkerId?: string | number | null;
   onMarkerSelect?: (markerId: string | number | null) => void;
+  /** Fired when the user clicks empty map space (not a marker or polyline). */
+  onMapClick?: () => void;
   onMarkerDragEnd?: (
     markerId: string | number,
     newPosition: google.maps.LatLngLiteral,
@@ -90,6 +94,7 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   InfoWindowModal,
   selectedMarkerId,
   onMarkerSelect,
+  onMapClick,
   onMarkerDragEnd,
   showMapTypeControl = true,
   showZoomControl = true,
@@ -104,15 +109,27 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   const [mapTypeId, setMapTypeId] = useState<MapType>("roadmap");
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
 
+  // Hold a state to the google.maps.Map instance so that its initialization triggers useEffect hooks.
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+  // Hold references to all native google.maps.Polyline instances currently on the map.
+  const nativePolylinesRef = useRef<google.maps.Polyline[]>([]);
+
   const onLoad = useCallback(
-    function callback(map: google.maps.Map) {
-      // Always set the center and zoom explicitly
-      // This ensures the zoom prop is respected regardless of markers
-      map.setCenter(center);
-      map.setZoom(zoom);
+    function callback(mapInstance: google.maps.Map) {
+      setMap(mapInstance);
+      mapInstance.setCenter(center);
+      mapInstance.setZoom(zoom);
     },
-    [center, zoom],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   );
+
+  const onUnmount = useCallback(() => {
+    // Clean up all native polylines when the map unmounts.
+    nativePolylinesRef.current.forEach((p) => p.setMap(null));
+    nativePolylinesRef.current = [];
+    setMap(null);
+  }, []);
 
   const handleMapTypeChange = (type: MapType) => {
     setMapTypeId(type);
@@ -128,6 +145,35 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
     }
   }, [selectedMarkerId, markers]);
 
+  // Imperatively manage native google.maps.Polyline instances.
+  // This guarantees old polylines are fully removed from the canvas whenever
+  // the polylines prop changes — React declarative <Polyline> components from
+  // @react-google-maps/api are not reliable for this because they can leave
+  // orphaned native canvas objects behind when the list shrinks or changes.
+  useEffect(() => {
+    if (!map) return;
+
+    // Destroy every existing native polyline.
+    nativePolylinesRef.current.forEach((p) => p.setMap(null));
+    nativePolylinesRef.current = [];
+
+    // Create fresh native polylines for the current prop value.
+    nativePolylinesRef.current = polylines.map((line) => {
+      return new google.maps.Polyline({
+        path: line.path,
+        map: map,
+        ...line.options,
+      });
+    });
+
+    // Cleanup when effect re-runs or component unmounts.
+    return () => {
+      nativePolylinesRef.current.forEach((p) => p.setMap(null));
+      nativePolylinesRef.current = [];
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [polylines, map]);
+
   if (!isLoaded) {
     return <></>;
   }
@@ -138,6 +184,8 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
       center={center}
       zoom={zoom}
       onLoad={onLoad}
+      onUnmount={onUnmount}
+      onClick={() => onMapClick?.()}
       options={{
         mapTypeId: mapTypeId,
         disableDefaultUI: true,
@@ -189,22 +237,19 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
           </Button>
         </Dropdown>
       )}
+
       {/* Child components, such as markers, info windows, etc. */}
       {markers.map((marker) => {
-        // Determine the number to display on the marker
         const markerNumber =
           marker.sequenceNumber ?? marker.jobData?.id ?? marker.id;
 
-        // Get job status for color
         const status =
           (marker.jobData && "status" in marker.jobData
             ? marker.jobData.status
             : undefined) || "draft";
 
-        // Check if this marker is selected
         const isSelected = selectedMarker?.id === marker.id;
 
-        // Create custom icon
         const icon = createCustomMarkerIcon(
           markerNumber,
           status,
@@ -233,13 +278,6 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
               }
             }}
           />
-        );
-      })}
-
-      {polylines.map((line, index) => {
-        const polylineOptions = { ...line.options };
-        return (
-          <Polyline key={index} path={line.path} options={polylineOptions} />
         );
       })}
 
