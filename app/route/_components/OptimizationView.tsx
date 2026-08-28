@@ -37,11 +37,13 @@ import { useOptimizationStore } from "@/store/optimization.store";
 import { useRouteStore } from "@/store/routes.store";
 import { useIndexStore } from "@/store/index.store";
 import { useTeamStore } from "@/store/team.store";
+import { useVehicleStore } from "@/store/vehicle.store";
 import RouteInfoWindow from "./RouteInfoWindow";
 import RouteExportPreview from "./RouteExportPreview";
 import {
   generateRoutePolylines,
   generateMapMarkers,
+  getGroupedStopsCount,
 } from "./optimizationView.utils";
 import { getRouteColor } from "@/utils/timeline.utils";
 import ResizeHandle from "@/components/ResizeHandle";
@@ -80,6 +82,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const { jobs, fetchJobsByDate, fetchJobsByIds } = useJobsStore();
   const { updateRoute } = useRouteStore();
   const { teams, initializeTeams } = useTeamStore();
+  const { vehicles, initializeVehicles } = useVehicleStore();
 
   useEffect(() => {
     if (route.job_ids && route.job_ids.length > 0) {
@@ -93,6 +96,11 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   useEffect(() => {
     initializeTeams();
   }, [initializeTeams]);
+
+  // Ensure vehicles are loaded for route vehicle info display
+  useEffect(() => {
+    initializeVehicles();
+  }, [initializeVehicles]);
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempRouteName, setTempRouteName] = useState(route.route_name);
@@ -314,13 +322,16 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
       (foundMarker?.jobData as Job) ||
       null;
 
+    const displayStopNumber =
+      foundMarker?.sequenceNumber ?? (stopIndex + 1);
+
     setSelectedDrawerJob({
       stopData: stop,
       job: matchedJob,
       driverName: routeItem.team_member_name || `Driver ${routeIndex + 1}`,
       leg: routeItem.leg,
       routeIndex,
-      stopIndex,
+      stopIndex: displayStopNumber,
     });
   };
 
@@ -547,7 +558,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             </Text>
             <Text type="secondary">
               <TeamOutlined /> {totalVehicles}{" "}
-              {totalVehicles === 1 ? "team member" : "team members"}
+              {totalVehicles === 1 ? "route" : "routes"}
             </Text>
           </div>
 
@@ -625,7 +636,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                       `Driver ${focusedRouteIndex + 1}`}
                   </span>
                   <span className="text-[11px] text-gray-400">
-                    {focusedRoute?.stops?.length ?? 0} stops
+                    {getGroupedStopsCount(focusedRoute?.stops)} stops
                   </span>
                   <Tooltip title="Clear focus (Esc)">
                     <button
@@ -650,6 +661,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                 <TimelineView
                   routes={route.result?.routes || []}
                   jobs={jobs}
+                  vehicles={vehicles}
                   onStopClick={handleStopClick}
                   onAddStop={(idx) => setAddStopRouteIndex(idx)}
                   onSwapDriver={(idx) => setSwapDriverRouteIndex(idx)}

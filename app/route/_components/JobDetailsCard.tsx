@@ -388,7 +388,7 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
           <div className="font-bold text-gray-900 text-sm truncate">
             {isDepotStop
               ? "Depot Station"
-              : `Stop No - ${stopIndex + 1} (${driverLabel})`}
+              : `Stop No - ${stopIndex} (${driverLabel})`}
           </div>
           {stopBadge && !isDepotStop && (
             <span
