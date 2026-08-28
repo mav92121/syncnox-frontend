@@ -553,9 +553,9 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
             <Text type="secondary">
               <CalendarOutlined /> {route.scheduled_date}
             </Text>
-            <Text type="secondary">
+            {/* <Text type="secondary">
               <EnvironmentOutlined /> {totalStops} stops
-            </Text>
+            </Text> */}
             <Text type="secondary">
               <TeamOutlined /> {totalVehicles}{" "}
               {totalVehicles === 1 ? "route" : "routes"}

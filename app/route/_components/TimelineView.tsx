@@ -311,15 +311,54 @@ const TimelineView: React.FC<TimelineViewProps> = ({
               const routeVehicle = route.vehicle_id
                 ? vehiclesMap.get(Number(route.vehicle_id))
                 : undefined;
+
+              const getVehicleCapacity = (v?: Vehicle): number | null => {
+                if (!v) return null;
+                if (Array.isArray(v.load_constraints)) {
+                  for (const c of v.load_constraints as any[]) {
+                    if (c && typeof c === "object") {
+                      const ctype = String(c.constraint_type || "").toLowerCase();
+                      const unit = String(c.unit || "").toLowerCase();
+                      if (ctype === "capacity" || ctype === "seats" || unit.includes("seat")) {
+                        const val = Number(c.max_value);
+                        if (val > 0) return val;
+                      }
+                    }
+                  }
+                }
+                const vtype = String(v.type || "").toLowerCase();
+                const typeCaps: Record<string, number> = {
+                  car: 4, van: 8, bus: 30, small_truck: 2, truck: 2, scooter: 1, bike: 1, foot: 1,
+                };
+                return typeCaps[vtype] || null;
+              };
+
+              const vehicleCapacity = getVehicleCapacity(routeVehicle);
+
               const vehicleLabel = routeVehicle
                 ? [
                     routeVehicle.name,
                     routeVehicle.type ? `(${routeVehicle.type.replace("_", " ")})` : null,
+                    vehicleCapacity ? `· ${vehicleCapacity} seats` : null,
                     routeVehicle.license_plate ? `· ${routeVehicle.license_plate}` : null,
                   ]
                     .filter(Boolean)
                     .join(" ")
                 : null;
+
+              // Pre-calculate cumulative running occupancy per stop in route
+              const occupancyMap = new Map<number, number>();
+              let runningLoad = 0;
+              (route.stops || []).forEach((s: any, idx: number) => {
+                const isPickup = s.stop_type === "pickup";
+                const isDropoff = s.stop_type === "dropoff" || s.stop_type === "drop_off";
+                if (isPickup) {
+                  runningLoad += (s.passenger_count || 1);
+                } else if (isDropoff) {
+                  runningLoad = Math.max(0, runningLoad - (s.passenger_count || 1));
+                }
+                occupancyMap.set(idx, runningLoad);
+              });
 
               return (
                 <div
@@ -615,6 +654,9 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                           }
                         }
 
+                        const lastRawIndex = group.firstRawIndex + group.candidateCount - 1;
+                        const currentOccupancy = occupancyMap.get(lastRawIndex) ?? 0;
+
                         // Build tooltip content — show all candidates if grouped with clickable links
                         const tooltipContent = (
                           <div className="pointer-events-auto select-none">
@@ -637,7 +679,12 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                                 )}
                               </div>
                             )}
-                            {count > 1 && (
+                            {isJob && (
+                              <div className="text-xs font-semibold text-emerald-300 mt-0.5">
+                                Occupancy: {currentOccupancy} {vehicleCapacity ? `/ ${vehicleCapacity}` : ""} seats
+                              </div>
+                            )}
+                            {isJob && group.rawStops.length > 0 && (
                               <div className="text-xs mt-1 max-h-36 overflow-y-auto space-y-0.5 custom-scrollbar pr-1">
                                 {group.rawStops.map((s: any, i: number) => {
                                   const candName = getCandidateName(s);
