@@ -3,22 +3,40 @@ import { decodePolyline } from "@/utils/googleMaps.utils";
 import { getRouteColor } from "@/utils/timeline.utils";
 import { Job } from "@/types/job.type";
 
-export const generateRoutePolylines = (route: Route) => {
+/** Stroke colour used for routes that are not the focused one. */
+const DIMMED_ROUTE_COLOR = "#9ca3af";
+
+export const generateRoutePolylines = (
+  route: Route,
+  focusedRouteIndex?: number | null,
+) => {
+
   if (!route?.result?.routes) return [];
 
-  return route.result.routes.flatMap((routeItem, index) => {
-    if (!routeItem.route_polyline) return [];
-    const color = getRouteColor(index);
-    return [
-      {
-        path: decodePolyline(routeItem.route_polyline),
-        options: {
-          strokeColor: color,
-          strokeWeight: 4,
-        },
+  return route.result.routes
+    .map((routeItem, index) => ({ routeItem, index }))
+    .filter(({ routeItem, index }) => {
+      if (!routeItem.route_polyline) return false;
+      if (
+        focusedRouteIndex !== null &&
+        focusedRouteIndex !== undefined &&
+        focusedRouteIndex !== index
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .map(({ routeItem, index }) => ({
+      id: `route-${index}`,
+      path: decodePolyline(routeItem.route_polyline),
+      options: {
+        strokeColor: getRouteColor(index),
+        strokeWeight: 4,
+        strokeOpacity: 1,
+        zIndex: 10,
+        clickable: true,
       },
-    ];
-  });
+    }));
 };
 
 export type MarkerJobData = Pick<
@@ -79,6 +97,7 @@ export const generateMapMarkers = (route: Route, jobs: Job[]) => {
           sequenceNumber: stopIndex,
           isDepot: stop.stop_type === "depot",
           color: color,
+          routeIndex: index,
         };
       });
   });

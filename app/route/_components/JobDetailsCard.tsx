@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { Tag, Button, App, message } from "antd";
+import { Tag, Button, App, message, Input, InputNumber, TimePicker } from "antd";
 import {
   CloseOutlined,
   DeleteOutlined,
   CheckCircleOutlined,
+  EditOutlined,
+  SaveOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import {
   User,
@@ -28,7 +31,7 @@ import {
 import dayjs from "dayjs";
 import type { Job, JobStatus } from "@/types/job.type";
 import { STATUS_COLORS, formatJobTypeLabel } from "@/utils/jobs.utils";
-import { updateJobStatus } from "@/apis/jobs.api";
+import { updateJobStatus, updateJob } from "@/apis/jobs.api";
 import { useJobsStore } from "@/store/jobs.store";
 import { useRouteStore } from "@/store/routes.store";
 
@@ -40,6 +43,7 @@ interface JobDetailsCardProps {
   leg?: string;
   onClose: () => void;
   onRemoveJob?: () => void;
+  onJobSaved?: () => void;
 }
 
 /** Pickup / drop-off / depot / break badge shown in the card header. */
@@ -108,11 +112,15 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   leg,
   onClose,
   onRemoveJob,
+  onJobSaved,
 }) => {
   const { patchJobLocally } = useJobsStore();
   const { modal } = App.useApp();
   const { fetchRoutes, selectedStatus } = useRouteStore();
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [jobSaved, setJobSaved] = useState(false);
 
   if (!stopData && !job) return null;
 
@@ -123,6 +131,21 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
     (job as any)?.priority ||
     "medium"
   ).toLowerCase();
+
+  // ── Edit state initialised from current job values ──────────────────────
+  const [editValues, setEditValues] = useState({
+    time_window_start: job?.time_window_start ?? "",
+    time_window_end: job?.time_window_end ?? "",
+    service_duration: job?.service_duration ?? 0,
+    client_pick_up_time:
+      (job?.worker_shuttle_detail as any)?.client_pick_up_time ??
+      job?.client_pick_up_time ??
+      "",
+    reach_before_minutes:
+      (job?.worker_shuttle_detail as any)?.reach_before_minutes ??
+      job?.reach_before_minutes ??
+      10,
+  });
 
   const stopType = String(stopData?.stop_type || "").toLowerCase();
   const isDepotStop = stopType.includes("depot");
@@ -291,6 +314,35 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
     });
   };
 
+  const handleSaveJob = async () => {
+    if (!job || !jobId) return;
+    try {
+      setIsSaving(true);
+      const payload: any = { ...job };
+      if (isShuttle) {
+        payload.worker_shuttle_detail = {
+          ...(job.worker_shuttle_detail ?? {}),
+          client_pick_up_time: editValues.client_pick_up_time || undefined,
+          reach_before_minutes: editValues.reach_before_minutes,
+        };
+      } else {
+        payload.time_window_start = editValues.time_window_start || undefined;
+        payload.time_window_end = editValues.time_window_end || undefined;
+        payload.service_duration = editValues.service_duration;
+      }
+      const updated = await updateJob(payload);
+      patchJobLocally(updated);
+      setIsEditing(false);
+      setJobSaved(true);
+      message.success("Job updated — click Re-Optimize to apply changes");
+      onJobSaved?.();
+    } catch (err) {
+      message.error("Failed to save job");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const statusField = (
     <Field
       icon={<Activity size={13} className="text-gray-400 shrink-0" />}
@@ -347,6 +399,36 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {/* Edit / Save / Cancel toggle — only for job stops, not depot */}
+          {!isDepotStop && job && (
+            isEditing ? (
+              <>
+                <button
+                  onClick={handleSaveJob}
+                  disabled={isSaving}
+                  title="Save changes"
+                  className="text-green-600 hover:text-green-800 transition-colors p-1 rounded hover:bg-green-50 cursor-pointer disabled:opacity-50"
+                >
+                  <SaveOutlined className="text-sm" />
+                </button>
+                <button
+                  onClick={() => { setIsEditing(false); }}
+                  title="Cancel edit"
+                  className="text-gray-400 hover:text-gray-700 transition-colors p-1 rounded hover:bg-gray-100 cursor-pointer"
+                >
+                  <CloseOutlined className="text-sm" />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => { setIsEditing(true); setJobSaved(false); }}
+                title="Edit job"
+                className="text-gray-400 hover:text-[#003220] transition-colors p-1 rounded hover:bg-gray-100 cursor-pointer"
+              >
+                <EditOutlined className="text-sm" />
+              </button>
+            )
+          )}
           {onRemoveJob && !isDepotStop && (
             <button
               onClick={onRemoveJob}
@@ -622,27 +704,113 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
 
       {/* Quick Action Footer */}
       {!isDepotStop && (
-        <div className="p-3 bg-gray-50 border-t border-gray-100 flex gap-2 shrink-0">
-          <Button
-            type="primary"
-            size="small"
-            icon={<CheckCircleOutlined />}
-            loading={isUpdating}
-            disabled={status === "completed"}
-            onClick={() => handleUpdateStatus("completed")}
-            className="w-1/2 bg-[#003220] hover:bg-[#002417] text-xs font-semibold h-8"
-          >
-            Mark Completed
-          </Button>
-          <Button
-            type="default"
-            size="small"
-            disabled={status === "skipped" || status === "failed"}
-            onClick={() => handleUpdateStatus("failed")}
-            className="w-1/2 text-xs font-semibold h-8"
-          >
-            Skip Stop
-          </Button>
+        <div className="p-3 bg-gray-50 border-t border-gray-100 flex flex-col gap-2 shrink-0">
+          {/* Edit form fields (shown in edit mode) */}
+          {isEditing && (
+            <div className="space-y-2 bg-white border border-amber-200 rounded p-2.5 text-xs">
+              <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-1">Edit Timing Fields</div>
+              {isShuttle ? (
+                <>
+                  <div>
+                    <div className="text-[10px] text-gray-500 mb-0.5">Client Pick-Up Time (HH:MM)</div>
+                    <Input
+                      size="small"
+                      placeholder="e.g. 08:30"
+                      value={editValues.client_pick_up_time}
+                      onChange={(e) => setEditValues(v => ({ ...v, client_pick_up_time: e.target.value }))}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 mb-0.5">Reach Before (minutes)</div>
+                    <InputNumber
+                      size="small"
+                      className="w-full text-xs"
+                      value={editValues.reach_before_minutes}
+                      onChange={(val) => setEditValues(v => ({ ...v, reach_before_minutes: val ?? 0 }))}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <div className="text-[10px] text-gray-500 mb-0.5">Time Window Start (HH:MM)</div>
+                    <Input
+                      size="small"
+                      placeholder="e.g. 09:00"
+                      value={editValues.time_window_start}
+                      onChange={(e) => setEditValues(v => ({ ...v, time_window_start: e.target.value }))}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 mb-0.5">Time Window End (HH:MM)</div>
+                    <Input
+                      size="small"
+                      placeholder="e.g. 17:00"
+                      value={editValues.time_window_end}
+                      onChange={(e) => setEditValues(v => ({ ...v, time_window_end: e.target.value }))}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 mb-0.5">Service Duration (min)</div>
+                    <InputNumber
+                      size="small"
+                      className="w-full text-xs"
+                      min={0}
+                      value={editValues.service_duration}
+                      onChange={(val) => setEditValues(v => ({ ...v, service_duration: val ?? 0 }))}
+                    />
+                  </div>
+                </>
+              )}
+              <Button
+                type="primary"
+                size="small"
+                icon={<SaveOutlined />}
+                loading={isSaving}
+                onClick={handleSaveJob}
+                className="w-full bg-[#003220] text-xs font-semibold h-7 mt-1"
+              >
+                Save Changes
+              </Button>
+            </div>
+          )}
+
+          {/* Job-saved banner — prompts user to re-optimize */}
+          {jobSaved && !isEditing && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 text-[11px] text-amber-800">
+              <ReloadOutlined className="shrink-0" />
+              <span className="flex-1">Job updated. Re-Optimize the route to apply changes.</span>
+            </div>
+          )}
+
+          {/* Status action buttons */}
+          {!isEditing && (
+            <div className="flex gap-2">
+              <Button
+                type="primary"
+                size="small"
+                icon={<CheckCircleOutlined />}
+                loading={isUpdating}
+                disabled={status === "completed"}
+                onClick={() => handleUpdateStatus("completed")}
+                className="w-1/2 bg-[#003220] hover:bg-[#002417] text-xs font-semibold h-8"
+              >
+                Mark Completed
+              </Button>
+              <Button
+                type="default"
+                size="small"
+                disabled={status === "skipped" || status === "failed"}
+                onClick={() => handleUpdateStatus("failed")}
+                className="w-1/2 text-xs font-semibold h-8"
+              >
+                Skip Stop
+              </Button>
+            </div>
+          )}
         </div>
       )}
     </div>

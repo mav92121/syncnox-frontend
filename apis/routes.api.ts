@@ -51,6 +51,13 @@ export const deleteOptimizationRequest = async (id: number): Promise<void> => {
   await apiClient.delete(`optimization/requests/${id}`);
 };
 
+/** Re-run the full optimization for a request (after job edits). Deletes old routes. */
+export const reOptimizeRequest = async (id: number): Promise<Route> => {
+  const response = await apiClient.post<Route>(`optimization/requests/${id}/re-optimize`);
+  return response.data;
+};
+
+
 // ─────────────────────────────────────────────
 // Per-Driver Route Operations
 // ─────────────────────────────────────────────

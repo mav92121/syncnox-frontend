@@ -30,6 +30,9 @@ interface TimelineViewProps {
   onSwapDriver?: (routeIndex: number) => void;
   onReverseRoute?: (routeIndex: number) => void;
   onReOptimize?: (routeIndex: number) => void;
+  /** Index of the route currently isolated on the map, or null for "show all". */
+  focusedRouteIndex?: number | null;
+  onFocusRoute?: (routeIndex: number) => void;
 }
 
 const INTERVAL_OPTIONS = [
@@ -86,6 +89,8 @@ const TimelineView: React.FC<TimelineViewProps> = ({
   onSwapDriver,
   onReverseRoute,
   onReOptimize,
+  focusedRouteIndex = null,
+  onFocusRoute,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [intervalMinutes, setIntervalMinutes] = useState(30);
@@ -196,6 +201,10 @@ const TimelineView: React.FC<TimelineViewProps> = ({
               const routeColor = getRouteColor(routeIndex);
               const durationStr = getRouteDurationStr(route);
               const totalStopsCount = route.stops?.length || 0;
+              // Rows outside the focus fade back but stay clickable, so the
+              // dispatcher can hop straight from one driver to another.
+              const isDimmed =
+                focusedRouteIndex !== null && focusedRouteIndex !== routeIndex;
 
               return (
                 <div
@@ -205,46 +214,62 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                 >
                   {/* Sticky Driver Info */}
                   <div
-                    className="sticky left-0 z-10 bg-white border-r border-gray-200 px-3 flex items-center gap-2.5 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)]"
+                    className="sticky left-0 z-10 bg-white border-r border-gray-200 shadow-[4px_0_8px_-4px_rgba(0,0,0,0.1)] cursor-pointer"
                     style={{ width: DRIVER_COLUMN_WIDTH, minWidth: DRIVER_COLUMN_WIDTH }}
+                    onClick={() => onFocusRoute?.(routeIndex)}
+                    title={
+                      focusedRouteIndex === routeIndex
+                        ? "Showing only this route — press Esc to show all"
+                        : "Show only this driver's route"
+                    }
                   >
-                    <Avatar
-                      icon={<UserOutlined />}
-                      style={{ backgroundColor: routeColor }}
-                      className="text-white shrink-0"
-                      size="default"
-                    />
-                    <div className="flex flex-col overflow-hidden flex-1 min-w-0">
-                      <span className="font-semibold truncate text-gray-800 text-xs">
-                        {route.team_member_name ||
-                          `Driver ${route.team_member_id}`}
-                      </span>
-                      <span className="text-[11px] text-gray-400 truncate">
-                        {Math.round(route.total_distance_meters / 1000)} km
-                        {durationStr ? ` • ${durationStr}` : ""}
-                        {` • ${totalStopsCount} stops`}
-                      </span>
-                    </div>
-
-                    {/* ••• Menu */}
-                    <Dropdown
-                      menu={{ items: getRouteMenuItems(routeIndex) }}
-                      trigger={["click"]}
-                      placement="bottomRight"
+                    {/* Opacity lives on an inner wrapper so the sticky column
+                        stays opaque over the timeline when scrolled sideways. */}
+                    <div
+                      className="h-full px-3 flex items-center gap-2.5 transition-opacity"
+                      style={{ opacity: isDimmed ? 0.4 : 1 }}
                     >
-                      <div
-                        className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer transition-colors shrink-0"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreOutlined className="text-gray-500 text-base" />
+                      <Avatar
+                        icon={<UserOutlined />}
+                        style={{ backgroundColor: routeColor }}
+                        className="text-white shrink-0"
+                        size="default"
+                      />
+                      <div className="flex flex-col overflow-hidden flex-1 min-w-0">
+                        <span className="font-semibold truncate text-gray-800 text-xs">
+                          {route.team_member_name ||
+                            `Driver ${route.team_member_id}`}
+                        </span>
+                        <span className="text-[11px] text-gray-400 truncate">
+                          {Math.round(route.total_distance_meters / 1000)} km
+                          {durationStr ? ` • ${durationStr}` : ""}
+                          {` • ${totalStopsCount} stops`}
+                        </span>
                       </div>
-                    </Dropdown>
+
+                      {/* ••• Menu */}
+                      <Dropdown
+                        menu={{ items: getRouteMenuItems(routeIndex) }}
+                        trigger={["click"]}
+                        placement="bottomRight"
+                      >
+                        <div
+                          className="w-7 h-7 flex items-center justify-center rounded-md hover:bg-gray-100 cursor-pointer transition-colors shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreOutlined className="text-gray-500 text-base" />
+                        </div>
+                      </Dropdown>
+                    </div>
                   </div>
 
                   {/* Timeline Track */}
                   <div
-                    className="relative z-0"
-                    style={{ width: timelineWidth }}
+                    className="relative z-0 transition-opacity"
+                    style={{
+                      width: timelineWidth,
+                      opacity: isDimmed ? 0.3 : 1,
+                    }}
                   >
                     {/* Connection Lines (Segments) */}
                     {route.stops?.map((stop: any, index: number) => {

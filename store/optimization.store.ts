@@ -4,6 +4,7 @@ import {
   createOptimizationRequest,
   getOptimizationRequest,
   updateOptimizationRequest,
+  reOptimizeRequest,
   CreateOptimizationRequestPayload,
   UpdateOptimizationRequestPayload,
 } from "@/apis/routes.api";
@@ -27,6 +28,7 @@ interface OptimizationStore {
     id: number,
     payload: UpdateOptimizationRequestPayload
   ) => Promise<Route>;
+  reOptimize: (id: number) => Promise<Route>;
 }
 
 const POLL_INTERVAL_MS = 2000; // 2 seconds
@@ -160,6 +162,25 @@ export const useOptimizationStore = create<OptimizationStore>((set, get) => ({
         error.response?.data?.detail ||
         error.message ||
         "Failed to update optimization";
+      set({ error: errorMessage });
+      throw new Error(errorMessage);
+    }
+  },
+
+  reOptimize: async (id: number) => {
+    try {
+      set({ error: null });
+      // Call the re-optimize endpoint — returns the request in 'queued' status
+      const optimization = await reOptimizeRequest(id);
+      set({ currentOptimization: optimization });
+      // Start polling so the UI auto-updates when the new result arrives
+      get().pollOptimizationStatus(id);
+      return optimization;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.detail ||
+        error.message ||
+        "Failed to re-optimize";
       set({ error: errorMessage });
       throw new Error(errorMessage);
     }
