@@ -136,6 +136,8 @@ const CreateRouteModal = ({
 
   // Handle redirect when optimization completes
   useEffect(() => {
+    if (!open) return;
+
     if (
       currentOptimization &&
       (currentOptimization.status === "completed" ||
@@ -158,6 +160,7 @@ const CreateRouteModal = ({
       return () => clearTimeout(timeout);
     }
   }, [
+    open,
     currentOptimization,
     router,
     setOpen,
