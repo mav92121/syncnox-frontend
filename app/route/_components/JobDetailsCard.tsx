@@ -1,12 +1,12 @@
-import React, { useState } from "react";
-import { Tag, Button, App, message, Input, InputNumber, TimePicker } from "antd";
+import React, { useState, useEffect } from "react";
+import { Tag, Button, App, message, Input, InputNumber, TimePicker, DatePicker, Select } from "antd";
+import AddressAutocomplete, { AddressData } from "@/components/AddressAutocomplete";
 import {
   CloseOutlined,
   DeleteOutlined,
   CheckCircleOutlined,
   EditOutlined,
   SaveOutlined,
-  ReloadOutlined,
 } from "@ant-design/icons";
 import {
   User,
@@ -43,7 +43,7 @@ interface JobDetailsCardProps {
   leg?: string;
   onClose: () => void;
   onRemoveJob?: () => void;
-  onJobSaved?: () => void;
+  onJobSaved?: (requiresReOptimization: boolean) => void;
 }
 
 /** Pickup / drop-off / depot / break badge shown in the card header. */
@@ -120,7 +120,6 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   const [isUpdating, setIsUpdating] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [jobSaved, setJobSaved] = useState(false);
 
   if (!stopData && !job) return null;
 
@@ -132,29 +131,12 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
     "medium"
   ).toLowerCase();
 
-  // ── Edit state initialised from current job values ──────────────────────
-  const [editValues, setEditValues] = useState({
-    time_window_start: job?.time_window_start ?? "",
-    time_window_end: job?.time_window_end ?? "",
-    service_duration: job?.service_duration ?? 0,
-    client_pick_up_time:
-      (job?.worker_shuttle_detail as any)?.client_pick_up_time ??
-      job?.client_pick_up_time ??
-      "",
-    reach_before_minutes:
-      (job?.worker_shuttle_detail as any)?.reach_before_minutes ??
-      job?.reach_before_minutes ??
-      10,
-  });
-
   const stopType = String(stopData?.stop_type || "").toLowerCase();
   const isDepotStop = stopType.includes("depot");
   const isPickupStop = stopType === "pickup";
   const isDropoffStop = stopType === "dropoff" || stopType === "drop_off";
   const stopBadge = STOP_TYPE_BADGES[stopType];
 
-  // Worker-shuttle jobs carry a different field set, and each job appears twice
-  // in the route (once as a pickup stop, once as a drop-off stop).
   const isShuttle =
     job?.template_type === "worker_shuttle" ||
     Boolean(job?.worker_shuttle_detail) ||
@@ -183,11 +165,6 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
     ? driverName.split(" ")[0].toUpperCase()
     : "DR1";
 
-  /**
-   * Shuttle values arrive flattened on the job, nested under
-   * `worker_shuttle_detail`, or inside `custom_fields` depending on how the job
-   * was created (form, bulk upload, or written back by the optimizer).
-   */
   const shuttleValue = (...keys: string[]): string | undefined => {
     for (const key of keys) {
       const candidates = [
@@ -226,11 +203,26 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
     "return_dropoff_point",
     "client_address",
   );
-  // Return trips are scheduled off the shift end hour, one-way/round trips off
-  // the start hour — mirrors the Client Pickup Time column on the jobs grid.
+
   const clientPickUpTime = isReturnTrip
     ? shuttleValue("end_hour", "client_pick_up_time", "start_hour")
     : shuttleValue("client_pick_up_time", "start_hour", "end_hour");
+  const startHour = shuttleValue("start_hour");
+  const endHour = shuttleValue("end_hour");
+  const pickupType = shuttleValue("pickup_type");
+  const scheduledDate =
+    job?.scheduled_date ||
+    shuttleValue("scheduled_date") ||
+    stopData?.scheduled_date;
+
+  const formatPickupType = (val?: string) => {
+    if (!val || val === "-") return "-";
+    return String(val)
+      .split("_")
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  };
+
   const candidatePickupEta = shuttleValue(
     "candidate_pickup_eta",
     "go_pickup_time_output",
@@ -252,8 +244,6 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
       )
     : job?.additional_notes || (job as any)?.notes || "-";
 
-  // Prefer the address the optimizer resolved for this specific stop, so a
-  // drop-off stop shows the drop-off address rather than the pickup address.
   const address =
     (isShuttle
       ? stopData?.address_formatted ||
@@ -283,6 +273,41 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
         return "bg-slate-100 text-slate-700 border-slate-200";
     }
   };
+
+  const getInitialEditValues = () => ({
+    scheduled_date: job?.scheduled_date || stopData?.scheduled_date || "",
+    job_type: job?.job_type || shuttleValue("job_type", "pickup_type") || "one_way",
+    start_hour: shuttleValue("start_hour") || "",
+    end_hour: shuttleValue("end_hour") || "",
+    pickup_type: shuttleValue("pickup_type") || "",
+    quart_id: shuttleValue("quart_id", "quant_id") || "",
+    reach_before_minutes: Number(reachBeforeMinutes ?? 10),
+    pick_up_address: pickUpAddress || "",
+    pick_up_location: (job?.worker_shuttle_detail as any)?.pick_up_location || job?.location || undefined,
+    drop_off_address: dropOffAddress || "",
+    drop_off_location: (job?.worker_shuttle_detail as any)?.drop_off_location || undefined,
+    candidate_name: shuttleValue("candidate_name") || "",
+    candidate_phone: shuttleValue("candidate_phone") || "",
+    candidate_id: shuttleValue("candidate_id") || "",
+    client_name: shuttleValue("client_name", "first_name") || "",
+    client_phone: shuttleValue("client_phone", "phone_number") || "",
+    client_id: shuttleValue("client_id") || "",
+    notes: notes !== "-" ? notes : "",
+    address_formatted: job?.address_formatted || "",
+    location: job?.location || undefined,
+    time_window_start: job?.time_window_start || "",
+    time_window_end: job?.time_window_end || "",
+    service_duration: job?.service_duration || 0,
+    priority_level: job?.priority_level || "medium",
+  });
+
+  const [editValues, setEditValues] = useState(getInitialEditValues);
+
+  useEffect(() => {
+    if (job) {
+      setEditValues(getInitialEditValues());
+    }
+  }, [job]);
 
   const handleUpdateStatus = async (newStatus: string) => {
     if (!jobId) return;
@@ -318,25 +343,96 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
     if (!job || !jobId) return;
     try {
       setIsSaving(true);
-      const payload: any = { ...job };
+
+      const origStartHour = shuttleValue("start_hour");
+      const origEndHour = shuttleValue("end_hour");
+      const origPickUpAddress = pickUpAddress;
+      const origDropOffAddress = dropOffAddress;
+      const origAddress = job.address_formatted || stopData?.address_formatted;
+      const origTimeWindowStart = job.time_window_start;
+      const origTimeWindowEnd = job.time_window_end;
+
+      const startHourChanged = (editValues.start_hour || "") !== (origStartHour || "");
+      const endHourChanged = (editValues.end_hour || "") !== (origEndHour || "");
+      const pickUpAddrChanged = (editValues.pick_up_address || "") !== (origPickUpAddress || "");
+      const dropOffAddrChanged = (editValues.drop_off_address || "") !== (origDropOffAddress || "");
+      const addrChanged = (editValues.address_formatted || "") !== (origAddress || "");
+      const twStartChanged = (editValues.time_window_start || "") !== (origTimeWindowStart || "");
+      const twEndChanged = (editValues.time_window_end || "") !== (origTimeWindowEnd || "");
+
+      const requiresReOptimization = isShuttle
+        ? (startHourChanged || endHourChanged || pickUpAddrChanged || dropOffAddrChanged)
+        : (addrChanged || twStartChanged || twEndChanged);
+
+      const validDbJobTypes = ["pickup", "delivery", "service", "one_way", "return_only"];
+      let targetJobType = editValues.job_type || job.job_type || "one_way";
+      if (!validDbJobTypes.includes(targetJobType)) {
+        targetJobType = validDbJobTypes.includes(job.job_type)
+          ? job.job_type
+          : (isReturnTrip ? "return_only" : "one_way");
+      }
+
+      const payload: any = {
+        ...job,
+        scheduled_date: editValues.scheduled_date || job.scheduled_date,
+        job_type: targetJobType,
+        additional_notes: editValues.notes,
+        notes: editValues.notes,
+      };
+
       if (isShuttle) {
         payload.worker_shuttle_detail = {
           ...(job.worker_shuttle_detail ?? {}),
-          client_pick_up_time: editValues.client_pick_up_time || undefined,
+          start_hour: editValues.start_hour || undefined,
+          end_hour: editValues.end_hour || undefined,
+          pickup_type: editValues.pickup_type || undefined,
+          quart_id: editValues.quart_id || undefined,
+          quant_id: editValues.quart_id || undefined,
           reach_before_minutes: editValues.reach_before_minutes,
+          pick_up_address: editValues.pick_up_address || undefined,
+          pick_up_location: editValues.pick_up_location || undefined,
+          drop_off_address: editValues.drop_off_address || undefined,
+          drop_off_location: editValues.drop_off_location || undefined,
+          candidate_name: editValues.candidate_name || undefined,
+          candidate_phone: editValues.candidate_phone || undefined,
+          candidate_id: editValues.candidate_id || undefined,
+          client_name: editValues.client_name || undefined,
+          client_phone: editValues.client_phone || undefined,
+          client_id: editValues.client_id || undefined,
+          notes: editValues.notes || undefined,
         };
+        payload.start_hour = editValues.start_hour || undefined;
+        payload.end_hour = editValues.end_hour || undefined;
+        payload.pickup_type = editValues.pickup_type || undefined;
+        payload.quart_id = editValues.quart_id || undefined;
+        payload.quant_id = editValues.quart_id || undefined;
+        payload.reach_before_minutes = editValues.reach_before_minutes;
+        payload.pick_up_address = editValues.pick_up_address || undefined;
+        payload.pick_up_location = editValues.pick_up_location || undefined;
+        payload.drop_off_address = editValues.drop_off_address || undefined;
+        payload.drop_off_location = editValues.drop_off_location || undefined;
+        payload.client_name = editValues.client_name || undefined;
+        payload.client_phone = editValues.client_phone || undefined;
+        payload.client_id = editValues.client_id || undefined;
+        payload.candidate_name = editValues.candidate_name || undefined;
+        payload.candidate_phone = editValues.candidate_phone || undefined;
+        payload.candidate_id = editValues.candidate_id || undefined;
       } else {
+        payload.address_formatted = editValues.address_formatted || undefined;
+        payload.location = editValues.location || undefined;
         payload.time_window_start = editValues.time_window_start || undefined;
         payload.time_window_end = editValues.time_window_end || undefined;
         payload.service_duration = editValues.service_duration;
+        payload.priority_level = editValues.priority_level;
       }
+
       const updated = await updateJob(payload);
       patchJobLocally(updated);
       setIsEditing(false);
-      setJobSaved(true);
-      message.success("Job updated — click Re-Optimize to apply changes");
-      onJobSaved?.();
+
+      onJobSaved?.(requiresReOptimization);
     } catch (err) {
+      console.error("Failed to save job:", err);
       message.error("Failed to save job");
     } finally {
       setIsSaving(false);
@@ -412,7 +508,7 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
                   <SaveOutlined className="text-sm" />
                 </button>
                 <button
-                  onClick={() => { setIsEditing(false); }}
+                  onClick={() => setIsEditing(false)}
                   title="Cancel edit"
                   className="text-gray-400 hover:text-gray-700 transition-colors p-1 rounded hover:bg-gray-100 cursor-pointer"
                 >
@@ -421,7 +517,7 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
               </>
             ) : (
               <button
-                onClick={() => { setIsEditing(true); setJobSaved(false); }}
+                onClick={() => setIsEditing(true)}
                 title="Edit job"
                 className="text-gray-400 hover:text-[#003220] transition-colors p-1 rounded hover:bg-gray-100 cursor-pointer"
               >
@@ -448,9 +544,424 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
         </div>
       </div>
 
-      {/* Scrollable Key-Value Grid */}
+      {/* Scrollable Key-Value Grid / Edit Form */}
       <div className="p-3.5 space-y-3 flex-1 overflow-y-auto custom-scrollbar">
-        {isShuttle ? (
+        {isEditing ? (
+          <div className="space-y-3 text-xs">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <span className="font-bold text-gray-900 text-xs uppercase tracking-wider">
+                Edit Job Details
+              </span>
+            </div>
+
+            {isShuttle ? (
+              <>
+                {/* 1. Shift & Schedule */}
+                <div className="space-y-2 bg-gray-50/70 p-2.5 rounded border border-gray-200">
+                  <div className="text-[10.5px] font-bold text-gray-800 border-b border-gray-200 pb-1">
+                    Shift & Schedule
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Scheduled Date
+                      </label>
+                      <DatePicker
+                        format="YYYY-MM-DD"
+                        size="small"
+                        className="w-full text-xs"
+                        value={editValues.scheduled_date ? dayjs(editValues.scheduled_date) : null}
+                        onChange={(d) => setEditValues(v => ({ ...v, scheduled_date: d ? d.format("YYYY-MM-DD") : "" }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Trip Type
+                      </label>
+                      <Select
+                        size="small"
+                        className="w-full text-xs"
+                        value={editValues.job_type}
+                        onChange={(val) => setEditValues(v => ({ ...v, job_type: val }))}
+                        options={[
+                          { value: "one_way", label: "One Way" },
+                          { value: "return_only", label: "Return Only" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Shift Start Time
+                      </label>
+                      <TimePicker
+                        format="HH:mm"
+                        size="small"
+                        needConfirm={false}
+                        className="w-full text-xs"
+                        value={editValues.start_hour ? dayjs(editValues.start_hour, ["HH:mm:ss", "HH:mm"]) : null}
+                        onChange={(t) => setEditValues(v => ({ ...v, start_hour: t ? t.format("HH:mm") : "" }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Shift End Time
+                      </label>
+                      <TimePicker
+                        format="HH:mm"
+                        size="small"
+                        needConfirm={false}
+                        className="w-full text-xs"
+                        value={editValues.end_hour ? dayjs(editValues.end_hour, ["HH:mm:ss", "HH:mm"]) : null}
+                        onChange={(t) => setEditValues(v => ({ ...v, end_hour: t ? t.format("HH:mm") : "" }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Pickup Type
+                      </label>
+                      <Select
+                        size="small"
+                        className="w-full text-xs"
+                        value={editValues.pickup_type}
+                        onChange={(val) => setEditValues(v => ({ ...v, pickup_type: val }))}
+                        options={[
+                          { value: "GO", label: "GO" },
+                          { value: "RETURN", label: "RETURN" },
+                          { value: "BOTH", label: "BOTH" },
+                          { value: "one_way", label: "One Way" },
+                          { value: "return_only", label: "Return Only" },
+                          { value: "round_trip", label: "Round Trip" },
+                        ]}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Quart / Shift Ref
+                      </label>
+                      <Input
+                        size="small"
+                        placeholder="e.g. 44280"
+                        value={editValues.quart_id}
+                        onChange={(e) => setEditValues(v => ({ ...v, quart_id: e.target.value }))}
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                      Reach Window (mins)
+                    </label>
+                    <InputNumber
+                      size="small"
+                      className="w-full text-xs"
+                      value={editValues.reach_before_minutes}
+                      onChange={(val) => setEditValues(v => ({ ...v, reach_before_minutes: val ?? 0 }))}
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Locations */}
+                <div className="space-y-2 bg-gray-50/70 p-2.5 rounded border border-gray-200">
+                  <div className="text-[10.5px] font-bold text-gray-800 border-b border-gray-200 pb-1">
+                    Locations
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                      Pick Up Address
+                    </label>
+                    <AddressAutocomplete
+                      value={editValues.pick_up_address}
+                      placeholder="Search pickup address"
+                      onChange={(val) =>
+                        setEditValues((v) => ({
+                          ...v,
+                          pick_up_address: val,
+                          pick_up_location: undefined,
+                        }))
+                      }
+                      onSelect={(addressData: AddressData) => {
+                        setEditValues((v) => ({
+                          ...v,
+                          pick_up_address: addressData.address_formatted,
+                          pick_up_location: addressData.location,
+                        }));
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                      Drop Off Address
+                    </label>
+                    <AddressAutocomplete
+                      value={editValues.drop_off_address}
+                      placeholder="Search dropoff address"
+                      onChange={(val) =>
+                        setEditValues((v) => ({
+                          ...v,
+                          drop_off_address: val,
+                          drop_off_location: undefined,
+                        }))
+                      }
+                      onSelect={(addressData: AddressData) => {
+                        setEditValues((v) => ({
+                          ...v,
+                          drop_off_address: addressData.address_formatted,
+                          drop_off_location: addressData.location,
+                        }));
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* 3. Passenger & Candidate Info */}
+                <div className="space-y-2 bg-gray-50/70 p-2.5 rounded border border-gray-200">
+                  <div className="text-[10.5px] font-bold text-gray-800 border-b border-gray-200 pb-1">
+                    Passenger & Candidate
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Candidate Name
+                      </label>
+                      <Input
+                        size="small"
+                        value={editValues.candidate_name}
+                        onChange={(e) => setEditValues(v => ({ ...v, candidate_name: e.target.value }))}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Candidate Phone
+                      </label>
+                      <Input
+                        size="small"
+                        value={editValues.candidate_phone}
+                        onChange={(e) => setEditValues(v => ({ ...v, candidate_phone: e.target.value }))}
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Candidate ID
+                      </label>
+                      <Input
+                        size="small"
+                        value={editValues.candidate_id}
+                        onChange={(e) => setEditValues(v => ({ ...v, candidate_id: e.target.value }))}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Client / Worker ID
+                      </label>
+                      <Input
+                        size="small"
+                        value={editValues.client_id}
+                        onChange={(e) => setEditValues(v => ({ ...v, client_id: e.target.value }))}
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Client Name
+                      </label>
+                      <Input
+                        size="small"
+                        value={editValues.client_name}
+                        onChange={(e) => setEditValues(v => ({ ...v, client_name: e.target.value }))}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Client Phone
+                      </label>
+                      <Input
+                        size="small"
+                        value={editValues.client_phone}
+                        onChange={(e) => setEditValues(v => ({ ...v, client_phone: e.target.value }))}
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Notes */}
+                <div className="space-y-2 bg-gray-50/70 p-2.5 rounded border border-gray-200">
+                  <div className="text-[10.5px] font-bold text-gray-800 border-b border-gray-200 pb-1">
+                    Notes
+                  </div>
+                  <Input.TextArea
+                    rows={2}
+                    size="small"
+                    placeholder="Special instructions or notes"
+                    value={editValues.notes}
+                    onChange={(e) => setEditValues(v => ({ ...v, notes: e.target.value }))}
+                    className="text-xs"
+                  />
+                </div>
+              </>
+            ) : (
+              /* Pickup/Delivery Form */
+              <>
+                <div className="space-y-2 bg-gray-50/70 p-2.5 rounded border border-gray-200">
+                  <div>
+                    <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                      Address
+                    </label>
+                    <AddressAutocomplete
+                      value={editValues.address_formatted}
+                      placeholder="Search address"
+                      onChange={(val) =>
+                        setEditValues((v) => ({
+                          ...v,
+                          address_formatted: val,
+                          location: undefined,
+                        }))
+                      }
+                      onSelect={(addressData: AddressData) => {
+                        setEditValues((v) => ({
+                          ...v,
+                          address_formatted: addressData.address_formatted,
+                          location: addressData.location,
+                        }));
+                      }}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Time Window Start
+                      </label>
+                      <TimePicker
+                        format="HH:mm"
+                        size="small"
+                        needConfirm={false}
+                        className="w-full text-xs"
+                        value={editValues.time_window_start ? dayjs(editValues.time_window_start, ["HH:mm:ss", "HH:mm"]) : null}
+                        onChange={(t) => setEditValues(v => ({ ...v, time_window_start: t ? t.format("HH:mm") : "" }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Time Window End
+                      </label>
+                      <TimePicker
+                        format="HH:mm"
+                        size="small"
+                        needConfirm={false}
+                        className="w-full text-xs"
+                        value={editValues.time_window_end ? dayjs(editValues.time_window_end, ["HH:mm:ss", "HH:mm"]) : null}
+                        onChange={(t) => setEditValues(v => ({ ...v, time_window_end: t ? t.format("HH:mm") : "" }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Service Duration (mins)
+                      </label>
+                      <InputNumber
+                        size="small"
+                        className="w-full text-xs"
+                        min={0}
+                        value={editValues.service_duration}
+                        onChange={(val) => setEditValues(v => ({ ...v, service_duration: val ?? 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Priority Level
+                      </label>
+                      <Select
+                        size="small"
+                        className="w-full text-xs"
+                        value={editValues.priority_level}
+                        onChange={(val) => setEditValues(v => ({ ...v, priority_level: val }))}
+                        options={[
+                          { value: "low", label: "Low" },
+                          { value: "medium", label: "Medium" },
+                          { value: "high", label: "High" },
+                          { value: "urgent", label: "Urgent" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 bg-gray-50/70 p-2.5 rounded border border-gray-200">
+                  <div className="text-[10.5px] font-bold text-gray-800 border-b border-gray-200 pb-1">
+                    Customer & Notes
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                      Customer Name
+                    </label>
+                    <Input
+                      size="small"
+                      value={customerName}
+                      onChange={(e) => setEditValues(v => ({ ...v, client_name: e.target.value }))}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Phone
+                      </label>
+                      <Input
+                        size="small"
+                        value={editValues.client_phone || phone}
+                        onChange={(e) => setEditValues(v => ({ ...v, client_phone: e.target.value }))}
+                        className="text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                        Email
+                      </label>
+                      <Input
+                        size="small"
+                        value={email}
+                        onChange={(e) => setEditValues(v => ({ ...v, email: e.target.value }))}
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-gray-600 font-semibold mb-0.5 block">
+                      Notes
+                    </label>
+                    <Input.TextArea
+                      rows={2}
+                      size="small"
+                      value={editValues.notes}
+                      onChange={(e) => setEditValues(v => ({ ...v, notes: e.target.value }))}
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        ) : isShuttle ? (
           <>
             {/* Row 1: Candidate Name & Status */}
             <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
@@ -528,6 +1039,38 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
                 label="Quant / Shift Ref"
               >
                 {dash(quantId)}
+              </Field>
+            </div>
+
+            {/* Shift Start Time & Shift End Time */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<Clock size={13} className="text-gray-400 shrink-0" />}
+                label="Shift Start Time"
+              >
+                {dash(startHour)}
+              </Field>
+              <Field
+                icon={<Clock size={13} className="text-gray-400 shrink-0" />}
+                label="Shift End Time"
+              >
+                {dash(endHour)}
+              </Field>
+            </div>
+
+            {/* Pickup Type & Scheduled Date */}
+            <div className="grid grid-cols-2 gap-3 border-b border-gray-100 pb-3">
+              <Field
+                icon={<Repeat size={13} className="text-gray-400 shrink-0" />}
+                label="Pickup Type"
+              >
+                {pickupType ? formatPickupType(pickupType) : "-"}
+              </Field>
+              <Field
+                icon={<Calendar size={13} className="text-gray-400 shrink-0" />}
+                label="Scheduled Date"
+              >
+                {dash(scheduledDate)}
               </Field>
             </div>
 
@@ -705,89 +1248,28 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
       {/* Quick Action Footer */}
       {!isDepotStop && (
         <div className="p-3 bg-gray-50 border-t border-gray-100 flex flex-col gap-2 shrink-0">
-          {/* Edit form fields (shown in edit mode) */}
-          {isEditing && (
-            <div className="space-y-2 bg-white border border-amber-200 rounded p-2.5 text-xs">
-              <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-1">Edit Timing Fields</div>
-              {isShuttle ? (
-                <>
-                  <div>
-                    <div className="text-[10px] text-gray-500 mb-0.5">Client Pick-Up Time (HH:MM)</div>
-                    <Input
-                      size="small"
-                      placeholder="e.g. 08:30"
-                      value={editValues.client_pick_up_time}
-                      onChange={(e) => setEditValues(v => ({ ...v, client_pick_up_time: e.target.value }))}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 mb-0.5">Reach Before (minutes)</div>
-                    <InputNumber
-                      size="small"
-                      className="w-full text-xs"
-                      value={editValues.reach_before_minutes}
-                      onChange={(val) => setEditValues(v => ({ ...v, reach_before_minutes: val ?? 0 }))}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div>
-                    <div className="text-[10px] text-gray-500 mb-0.5">Time Window Start (HH:MM)</div>
-                    <Input
-                      size="small"
-                      placeholder="e.g. 09:00"
-                      value={editValues.time_window_start}
-                      onChange={(e) => setEditValues(v => ({ ...v, time_window_start: e.target.value }))}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 mb-0.5">Time Window End (HH:MM)</div>
-                    <Input
-                      size="small"
-                      placeholder="e.g. 17:00"
-                      value={editValues.time_window_end}
-                      onChange={(e) => setEditValues(v => ({ ...v, time_window_end: e.target.value }))}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div>
-                    <div className="text-[10px] text-gray-500 mb-0.5">Service Duration (min)</div>
-                    <InputNumber
-                      size="small"
-                      className="w-full text-xs"
-                      min={0}
-                      value={editValues.service_duration}
-                      onChange={(val) => setEditValues(v => ({ ...v, service_duration: val ?? 0 }))}
-                    />
-                  </div>
-                </>
-              )}
+          {isEditing ? (
+            <div className="flex gap-2">
               <Button
                 type="primary"
                 size="small"
                 icon={<SaveOutlined />}
                 loading={isSaving}
                 onClick={handleSaveJob}
-                className="w-full bg-[#003220] text-xs font-semibold h-7 mt-1"
+                className="w-1/2 bg-[#003220] hover:bg-[#002417] text-xs font-semibold h-8"
               >
                 Save Changes
               </Button>
+              <Button
+                type="default"
+                size="small"
+                onClick={() => setIsEditing(false)}
+                className="w-1/2 text-xs font-semibold h-8"
+              >
+                Cancel
+              </Button>
             </div>
-          )}
-
-          {/* Job-saved banner — prompts user to re-optimize */}
-          {jobSaved && !isEditing && (
-            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 text-[11px] text-amber-800">
-              <ReloadOutlined className="shrink-0" />
-              <span className="flex-1">Job updated. Re-Optimize the route to apply changes.</span>
-            </div>
-          )}
-
-          {/* Status action buttons */}
-          {!isEditing && (
+          ) : (
             <div className="flex gap-2">
               <Button
                 type="primary"

@@ -307,9 +307,46 @@ export const createJobTableColumns = (options?: {
           params.data?.quant_id ||
           params.data?.quart_id ||
           params.data?.worker_shuttle_detail?.quant_id ||
+          params.data?.worker_shuttle_detail?.quart_id ||
           params.data?.custom_fields?.quant_id ||
           params.data?.custom_fields?.quart_id ||
           "-",
+      },
+      {
+        field: "start_hour",
+        headerName: "Shift Start Time",
+        width: 140,
+        valueGetter: (params: any) =>
+          params.data?.start_hour ||
+          params.data?.worker_shuttle_detail?.start_hour ||
+          params.data?.custom_fields?.start_hour ||
+          "-",
+      },
+      {
+        field: "end_hour",
+        headerName: "Shift End Time",
+        width: 140,
+        valueGetter: (params: any) =>
+          params.data?.end_hour ||
+          params.data?.worker_shuttle_detail?.end_hour ||
+          params.data?.custom_fields?.end_hour ||
+          "-",
+      },
+      {
+        field: "pickup_type",
+        headerName: "Pickup Type",
+        width: 140,
+        valueGetter: (params: any) => {
+          const raw =
+            params.data?.pickup_type ||
+            params.data?.worker_shuttle_detail?.pickup_type ||
+            params.data?.custom_fields?.pickup_type;
+          if (!raw) return "-";
+          return String(raw)
+            .split("_")
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+            .join(" ");
+        },
       },
       {
         field: "job_type",

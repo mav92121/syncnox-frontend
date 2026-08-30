@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Spin, Alert, Card, List, Button, Typography } from "antd";
-import { DownOutlined, UpOutlined } from "@ant-design/icons";
+import { Spin, Alert } from "antd";
+import { AlertTriangle, AlertCircle, MapPin, ChevronUp, ChevronDown } from "lucide-react";
 import OptimizationView from "../_components/OptimizationView";
 import { useOptimizationStore } from "@/store/optimization.store";
 
@@ -29,15 +29,12 @@ const RoutePage = () => {
       return;
     }
 
-    // Check if we already have this optimization in the store (from polling)
     const currentId = currentOptimization?.id;
     if (currentId === id) {
-      // Already have the data, no need to fetch
       setIsLoading(false);
       return;
     }
 
-    // Need to fetch the data
     let cancelled = false;
     setIsLoading(true);
     fetchOptimization(id)
@@ -88,6 +85,8 @@ const RoutePage = () => {
     );
   }
 
+  const unassignedJobs = currentOptimization.result?.unassigned_jobs || [];
+
   return (
     <div className="absolute inset-0 flex flex-col">
       {/* Optimization View - Full screen */}
@@ -96,78 +95,107 @@ const RoutePage = () => {
       </div>
 
       {/* Unassigned Jobs Panel - Floating Bottom Right */}
-      {currentOptimization.result?.unassigned_jobs &&
-        currentOptimization.result.unassigned_jobs.length > 0 && (
-          <div
-            className="fixed shadow-lg"
-            style={{
-              bottom: "20px",
-              right: "20px",
-              width: "320px",
-              maxWidth: "calc(100vw - 40px)",
-            }}
-          >
-            <Card
-              className="rounded-lg border border-gray-200"
-              bodyStyle={{
-                padding: isUnassignedExpanded ? "12px 16px" : "0",
-                maxHeight: isUnassignedExpanded ? "300px" : "0",
-                overflow: "hidden",
-                transition: "all 0.3s ease",
-              }}
-              title={
-                <div className="flex items-center justify-between py-1">
-                  <Typography.Text strong className="text-base">
-                    Unassigned Jobs (
-                    {currentOptimization.result.unassigned_jobs.length})
-                  </Typography.Text>
-                  <Button
-                    type="text"
-                    size="small"
-                    icon={
-                      isUnassignedExpanded ? <UpOutlined /> : <DownOutlined />
-                    }
-                    onClick={() =>
-                      setIsUnassignedExpanded(!isUnassignedExpanded)
-                    }
-                    className="text-gray-500 hover:text-gray-700"
-                  />
+      {unassignedJobs.length > 0 && (
+        <div className="fixed bottom-4 right-4 z-40 w-76 max-w-[calc(100vw-32px)] transition-all duration-300">
+          {isUnassignedExpanded ? (
+            /* Expanded Panel Card */
+            <div className="bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden flex flex-col transition-all duration-300 animate-in fade-in zoom-in-95 duration-200">
+              {/* Header Bar */}
+              <div
+                onClick={() => setIsUnassignedExpanded(false)}
+                className="px-3 py-2 bg-gray-50/90 border-b border-gray-200 flex items-center justify-between cursor-pointer select-none hover:bg-gray-100/70 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded bg-rose-50 text-rose-600 flex items-center justify-center font-medium">
+                    <AlertTriangle size={13} />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-gray-900 text-xs">
+                      Unassigned Jobs
+                    </span>
+                    <span className="bg-rose-600 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full">
+                      {unassignedJobs.length}
+                    </span>
+                  </div>
                 </div>
-              }
-            >
-              {isUnassignedExpanded && (
-                <div className="overflow-y-auto" style={{ maxHeight: "200px" }}>
-                  <List
-                    size="small"
-                    dataSource={currentOptimization.result.unassigned_jobs}
-                    locale={{
-                      emptyText: "No unassigned jobs",
-                    }}
-                    renderItem={(job) => (
-                      <List.Item className="px-2 hover:bg-gray-50 cursor-pointer transition-colors">
-                        <List.Item.Meta
-                          title={
-                            <Typography.Text className="text-sm">
-                              {job.address_formatted}
-                            </Typography.Text>
-                          }
-                          description={
-                            <Typography.Text
-                              type="secondary"
-                              className="text-xs"
-                            >
-                              <div className="text-red-400">{job.reason}</div>
-                            </Typography.Text>
-                          }
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsUnassignedExpanded(false);
+                  }}
+                  title="Minimize"
+                  className="text-gray-400 hover:text-gray-700 transition-colors p-0.5 rounded hover:bg-gray-200/60 cursor-pointer"
+                >
+                  <ChevronDown size={15} />
+                </button>
+              </div>
+
+              {/* Body List */}
+              <div className="p-2.5 max-h-56 overflow-y-auto space-y-2 custom-scrollbar">
+                {unassignedJobs.map((job, idx) => (
+                  <div
+                    key={job.job_id || idx}
+                    className="bg-white border border-gray-200 rounded-md p-2 shadow-2xs hover:border-gray-300 transition-all text-xs space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-gray-900 text-[10.5px]">
+                        Job #{job.job_id}
+                      </span>
+                      <span className="text-[9.5px] font-semibold text-rose-600 uppercase tracking-wide bg-rose-50 px-1.5 py-0.5 rounded border border-rose-100">
+                        Unassigned
+                      </span>
+                    </div>
+
+                    {job.address_formatted && (
+                      <div className="flex items-start gap-1 text-gray-600 font-normal leading-tight text-[11px]">
+                        <MapPin
+                          size={12}
+                          className="text-gray-400 shrink-0 mt-0.5"
                         />
-                      </List.Item>
+                        <span className="line-clamp-1">
+                          {job.address_formatted}
+                        </span>
+                      </div>
                     )}
-                  />
+
+                    {job.reason && (
+                      <div className="flex items-start gap-1 p-1.5  border border-rose-100 rounded text-[10.5px] leading-tight">
+                        <AlertCircle
+                          size={12}
+                          className="text-rose-500 shrink-0 mt-0.5"
+                        />
+                        <span className="line-clamp-2">{job.reason}</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Minimized Floating Pill Button */
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsUnassignedExpanded(true)}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-lg border border-gray-200 text-gray-800 hover:border-[#003220] transition-all cursor-pointer select-none group"
+              >
+                <div className="w-4 h-4 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center font-bold">
+                  <AlertTriangle size={11} />
                 </div>
-              )}
-            </Card>
-          </div>
-        )}
+                <span className="font-semibold text-xs text-gray-900">
+                  Unassigned Jobs
+                </span>
+                <span className="bg-rose-600 text-white font-bold text-[10px] px-1.5 py-0.2 rounded-full">
+                  {unassignedJobs.length}
+                </span>
+                <ChevronUp
+                  size={14}
+                  className="text-gray-400 group-hover:text-gray-700 transition-colors"
+                />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -755,7 +755,31 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
               setSelectedDrawerJob(null);
               setSelectedMarkerId(null);
             }}
-            onJobSaved={() => setHasUnsavedJobEdits(true)}
+            onJobSaved={async (requiresReOptimization: boolean) => {
+              if (requiresReOptimization && route?.id) {
+                message.loading({
+                  content: "Parameters changed. Auto re-optimizing route...",
+                  key: "auto_reopt",
+                });
+                try {
+                  await reOptimize(route.id);
+                  message.success({
+                    content: "Route re-optimized successfully!",
+                    key: "auto_reopt",
+                  });
+                  setHasUnsavedJobEdits(false);
+                } catch (err: any) {
+                  message.error({
+                    content: err?.message || "Failed to auto re-optimize route",
+                    key: "auto_reopt",
+                  });
+                  setHasUnsavedJobEdits(true);
+                }
+              } else {
+                message.success("Job updated successfully");
+                setHasUnsavedJobEdits(true);
+              }
+            }}
             onRemoveJob={
               selectedDrawerJob.routeIndex !== undefined &&
               selectedDrawerJob.routeIndex >= 0 &&

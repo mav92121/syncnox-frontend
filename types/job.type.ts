@@ -29,6 +29,10 @@ export interface Location {
 
 export interface WorkerShuttleDetail {
   quant_id?: string;
+  quart_id?: string;
+  start_hour?: string;
+  end_hour?: string;
+  pickup_type?: string;
   reach_before_minutes?: number;
   client_id?: string;
   client_phone?: string;
@@ -102,6 +106,10 @@ export interface Job {
 
   // Worker Shuttle Fields
   quant_id?: string;
+  quart_id?: string;
+  start_hour?: string;
+  end_hour?: string;
+  pickup_type?: string;
   reach_before_minutes?: number;
   client_id?: string;
   client_phone?: string;
