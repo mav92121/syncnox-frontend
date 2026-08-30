@@ -1,7 +1,7 @@
 "use client";
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Panel, PanelGroup } from "react-resizable-panels";
+import { Panel, PanelGroup, ImperativePanelHandle } from "react-resizable-panels";
 import {
   Typography,
   Button,
@@ -26,7 +26,7 @@ import {
 } from "@ant-design/icons";
 
 import GoogleMaps from "@/components/GoogleMaps";
-import { X } from "lucide-react";
+import { X, Maximize2, Minimize2, ChevronUp, ChevronDown, Map } from "lucide-react";
 import TimelineView from "./TimelineView";
 import AddJobsModal from "@/app/plan/AddJobsModal";
 import SwapDriverDrawer from "./SwapDriverDrawer";
@@ -126,6 +126,55 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   const [selectedMarkerId, setSelectedMarkerId] = useState<
     string | number | null
   >(null);
+
+  // Map panel layout state & imperative refs
+  const [mapViewState, setMapViewState] = useState<"normal" | "fullscreen" | "collapsed">("normal");
+  const mapPanelRef = useRef<ImperativePanelHandle>(null);
+  const timelinePanelRef = useRef<ImperativePanelHandle>(null);
+
+  const triggerMapResize = useCallback(() => {
+    setTimeout(() => {
+      window.dispatchEvent(new Event("resize"));
+    }, 150);
+  }, []);
+
+  const handleToggleFullscreen = useCallback(() => {
+    if (mapViewState === "fullscreen") {
+      mapPanelRef.current?.resize(60);
+      timelinePanelRef.current?.resize(40);
+      setMapViewState("normal");
+    } else {
+      mapPanelRef.current?.resize(100);
+      timelinePanelRef.current?.resize(0);
+      setMapViewState("fullscreen");
+    }
+    triggerMapResize();
+  }, [mapViewState, triggerMapResize]);
+
+  const handleToggleCollapse = useCallback(() => {
+    if (mapViewState === "collapsed") {
+      mapPanelRef.current?.resize(60);
+      timelinePanelRef.current?.resize(40);
+      setMapViewState("normal");
+    } else {
+      mapPanelRef.current?.resize(0);
+      timelinePanelRef.current?.resize(100);
+      setMapViewState("collapsed");
+    }
+    triggerMapResize();
+  }, [mapViewState, triggerMapResize]);
+
+  const handlePanelLayout = useCallback((sizes: number[]) => {
+    if (!sizes || sizes.length < 2) return;
+    const mapSize = sizes[0];
+    if (mapSize >= 95) {
+      setMapViewState("fullscreen");
+    } else if (mapSize <= 5) {
+      setMapViewState("collapsed");
+    } else {
+      setMapViewState("normal");
+    }
+  }, []);
 
   // Route operations modal state
   const [addStopRouteIndex, setAddStopRouteIndex] = useState<number | null>(
@@ -606,9 +655,9 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
 
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 relative">
-        <PanelGroup direction="vertical">
+        <PanelGroup direction="vertical" onLayout={handlePanelLayout}>
           {/* Map Panel */}
-          <Panel defaultSize={60} minSize={30}>
+          <Panel ref={mapPanelRef} defaultSize={60} minSize={0} collapsible={true}>
             <div className="h-full w-full relative">
               <GoogleMaps
                 polylines={routePolylines}
@@ -619,14 +668,17 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                 onMarkerSelect={handleMarkerSelect}
                 onMapClick={clearFocus}
                 showDirectionArrows={true}
+                onToggleFullscreen={handleToggleFullscreen}
+                onToggleCollapse={handleToggleCollapse}
+                mapViewState={mapViewState}
               />
 
               {/* Clear-focus chip — the only visible affordance telling the
                   dispatcher why the rest of the plan went gray. */}
               {focusedRouteIndex !== null && (
-                <div className="absolute top-3 left-3 z-40 flex items-center gap-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-full shadow-md pl-3 pr-1.5 py-1.5">
+                <div className="absolute top-3 left-3 z-40 flex items-center gap-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-none shadow-md pl-3 pr-1.5 py-1.5">
                   <span
-                    className="w-2.5 h-2.5 rounded-full shrink-0"
+                    className="w-2.5 h-2.5 rounded-none shrink-0"
                     style={{
                       backgroundColor: getRouteColor(focusedRouteIndex),
                     }}
@@ -643,7 +695,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                       type="button"
                       onClick={clearFocus}
                       aria-label="Clear route focus"
-                      className="flex items-center justify-center w-5 h-5 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                      className="flex items-center justify-center w-5 h-5 rounded-none text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-none outline-none"
                     >
                       <X size={13} />
                     </button>
@@ -655,13 +707,29 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
 
           <ResizeHandle />
 
-          <Panel defaultSize={40} minSize={20}>
+          <Panel ref={timelinePanelRef} defaultSize={40} minSize={0} collapsible={true}>
             <div className="flex flex-col h-full bg-gray-50 min-h-0 min-w-0">
+              {mapViewState === "collapsed" && (
+                <div className="bg-[#ecfdf5] text-[#003220] px-4 py-2 flex items-center justify-between border-b border-emerald-100 shrink-0 transition-all">
+                  <div className="flex items-center gap-2 text-xs font-semibold">
+                    <Map size={14} className="text-[#003220]" />
+                    <span>Map view is currently collapsed</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleCollapse}
+                    className="px-3 py-1 bg-[#003220] hover:bg-[#002A00] text-white text-xs font-bold rounded-none border-none outline-none shadow-sm transition-all cursor-pointer"
+                  >
+                    Show Map
+                  </button>
+                </div>
+              )}
               <div className="flex-1 min-h-0 min-w-0">
                 <TimelineView
                   routes={route.result?.routes || []}
                   jobs={jobs}
                   vehicles={vehicles}
+                  selectedMarkerId={selectedMarkerId}
                   onStopClick={handleStopClick}
                   onAddStop={(idx) => setAddStopRouteIndex(idx)}
                   onSwapDriver={(idx) => setSwapDriverRouteIndex(idx)}

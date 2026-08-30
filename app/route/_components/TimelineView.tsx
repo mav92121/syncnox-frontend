@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import dayjs from "dayjs";
 import type { Job } from "@/types/job.type";
 import type { Vehicle } from "@/types/vehicle.type";
@@ -12,6 +12,10 @@ import {
   SwapOutlined,
   RetweetOutlined,
   ThunderboltOutlined,
+  FileTextOutlined,
+  EnvironmentOutlined,
+  ClockCircleOutlined,
+  CarOutlined,
 } from "@ant-design/icons";
 import {
   calculateTimeRange,
@@ -91,6 +95,8 @@ interface TimelineViewProps {
   jobs?: Job[];
   /** Vehicle list from vehicle store — used to show vehicle info per route. */
   vehicles?: Vehicle[];
+  /** Selected marker ID `${routeIndex}-${stopIndex}` from map click or stop selection */
+  selectedMarkerId?: string | number | null;
   onStopClick?: (stop: any, routeIndex: number, stopIndex: number) => void;
   onAddStop?: (routeIndex: number) => void;
   onSwapDriver?: (routeIndex: number) => void;
@@ -151,6 +157,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
   routes,
   jobs = [],
   vehicles = [],
+  selectedMarkerId = null,
   onStopClick,
   onAddStop,
   onSwapDriver,
@@ -211,6 +218,44 @@ const TimelineView: React.FC<TimelineViewProps> = ({
       generateTimeMarkers(startTime, endTime, intervalMinutes, pixelsPerMinute),
     [startTime, endTime, intervalMinutes, pixelsPerMinute],
   );
+
+  // Auto-scroll timeline to selected marker / stop position whenever selectedMarkerId changes
+  useEffect(() => {
+    if (!selectedMarkerId || !containerRef.current) return;
+
+    const [rIdxStr, sIdxStr] = String(selectedMarkerId).split("-");
+    const rIdx = Number(rIdxStr);
+    const sIdx = Number(sIdxStr);
+
+    if (isNaN(rIdx) || isNaN(sIdx) || !routes[rIdx]) return;
+
+    const targetRoute = routes[rIdx];
+    const targetStop = targetRoute.stops?.[sIdx];
+    if (!targetStop?.arrival_time) return;
+
+    const container = containerRef.current;
+
+    // Calculate horizontal X scroll offset to center stop on timeline
+    const stopX = getPosition(targetStop.arrival_time, startTime, pixelsPerMinute);
+    const visibleTimelineWidth = container.clientWidth - DRIVER_COLUMN_WIDTH;
+    const targetScrollLeft = Math.max(0, stopX - visibleTimelineWidth / 2);
+
+    // Calculate vertical Y scroll offset to bring driver row into view
+    let targetScrollTop = container.scrollTop;
+    const rowEl = container.querySelector(`[data-route-index="${rIdx}"]`) as HTMLElement;
+    if (rowEl) {
+      const rowTop = rowEl.offsetTop;
+      const rowHeight = rowEl.offsetHeight;
+      const containerHeight = container.clientHeight;
+      targetScrollTop = Math.max(0, rowTop - containerHeight / 2 + rowHeight / 2);
+    }
+
+    container.scrollTo({
+      left: targetScrollLeft,
+      top: targetScrollTop,
+      behavior: "smooth",
+    });
+  }, [selectedMarkerId, routes, startTime, pixelsPerMinute]);
 
   const getRouteMenuItems = (routeIndex: number): MenuProps["items"] => [
     {
@@ -363,6 +408,7 @@ const TimelineView: React.FC<TimelineViewProps> = ({
               return (
                 <div
                   key={routeIndex}
+                  data-route-index={routeIndex}
                   className="flex border-b border-gray-100 hover:bg-gray-50 transition-colors"
                   style={{ height: ROW_HEIGHT }}
                 >
@@ -659,67 +705,69 @@ const TimelineView: React.FC<TimelineViewProps> = ({
 
                         // Build tooltip content — show all candidates if grouped with clickable links
                         const tooltipContent = (
-                          <div className="pointer-events-auto select-none">
-                            <div className="font-semibold">
-                              {isDepot
-                                ? (stop.stop_type === "depot_start" ? "Depot (Start)" : stop.stop_type === "depot_end" ? "Depot (End)" : "Depot")
-                                : (() => {
-                                    const cName = getCandidateName(stop);
-                                    const titleStr = stop.address_formatted || `Job #${stop.job_id}`;
-                                    return cName ? `${titleStr} (${cName})` : titleStr;
-                                  })()}
+                          <div className="pointer-events-auto select-none space-y-1">
+                            <div className="font-semibold flex items-center gap-1.5">
+                              {isDepot ? (
+                                <HomeFilled className="text-amber-400 text-sm shrink-0" />
+                              ) : (
+                                <EnvironmentOutlined className="text-red-400 text-sm shrink-0" />
+                              )}
+                              <span>
+                                {isDepot
+                                  ? (stop.stop_type === "depot_start" ? "Depot (Start)" : stop.stop_type === "depot_end" ? "Depot (End)" : "Depot")
+                                  : (stop.address_formatted || `#${stop.job_id}`)}
+                              </span>
                             </div>
                             {stopTypeLabel && (
-                              <div className="text-xs font-semibold uppercase opacity-80">
-                                {stopTypeLabel}
+                              <div className="text-xs font-semibold uppercase opacity-80 flex items-center gap-1.5">
+                                <UserOutlined className="text-xs shrink-0" />
+                                <span>{stopTypeLabel}</span>
                                 {count > 1 && (
-                                  <span className="ml-1 bg-white/20 rounded px-1">
+                                  <span className="bg-white/20 rounded px-1 lowercase">
                                     ×{count} candidates
                                   </span>
                                 )}
                               </div>
                             )}
                             {isJob && (
-                              <div className="text-xs font-semibold text-emerald-300 mt-0.5">
-                                Occupancy: {currentOccupancy} {vehicleCapacity ? `/ ${vehicleCapacity}` : ""} seats
+                              <div className="text-xs font-semibold text-emerald-300 flex items-center gap-1.5">
+                                <CarOutlined className="text-xs shrink-0" />
+                                <span>Occupancy: {currentOccupancy} {vehicleCapacity ? `/ ${vehicleCapacity}` : ""} seats</span>
                               </div>
                             )}
                             {isJob && group.rawStops.length > 0 && (
-                              <div className="text-xs mt-1 max-h-36 overflow-y-auto space-y-0.5 custom-scrollbar pr-1">
+                              <div className="text-xs max-h-36 overflow-y-auto space-y-1 custom-scrollbar pr-1 pt-0.5">
                                 {group.rawStops.map((s: any, i: number) => {
                                   const candName = getCandidateName(s);
                                   return (
                                     <div
                                       key={i}
-                                      className="cursor-pointer text-sky-200 hover:text-white hover:underline transition-colors py-0.5"
+                                      className="cursor-pointer text-sky-200 hover:text-white hover:underline transition-colors py-0.5 flex items-center gap-1.5"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         onStopClick?.(s, routeIndex, displayIndex);
                                       }}
                                     >
-                                      · Job #{s.job_id} {candName ? `(${candName})` : ""}
+                                      <FileTextOutlined className="text-sky-300 text-xs shrink-0" />
+                                      <span>#{s.job_id} {candName ? `(${candName})` : ""}</span>
                                     </div>
                                   );
                                 })}
                               </div>
                             )}
-                            <div className="text-xs text-gray-400 mt-1">
-                              ETA: {arrivalTime.isValid() ? arrivalTime.format("HH:mm") : "--:--"}
+                            <div className="text-xs text-white font-bold flex items-center gap-1.5 pt-0.5">
+                              <ClockCircleOutlined className="text-amber-300 text-xs shrink-0" />
+                              <span>ETA: {arrivalTime.isValid() ? arrivalTime.format("HH:mm") : "--:--"}</span>
                             </div>
                             {serviceDuration > 0 && (
-                              <>
-                                <div className="text-xs">
+                              <div className="text-xs text-gray-200 pl-5 space-y-0.5">
+                                <div>
                                   Departure:{" "}
                                   {departureTime.isValid()
                                     ? departureTime.format("HH:mm")
                                     : "--:--"}
                                 </div>
-                                <div className="text-xs">Service: {serviceDuration} min</div>
-                              </>
-                            )}
-                            {isJob && (
-                              <div className="text-xs uppercase mt-1 opacity-80">
-                                Status: {jobStatus}
+                                <div>Service: {serviceDuration} min</div>
                               </div>
                             )}
                           </div>
