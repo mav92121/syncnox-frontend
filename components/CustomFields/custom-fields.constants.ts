@@ -59,7 +59,11 @@ export const TEMPLATE_BASE_FIELDS: Record<string, BaseFieldDefinition[]> = {
     { field_key: "completed_at", label: "Completed At", data_type: "date", is_required: false, description: "Service completion timestamp", group: "pod", surfaces: { disp: true, driver: true, track: false } },
   ],
   worker_shuttle: [
+    { field_key: "quart_id", label: "Quart / Shift Ref", data_type: "string", is_required: false, description: "Shift reference or batch ID", group: "optimization", surfaces: { disp: true, driver: true, track: false } },
     { field_key: "scheduled_date", label: "Scheduled Date", data_type: "date", is_required: true, description: "Date of shuttle shift", group: "optimization", surfaces: { disp: true, driver: true, track: false } },
+    { field_key: "start_hour", label: "Shift Start Time", data_type: "string", is_required: true, description: "Shift start time (e.g. 08:00)", group: "optimization", surfaces: { disp: true, driver: true, track: false } },
+    { field_key: "end_hour", label: "Shift End Time", data_type: "string", is_required: true, description: "Shift end time (e.g. 17:00)", group: "optimization", surfaces: { disp: true, driver: true, track: false } },
+    { field_key: "pickup_type", label: "Pickup Type", data_type: "select", is_required: true, description: "GO, RETURN, or BOTH", group: "optimization", surfaces: { disp: true, driver: true, track: false }, options: ["GO", "RETURN", "BOTH"] },
     { field_key: "job_type", label: "Trip Type", data_type: "select", is_required: true, description: "One Way, Return Only, or Round Trip", group: "optimization", surfaces: { disp: true, driver: true, track: false } },
     { field_key: "pick_up_address", label: "Pick Up Address", data_type: "string", is_required: true, description: "Passenger pickup location address", group: "optimization", surfaces: { disp: true, driver: true, track: true } },
     { field_key: "drop_off_address", label: "Drop Off Address", data_type: "string", is_required: true, description: "Passenger dropoff location address", group: "optimization", surfaces: { disp: true, driver: true, track: true } },

@@ -145,6 +145,19 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
         values.client_pick_up_time,
       ).format("HH:mm");
     }
+    if (values.start_hour) {
+      transformedValues.start_hour = dayjs.isDayjs(values.start_hour)
+        ? dayjs(values.start_hour).format("HH:mm")
+        : values.start_hour;
+    }
+    if (values.end_hour) {
+      transformedValues.end_hour = dayjs.isDayjs(values.end_hour)
+        ? dayjs(values.end_hour).format("HH:mm")
+        : values.end_hour;
+    }
+    if (values.quart_id && !values.quant_id) {
+      transformedValues.quant_id = values.quart_id;
+    }
 
     // 3. Transform phone: object {countryCode, number} -> string phone_number
     if (values.phone && values.phone.number) {
@@ -182,12 +195,14 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
   // Prefill form when initialData changes (for editing)
   useEffect(() => {
     if (initialData) {
+      const customObj = initialData.custom_fields || {};
       const detailObj =
         initialData.worker_shuttle_detail ||
         initialData.pickup_delivery_detail ||
         {};
 
       const formValues: any = {
+        ...customObj,
         ...detailObj,
         ...initialData,
       };
@@ -199,6 +214,30 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
       if (initialData.template_type) {
         setActiveTemplate(initialData.template_type);
       }
+
+      // Extract worker shuttle fields from root job, worker_shuttle_detail, or custom_fields
+      const rawStartHour =
+        initialData.start_hour ||
+        initialData.worker_shuttle_detail?.start_hour ||
+        initialData.custom_fields?.start_hour;
+
+      const rawEndHour =
+        initialData.end_hour ||
+        initialData.worker_shuttle_detail?.end_hour ||
+        initialData.custom_fields?.end_hour;
+
+      const rawPickupType =
+        initialData.pickup_type ||
+        initialData.worker_shuttle_detail?.pickup_type ||
+        initialData.custom_fields?.pickup_type;
+
+      const rawQuartId =
+        initialData.quart_id ||
+        initialData.quant_id ||
+        initialData.worker_shuttle_detail?.quart_id ||
+        initialData.worker_shuttle_detail?.quant_id ||
+        initialData.custom_fields?.quart_id ||
+        initialData.custom_fields?.quant_id;
 
       // 1. Transform scheduled_date: string (YYYY-MM-DD) -> dayjs object
       if (formValues.scheduled_date) {
@@ -216,6 +255,20 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
         formValues.client_pick_up_time = parseTimeToDayjs(formValues.client_pick_up_time);
       }
 
+      if (rawStartHour) {
+        formValues.start_hour = parseTimeToDayjs(rawStartHour);
+      }
+      if (rawEndHour) {
+        formValues.end_hour = parseTimeToDayjs(rawEndHour);
+      }
+      if (rawPickupType) {
+        formValues.pickup_type = rawPickupType;
+      }
+      if (rawQuartId) {
+        formValues.quart_id = rawQuartId;
+        formValues.quant_id = rawQuartId;
+      }
+
       // 3. Transform phone_number: string "+1-298372138" -> object {countryCode, number}
       if (formValues.phone_number) {
         const [code, number] = formValues.phone_number.split("-");
@@ -231,7 +284,7 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
       // Set all form fields with the transformed values
       form.setFieldsValue(formValues);
     }
-  }, [initialData]);
+  }, [initialData, form]);
 
 
   return (
@@ -318,36 +371,114 @@ const JobForm = ({ initialData = null, onSubmit }: JobFormProps) => {
                 </Row>
               )}
 
-              {/* Quant ID & Assign Drivers */}
-              <Row gutter={16}>
-                {getFieldConfig("quant_id").isVisible && (
-                  <Col span={12}>
+              {/* Shift Start Time & Shift End Time */}
+              {(getFieldConfig("start_hour").isVisible || getFieldConfig("end_hour").isVisible) && (
+                <Row gutter={16}>
+                  {getFieldConfig("start_hour").isVisible && (
+                    <Col span={getFieldConfig("end_hour").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("start_hour").label}
+                        name="start_hour"
+                        required={getFieldConfig("start_hour").isRequired}
+                        rules={
+                          getFieldConfig("start_hour").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("start_hour").label} is required` }]
+                            : []
+                        }
+                      >
+                        <TimePicker format="HH:mm" className="w-full" needConfirm={false} />
+                      </Form.Item>
+                    </Col>
+                  )}
+                  {getFieldConfig("end_hour").isVisible && (
+                    <Col span={getFieldConfig("start_hour").isVisible ? 12 : 24}>
+                      <Form.Item
+                        label={getFieldConfig("end_hour").label}
+                        name="end_hour"
+                        required={getFieldConfig("end_hour").isRequired}
+                        rules={
+                          getFieldConfig("end_hour").isRequired
+                            ? [{ required: true, message: `${getFieldConfig("end_hour").label} is required` }]
+                            : []
+                        }
+                      >
+                        <TimePicker format="HH:mm" className="w-full" needConfirm={false} />
+                      </Form.Item>
+                    </Col>
+                  )}
+                </Row>
+              )}
+
+              {/* Pickup Type */}
+              {getFieldConfig("pickup_type").isVisible && (
+                <Row gutter={16}>
+                  <Col span={24}>
                     <Form.Item
-                      label={getFieldConfig("quant_id").label}
-                      name="quant_id"
-                      required={getFieldConfig("quant_id").isRequired}
+                      label={getFieldConfig("pickup_type").label}
+                      name="pickup_type"
+                      required={getFieldConfig("pickup_type").isRequired}
                       rules={
-                        getFieldConfig("quant_id").isRequired
-                          ? [{ required: true, message: `${getFieldConfig("quant_id").label} is required` }]
+                        getFieldConfig("pickup_type").isRequired
+                          ? [{ required: true, message: `${getFieldConfig("pickup_type").label} is required` }]
                           : []
                       }
                     >
-                      <Input placeholder="e.g. SHIFT-101" />
+                      <Select
+                        placeholder={`Select ${getFieldConfig("pickup_type").label}`}
+                        options={[
+                          { value: "GO", label: "GO (Pick Up to Plant/Workplace)" },
+                          { value: "RETURN", label: "RETURN (Plant/Workplace to Drop Off)" },
+                          { value: "BOTH", label: "BOTH (Go & Return)" },
+                          { value: "one_way", label: "One Way (Pick Up)" },
+                          { value: "return_only", label: "Return Only (Drop Off)" },
+                          { value: "round_trip", label: "Round Trip (Go & Return)" },
+                        ]}
+                      />
                     </Form.Item>
                   </Col>
-                )}
-                <Col span={getFieldConfig("quant_id").isVisible ? 12 : 24}>
-                  <Form.Item label="Assign Driver / Team" name="assigned_to">
-                    <Select placeholder="Select" allowClear>
-                      {teams.map((team) => (
-                        <Select.Option key={team.id} value={team.id}>
-                          {team.name}
-                        </Select.Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </Col>
-              </Row>
+                </Row>
+              )}
+
+              {/* Quart / Shift Ref ID & Assign Drivers */}
+              {(() => {
+                const quartCfg = getFieldConfig("quart_id").isVisible
+                  ? getFieldConfig("quart_id")
+                  : getFieldConfig("quant_id");
+                const showQuart = quartCfg.isVisible;
+                const fieldName = getFieldConfig("quart_id").isVisible ? "quart_id" : "quant_id";
+
+                return (
+                  <Row gutter={16}>
+                    {showQuart && (
+                      <Col span={12}>
+                        <Form.Item
+                          label={quartCfg.label}
+                          name={fieldName}
+                          required={quartCfg.isRequired}
+                          rules={
+                            quartCfg.isRequired
+                              ? [{ required: true, message: `${quartCfg.label} is required` }]
+                              : []
+                          }
+                        >
+                          <Input placeholder="e.g. SHIFT-101" />
+                        </Form.Item>
+                      </Col>
+                    )}
+                    <Col span={showQuart ? 12 : 24}>
+                      <Form.Item label="Assign Driver / Team" name="assigned_to">
+                        <Select placeholder="Select" allowClear>
+                          {teams.map((team) => (
+                            <Select.Option key={team.id} value={team.id}>
+                              {team.name}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                );
+              })()}
 
               {/* Reach Window */}
               {getFieldConfig("reach_before_minutes").isVisible && (
