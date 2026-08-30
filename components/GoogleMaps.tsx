@@ -6,8 +6,8 @@ import {
   Marker,
   InfoWindow,
 } from "@react-google-maps/api";
-import { Button, Dropdown, Radio } from "antd";
-import { Layers } from "lucide-react";
+import { Button, Dropdown, Radio, Tooltip } from "antd";
+import { Layers, Maximize2, Minimize2, ChevronUp, ChevronDown } from "lucide-react";
 import { Job, JobType } from "@/types/job.type";
 import { createCustomMarkerIcon } from "@/utils/customMapMarker";
 
@@ -33,7 +33,7 @@ const mapTypeStyles: React.CSSProperties = {
   right: "10px",
   zIndex: 1,
   backgroundColor: "white",
-  borderRadius: "4px",
+  borderRadius: "0px",
   boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
   padding: "8px 0",
 };
@@ -84,6 +84,9 @@ interface GoogleMapsProps {
   showMapTypeControl?: boolean;
   showZoomControl?: boolean;
   showDirectionArrows?: boolean;
+  onToggleFullscreen?: () => void;
+  onToggleCollapse?: () => void;
+  mapViewState?: "normal" | "fullscreen" | "collapsed";
 }
 
 const GoogleMaps: React.FC<GoogleMapsProps> = ({
@@ -99,6 +102,9 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
   showMapTypeControl = true,
   showZoomControl = true,
   showDirectionArrows = false,
+  onToggleFullscreen,
+  onToggleCollapse,
+  mapViewState = "normal",
 }) => {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -199,43 +205,131 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
         ],
       }}
     >
-      {showMapTypeControl && (
-        <Dropdown
-          popupRender={() => (
-            <div style={mapTypeStyles}>
-              <Radio.Group
-                value={mapTypeId}
-                onChange={(e) => handleMapTypeChange(e.target.value as MapType)}
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "8px",
-                  padding: "0 12px",
-                }}
-              >
-                <Radio value="roadmap">Roadmap</Radio>
-                <Radio value="satellite">Satellite</Radio>
-                <Radio value="hybrid">Hybrid</Radio>
-                <Radio value="terrain">Terrain</Radio>
-              </Radio.Group>
-            </div>
-          )}
-          trigger={["hover", "click"]}
-          placement="bottomRight"
+      {/* Unified Map Controls Toolbar (Fullscreen, Collapse, Layers) */}
+      {(onToggleFullscreen || onToggleCollapse || showMapTypeControl) && (
+        <div
+          style={{
+            position: "absolute",
+            top: "10px",
+            right: "10px",
+            zIndex: 1,
+            display: "flex",
+            alignItems: "center",
+            backgroundColor: "white",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            border: "1px solid #d9d9d9",
+            borderRadius: "0px",
+          }}
         >
-          <Button
-            style={{
-              position: "absolute",
-              top: "10px",
-              right: "10px",
-              zIndex: 1,
-              backgroundColor: "white",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-            }}
-          >
-            <Layers />
-          </Button>
-        </Dropdown>
+          {onToggleFullscreen && (
+            <Tooltip title={mapViewState === "fullscreen" ? "Exit Fullscreen" : "Fullscreen Map"}>
+              <Button
+                type="text"
+                onClick={onToggleFullscreen}
+                aria-label="Toggle Fullscreen Map"
+                style={{
+                  height: "38px",
+                  width: "38px",
+                  padding: 0,
+                  borderRadius: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+                className={`transition-colors ${
+                  mapViewState === "fullscreen"
+                    ? "!bg-[#003220] !text-white hover:!bg-[#002518] hover:!text-white"
+                    : "hover:!bg-emerald-50 hover:!text-[#003220] text-gray-700"
+                }`}
+              >
+                {mapViewState === "fullscreen" ? (
+                  <Minimize2 size={16} color="#ffffff" />
+                ) : (
+                  <Maximize2 size={16} />
+                )}
+              </Button>
+            </Tooltip>
+          )}
+
+          {onToggleCollapse && (
+            <>
+              {onToggleFullscreen && <div className="w-[1px] h-5 bg-gray-200" />}
+              <Tooltip title={mapViewState === "collapsed" ? "Expand Map View" : "Collapse Map View"}>
+                <Button
+                  type="text"
+                  onClick={onToggleCollapse}
+                  aria-label="Toggle Collapse Map"
+                  style={{
+                    height: "38px",
+                    width: "38px",
+                    padding: 0,
+                    borderRadius: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  className={`transition-colors ${
+                    mapViewState === "collapsed"
+                      ? "!bg-[#003220] !text-white hover:!bg-[#002518] hover:!text-white"
+                      : "hover:!bg-emerald-50 hover:!text-[#003220] text-gray-700"
+                  }`}
+                >
+                  {mapViewState === "collapsed" ? (
+                    <ChevronDown size={16} color="#ffffff" />
+                  ) : (
+                    <ChevronUp size={16} />
+                  )}
+                </Button>
+              </Tooltip>
+            </>
+          )}
+
+          {showMapTypeControl && (
+            <>
+              {(onToggleFullscreen || onToggleCollapse) && <div className="w-[1px] h-5 bg-gray-200" />}
+              <Dropdown
+                popupRender={() => (
+                  <div style={mapTypeStyles}>
+                    <Radio.Group
+                      value={mapTypeId}
+                      onChange={(e) => handleMapTypeChange(e.target.value as MapType)}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                        padding: "0 12px",
+                      }}
+                    >
+                      <Radio value="roadmap">Roadmap</Radio>
+                      <Radio value="satellite">Satellite</Radio>
+                      <Radio value="hybrid">Hybrid</Radio>
+                      <Radio value="terrain">Terrain</Radio>
+                    </Radio.Group>
+                  </div>
+                )}
+                trigger={["hover", "click"]}
+                placement="bottomRight"
+              >
+                <Button
+                  type="text"
+                  style={{
+                    height: "38px",
+                    width: "38px",
+                    padding: 0,
+                    borderRadius: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#1f2937",
+                  }}
+                  className="hover:!bg-emerald-50 hover:!text-[#003220] transition-colors"
+                >
+                  <Layers size={16} />
+                </Button>
+              </Dropdown>
+            </>
+          )}
+        </div>
       )}
 
       {/* Child components, such as markers, info windows, etc. */}

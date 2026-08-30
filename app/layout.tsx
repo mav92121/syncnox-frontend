@@ -16,7 +16,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   icons: {
-    icon: "logo.svg",
+    icon: "/logo.svg",
   },
   title: "App | Syncnox",
   description:
