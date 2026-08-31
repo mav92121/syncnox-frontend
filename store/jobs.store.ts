@@ -85,13 +85,18 @@ export const useJobsStore = create<JobsState>()(
         });
 
         try {
-          const jobsData = await fetchJobs({ status, limit: 1000 });
+          const { selectedDate } = get();
+          const jobsData = await fetchJobs({
+            status,
+            date: selectedDate || undefined,
+            limit: 1000,
+          });
 
           set((state) => {
             state.jobs = jobsData;
             state.allDraftJobs = jobsData;
 
-            state.draftJobDates = [
+            const dates = [
               ...new Set(
                 jobsData
                   .map((job) => job.scheduled_date)
@@ -99,14 +104,13 @@ export const useJobsStore = create<JobsState>()(
               ),
             ].sort();
 
-            if (state.draftJobDates.length > 0) {
+            if (dates.length > 0) {
+              state.draftJobDates = dates;
               if (
                 !state.selectedDate ||
-                !state.draftJobDates.includes(state.selectedDate)
+                !dates.includes(state.selectedDate)
               ) {
-                state.selectedDate = findClosestDateToToday(
-                  state.draftJobDates,
-                );
+                state.selectedDate = findClosestDateToToday(dates);
               }
 
               state.draftJobs = jobsData.filter(
@@ -137,7 +141,11 @@ export const useJobsStore = create<JobsState>()(
         });
 
         try {
-          const jobsData = await fetchJobs({ limit: 1000 });
+          const { selectedDate } = get();
+          const jobsData = await fetchJobs({
+            date: selectedDate || undefined,
+            limit: 1000,
+          });
 
           set((state) => {
             state.jobs = jobsData;
@@ -145,7 +153,7 @@ export const useJobsStore = create<JobsState>()(
             state.allDraftJobs = jobsData;
 
             // Extract unique scheduled_date entries
-            state.draftJobDates = [
+            const dates = [
               ...new Set(
                 jobsData
                   .map((job) => job.scheduled_date)
@@ -153,20 +161,19 @@ export const useJobsStore = create<JobsState>()(
               ),
             ].sort();
 
-            // Set initial selected date
-            if (state.draftJobDates.length > 0) {
+            if (dates.length > 0) {
+              state.draftJobDates = dates;
               if (
                 !state.selectedDate ||
-                !state.draftJobDates.includes(state.selectedDate)
+                !dates.includes(state.selectedDate)
               ) {
-                state.selectedDate = findClosestDateToToday(state.draftJobDates);
+                state.selectedDate = findClosestDateToToday(dates);
               }
 
               state.draftJobs = jobsData.filter(
                 (job) => job.scheduled_date === state.selectedDate,
               );
             } else {
-              state.selectedDate = null;
               state.draftJobs = jobsData;
             }
 
