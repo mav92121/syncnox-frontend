@@ -38,19 +38,28 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker, onRemoveJob, 
   const showButtons = status === "completed" || status === "failed";
 
 
+  const stopType = String((jobData as any)?.stop_type || "").toLowerCase();
+  const isPickupStop = stopType === "pickup";
+
   const handleUpdateJobStatus = async (status: string) => {
     if (!jobData?.id) return;
 
+    let targetStatus = status;
+    if (status === "completed" && isPickupStop) {
+      targetStatus = "in_transit";
+    }
+
     try {
       setIsMarkingComplete(true);
-      const updatedJob = await updateJobStatus(jobData.id, status);
-      // Reflect the update in the store locally to avoid double PUT
+      const updatedJob = await updateJobStatus(jobData.id, targetStatus);
       patchJobLocally(updatedJob);
       await fetchRoutes(selectedStatus);
       message.success(
-        status === "completed"
-          ? "Job marked as completed"
-          : "Job marked as skipped",
+        isPickupStop
+          ? "Pickup marked as done (In Transit)"
+          : status === "completed"
+            ? "Job marked as completed"
+            : "Job marked as skipped",
       );
     } catch (error) {
       message.error(
@@ -65,12 +74,26 @@ const RouteInfoWindow: React.FC<RouteInfoWindowProps> = ({ marker, onRemoveJob, 
 
   const confirmAction = (status: string) => {
     const isComplete = status === "completed";
-    modal.confirm({
-      title: isComplete ? "Mark as Completed?" : "Skip this job?",
-      content: isComplete
+    const title = isPickupStop
+      ? "Mark Pickup as Done?"
+      : isComplete
+        ? "Mark as Completed?"
+        : "Skip this job?";
+    const content = isPickupStop
+      ? "Are you sure you want to mark this pickup as done?"
+      : isComplete
         ? "Are you sure you want to mark this job as completed?"
-        : "Are you sure you want to skip this job?",
-      okText: isComplete ? "Mark as Completed" : "Skip",
+        : "Are you sure you want to skip this job?";
+    const okText = isPickupStop
+      ? "Mark Pickup Done"
+      : isComplete
+        ? "Mark as Completed"
+        : "Skip";
+
+    modal.confirm({
+      title,
+      content,
+      okText,
       okType: isComplete ? "primary" : "danger",
       cancelText: "Cancel",
       onOk: () => handleUpdateJobStatus(status),

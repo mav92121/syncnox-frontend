@@ -76,26 +76,56 @@ const JobDetailsDrawer: React.FC<JobDetailsDrawerProps> = ({
   const preferences = job?.customer_preferences || "";
   const podNotes = job?.pod_notes || "";
 
+  const stopType = String(stopData?.stop_type || "").toLowerCase();
+  const isPickupStop = stopType === "pickup";
+
   const handleUpdateStatus = async (newStatus: string) => {
     if (!jobId) return;
 
+    let targetStatus = newStatus;
+    if (newStatus === "completed" && isPickupStop) {
+      targetStatus = "in_transit";
+    }
+
     const isComplete = newStatus === "completed";
-    modal.confirm({
-      title: isComplete ? "Mark Job as Completed?" : "Skip this Job?",
-      content: isComplete
+    const title = isPickupStop
+      ? "Mark Pickup as Done?"
+      : isComplete
+        ? "Mark Job as Completed?"
+        : "Skip this Job?";
+
+    const content = isPickupStop
+      ? `Are you sure you want to mark Pickup for Job #${jobId} as done?`
+      : isComplete
         ? `Are you sure you want to mark Job #${jobId} as completed?`
-        : `Are you sure you want to skip Job #${jobId}?`,
-      okText: isComplete ? "Mark Completed" : "Skip Job",
+        : `Are you sure you want to skip Job #${jobId}?`;
+
+    const okText = isPickupStop
+      ? "Mark Pickup Done"
+      : isComplete
+        ? "Mark Completed"
+        : "Skip Job";
+
+    modal.confirm({
+      title,
+      content,
+      okText,
       okType: isComplete ? "primary" : "danger",
       okButtonProps: isComplete ? { style: { backgroundColor: "#003220", borderColor: "#003220" } } : undefined,
       cancelText: "Cancel",
       onOk: async () => {
         try {
           setIsUpdating(true);
-          const updated = await updateJobStatus(jobId, newStatus);
+          const updated = await updateJobStatus(jobId, targetStatus);
           patchJobLocally(updated);
           await fetchRoutes(selectedStatus);
-          message.success(isComplete ? "Job marked as completed" : "Job skipped");
+          message.success(
+            isPickupStop
+              ? "Pickup marked as done (In Transit)"
+              : isComplete
+                ? "Job marked as completed"
+                : "Job skipped",
+          );
           onClose();
         } catch (err) {
           message.error("Failed to update job status");
