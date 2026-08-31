@@ -312,22 +312,48 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   const handleUpdateStatus = async (newStatus: string) => {
     if (!jobId) return;
 
-    const isComplete = newStatus === "completed";
-    modal.confirm({
-      title: isComplete ? "Mark Job as Completed?" : "Skip this Job?",
-      content: isComplete
+    let targetStatus = newStatus;
+    if (newStatus === "completed" && isPickupStop) {
+      targetStatus = "in_transit";
+    }
+
+    const isCompleteAction = newStatus === "completed";
+    const title = isPickupStop
+      ? "Mark Pickup as Done?"
+      : isCompleteAction
+        ? "Mark Job as Completed?"
+        : "Skip this Job?";
+
+    const content = isPickupStop
+      ? `Are you sure you want to mark Pickup for Job #${jobId} as done?`
+      : isCompleteAction
         ? `Are you sure you want to mark Job #${jobId} as completed?`
-        : `Are you sure you want to skip Job #${jobId}?`,
-      okText: isComplete ? "Mark Completed" : "Skip Job",
-      okType: isComplete ? "primary" : "danger",
+        : `Are you sure you want to skip Job #${jobId}?`;
+
+    const okText = isPickupStop
+      ? "Mark Pickup Done"
+      : isCompleteAction
+        ? "Mark Completed"
+        : "Skip Job";
+
+    modal.confirm({
+      title,
+      content,
+      okText,
+      okType: isCompleteAction ? "primary" : "danger",
+      okButtonProps: isCompleteAction ? { style: { backgroundColor: "#003220", borderColor: "#003220" } } : undefined,
       onOk: async () => {
         try {
           setIsUpdating(true);
-          const updated = await updateJobStatus(jobId, newStatus);
+          const updated = await updateJobStatus(jobId, targetStatus);
           patchJobLocally(updated);
           await fetchRoutes(selectedStatus);
           message.success(
-            isComplete ? "Job marked as completed" : "Job skipped",
+            isPickupStop
+              ? "Pickup marked as done (In Transit)"
+              : isCompleteAction
+                ? "Job marked as completed"
+                : "Job skipped",
           );
           onClose();
         } catch (err) {

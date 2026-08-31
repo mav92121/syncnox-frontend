@@ -681,7 +681,11 @@ const TimelineView: React.FC<TimelineViewProps> = ({
                         let blockTextColor = "white";
 
                         if (isJob) {
-                          if (jobStatus === "completed" || jobStatus === "success") {
+                          const isStopDone = isPickup
+                            ? (jobStatus === "in_transit" || jobStatus === "completed" || jobStatus === "success")
+                            : (jobStatus === "completed" || jobStatus === "success");
+
+                          if (isStopDone) {
                             blockBgColor = routeColor;
                             blockBorderColor = routeColor;
                             blockTextColor = "white";
