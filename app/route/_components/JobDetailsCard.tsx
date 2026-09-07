@@ -44,6 +44,7 @@ interface JobDetailsCardProps {
   onClose: () => void;
   onRemoveJob?: () => void;
   onJobSaved?: (requiresReOptimization: boolean) => void;
+  onEditJob?: (job: Job) => void;
 }
 
 /** Pickup / drop-off / depot / break badge shown in the card header. */
@@ -113,8 +114,9 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
   onClose,
   onRemoveJob,
   onJobSaved,
+  onEditJob,
 }) => {
-  const { patchJobLocally } = useJobsStore();
+  const { patchJobLocally, jobs } = useJobsStore();
   const { modal } = App.useApp();
   const { fetchRoutes, selectedStatus } = useRouteStore();
   const [isUpdating, setIsUpdating] = useState(false);
@@ -543,7 +545,20 @@ const JobDetailsCard: React.FC<JobDetailsCardProps> = ({
               </>
             ) : (
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={() => {
+                  if (onEditJob) {
+                    const targetJob =
+                      job ||
+                      jobs.find((j) => j.id === (stopData?.job_id || stopData?.id)) ||
+                      ({
+                        id: stopData?.job_id || stopData?.id,
+                        ...stopData,
+                      } as any);
+                    onEditJob(targetJob);
+                  } else {
+                    setIsEditing(true);
+                  }
+                }}
                 title="Edit job"
                 className="text-gray-400 hover:text-[#003220] transition-colors p-1 rounded hover:bg-gray-100 cursor-pointer"
               >

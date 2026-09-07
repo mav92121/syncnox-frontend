@@ -11,6 +11,7 @@ import {
   Modal,
   Spin,
   Alert,
+  Drawer,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -28,6 +29,7 @@ import { X, Maximize2, Minimize2, ChevronUp, ChevronDown, Map as MapIcon } from 
 import MapSearch from "./MapSearch";
 import TimelineView from "./TimelineView";
 import AddJobsModal from "@/app/plan/AddJobsModal";
+import JobForm from "@/components/Jobs/JobForm";
 import SwapDriverDrawer from "./SwapDriverDrawer";
 import { Route } from "@/types/routes.type";
 import type { Job } from "@/types/job.type";
@@ -111,6 +113,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
   );
   // Tracks whether any job edits have been saved but re-optimization not yet run
   const [hasUnsavedJobEdits, setHasUnsavedJobEdits] = useState(false);
+  const [editJobData, setEditJobData] = useState<Job | null>(null);
 
   // Job Details Floating Card state
   const [selectedDrawerJob, setSelectedDrawerJob] = useState<{
@@ -959,6 +962,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                 setHasUnsavedJobEdits(true);
               }
             }}
+            onEditJob={(jobToEdit) => setEditJobData(jobToEdit)}
             onRemoveJob={
               selectedDrawerJob.routeIndex !== undefined &&
               selectedDrawerJob.routeIndex >= 0 &&
@@ -1011,6 +1015,28 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
           onSuccess={handleSwapSuccess}
         />
       )}
+
+      {/* Edit Job Drawer */}
+      <Drawer
+        title={`Edit Job #${editJobData?.id || ""}`}
+        width={720}
+        onClose={() => setEditJobData(null)}
+        open={Boolean(editJobData)}
+        destroyOnClose
+      >
+        <JobForm
+          initialData={editJobData}
+          onSubmit={(updatedJob) => {
+            setEditJobData(null);
+            setHasUnsavedJobEdits(true);
+            if (selectedDrawerJob && updatedJob) {
+              setSelectedDrawerJob((prev) =>
+                prev ? { ...prev, job: updatedJob } : null
+              );
+            }
+          }}
+        />
+      </Drawer>
 
       <Modal
         open={shareResult !== null}
