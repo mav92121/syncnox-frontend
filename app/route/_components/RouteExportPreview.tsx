@@ -8,6 +8,7 @@ import DriverSummaryTable from "./DriverSummaryTable";
 import RouteStopsTable from "./RouteStopsTable";
 import { Route } from "@/types/routes.type";
 import { Job } from "@/types/job.type";
+import { useVehicleStore } from "@/store/vehicle.store";
 import {
   prepareDriverSummary,
   prepareStopsData,
@@ -33,6 +34,13 @@ const RouteExportPreview: React.FC<RouteExportPreviewProps> = ({
   jobs,
 }) => {
   const printRef = useRef<HTMLDivElement>(null);
+  const { vehicles } = useVehicleStore();
+
+  const vehiclesMap = useMemo(() => {
+    const map = new Map<number, any>();
+    vehicles.forEach((v) => map.set(v.id, v));
+    return map;
+  }, [vehicles]);
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -176,9 +184,13 @@ const RouteExportPreview: React.FC<RouteExportPreviewProps> = ({
 
         {/* Driver Routes Sections */}
         {route.result?.routes?.map((routeItem, index) => {
+          const vehicleObj = routeItem.vehicle_id
+            ? vehiclesMap.get(Number(routeItem.vehicle_id))
+            : undefined;
           const driverSummary = prepareDriverSummary(
             routeItem,
-            route.scheduled_date
+            route.scheduled_date,
+            vehicleObj
           );
           const stopsData = prepareStopsData(routeItem.stops, jobs);
 

@@ -9,6 +9,10 @@ export interface AddressComponents {
 
 export interface DriverSummary {
   driverName: string;
+  vehicleName?: string;
+  licensePlate?: string;
+  vehicleType?: string;
+  seatCapacity?: string;
   routeDate: string;
   distance: string;
   totalStops: number;
@@ -77,10 +81,15 @@ export const formatETA = (arrivalTime: string): string => {
  */
 export const prepareDriverSummary = (
   route: Routes,
-  scheduledDate: string
+  scheduledDate: string,
+  vehicle?: { name?: string; license_plate?: string; type?: string; capacity?: number }
 ): DriverSummary => {
   return {
     driverName: route.team_member_name || "Unassigned",
+    vehicleName: vehicle?.name || `Vehicle ${route.vehicle_id}`,
+    licensePlate: vehicle?.license_plate || undefined,
+    vehicleType: vehicle?.type ? vehicle.type.replace("_", " ") : undefined,
+    seatCapacity: vehicle?.capacity ? `${vehicle.capacity} seats` : undefined,
     routeDate: scheduledDate,
     distance: formatDistance(route.total_distance_meters),
     totalStops: route.stops.length,

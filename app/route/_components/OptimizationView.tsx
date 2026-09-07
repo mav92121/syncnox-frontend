@@ -8,7 +8,6 @@ import {
   Tooltip,
   Input,
   message,
-  Divider,
   Modal,
   Spin,
   Alert,
@@ -16,7 +15,6 @@ import {
 import {
   ArrowLeftOutlined,
   CalendarOutlined,
-  EnvironmentOutlined,
   TeamOutlined,
   ExportOutlined,
   ShareAltOutlined,
@@ -26,7 +24,8 @@ import {
 } from "@ant-design/icons";
 
 import GoogleMaps from "@/components/GoogleMaps";
-import { X, Maximize2, Minimize2, ChevronUp, ChevronDown, Map } from "lucide-react";
+import { X, Maximize2, Minimize2, ChevronUp, ChevronDown, Map as MapIcon } from "lucide-react";
+import MapSearch from "./MapSearch";
 import TimelineView from "./TimelineView";
 import AddJobsModal from "@/app/plan/AddJobsModal";
 import SwapDriverDrawer from "./SwapDriverDrawer";
@@ -191,21 +190,150 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
     null,
   );
 
+  // Global Candidate & Job Search State — search UI is now inside the map (MapSearch component)
+
+  // Extract all searchable candidates across all routes & stops
+  const candidateIndex = useMemo(() => {
+    if (!route.result?.routes) return [];
+
+    const jobsMap = new Map(jobs.map((j) => [j.id, j]));
+    const results: Array<{
+      id: string;
+      candidateName: string;
+      candidatePhone: string;
+      candidateId: string;
+      pickupAddress: string;
+      dropoffAddress: string;
+      driverName: string;
+      leg?: string;
+      routeIndex: number;
+      stopIndex: number;
+      /** 1-based stop number counting only non-depot stops — matches timeline display */
+      displayStopNumber: number;
+      stop: any;
+      job: Job | null;
+      searchableText: string;
+    }> = [];
+
+    route.result.routes.forEach((routeItem, routeIdx) => {
+      const driverName = routeItem.team_member_name || `Driver ${routeIdx + 1}`;
+      // Per-route counter that only increments for visible (non-depot) stops — same
+      // logic as jobStopCounter in TimelineView so the number always matches.
+      let displayStopCounter = 0;
+      routeItem.stops?.forEach((stop: any, stopIdx: number) => {
+        if (stop.stop_type === "depot" || stop.stop_type === "depot_start" || stop.stop_type === "depot_end") {
+          return;
+        }
+        displayStopCounter++;
+
+        const jobId = stop.job_id || stop.id;
+        const matchedJob =
+          (jobId
+            ? jobsMap.get(Number(jobId)) || jobsMap.get(jobId as any)
+            : null) ||
+          stop.job ||
+          null;
+        const custom = matchedJob?.custom_fields || {};
+
+        const candName =
+          custom.candidate_name ||
+          matchedJob?.candidate_name ||
+          (matchedJob?.first_name || matchedJob?.last_name
+            ? `${matchedJob.first_name || ""} ${matchedJob.last_name || ""}`.trim()
+            : null) ||
+          stop.candidate_name ||
+          "Unknown Candidate";
+
+        const candPhone =
+          custom.candidate_phone ||
+          matchedJob?.candidate_phone ||
+          custom.client_phone ||
+          matchedJob?.phone_number ||
+          stop.candidate_phone ||
+          "";
+
+        const candId =
+          custom.candidate_id ||
+          matchedJob?.candidate_id ||
+          custom.client_id ||
+          matchedJob?.client_id ||
+          custom.quant_id ||
+          custom.quart_id ||
+          "";
+
+        const pickup =
+          stop.address_formatted ||
+          matchedJob?.pick_up_address ||
+          custom.candidate_address ||
+          "";
+
+        const dropoff =
+          matchedJob?.drop_off_address ||
+          custom.client_address ||
+          "";
+
+        const searchStr = `${candName} ${candPhone} ${candId} ${pickup} ${dropoff} ${driverName}`.toLowerCase();
+
+        results.push({
+          id: `${routeIdx}-${stopIdx}-${jobId || stopIdx}`,
+          candidateName: candName,
+          candidatePhone: candPhone,
+          candidateId: candId,
+          pickupAddress: pickup,
+          dropoffAddress: dropoff,
+          driverName,
+          leg: routeItem.leg,
+          routeIndex: routeIdx,
+          stopIndex: stopIdx,
+          displayStopNumber: displayStopCounter,
+          stop,
+          job: matchedJob,
+          searchableText: searchStr,
+        });
+      });
+    });
+
+    return results;
+  }, [route.result?.routes, jobs]);
+
+  const handleSelectCandidate = (item: (typeof candidateIndex)[0]) => {
+    setFocusedRouteIndex(item.routeIndex);
+    if (typeof item.stop.latitude === "number" && typeof item.stop.longitude === "number") {
+      setCenter({ lat: item.stop.latitude, lng: item.stop.longitude });
+    }
+    const markerId = `${item.routeIndex}-${item.stopIndex}`;
+    setSelectedMarkerId(markerId);
+    setSelectedDrawerJob({
+      stopData: item.stop,
+      job: item.job,
+      driverName: item.driverName,
+      leg: item.leg,
+      routeIndex: item.routeIndex,
+      // Use the timeline-matching display number for the job details card header
+      stopIndex: item.displayStopNumber,
+    });
+  };
+
   const clearFocus = useCallback(() => {
     setFocusedRouteIndex(null);
     setSelectedDrawerJob(null);
     setSelectedMarkerId(null);
   }, []);
 
-  // Escape clears focus.
+  // Escape clears focus or exits fullscreen.
   useEffect(() => {
-    if (focusedRouteIndex === null) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") clearFocus();
+      if (event.key === "Escape") {
+        if (mapViewState === "fullscreen") {
+          handleToggleFullscreen();
+        } else if (focusedRouteIndex !== null) {
+          clearFocus();
+        }
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [focusedRouteIndex, clearFocus]);
+  }, [mapViewState, focusedRouteIndex, clearFocus, handleToggleFullscreen]);
 
   // Focus indices point into route.result.routes — drop focus if the route set
   // changes underneath us (re-optimize, driver swap, stop add/remove).
@@ -598,13 +726,10 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
           </div>
 
           {/* Center: Stats */}
-          <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-4">
+          <div className="flex items-center gap-4">
             <Text type="secondary">
               <CalendarOutlined /> {route.scheduled_date}
             </Text>
-            {/* <Text type="secondary">
-              <EnvironmentOutlined /> {totalStops} stops
-            </Text> */}
             <Text type="secondary">
               <TeamOutlined /> {totalVehicles}{" "}
               {totalVehicles === 1 ? "route" : "routes"}
@@ -658,7 +783,13 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
         <PanelGroup direction="vertical" onLayout={handlePanelLayout}>
           {/* Map Panel */}
           <Panel ref={mapPanelRef} defaultSize={60} minSize={0} collapsible={true}>
-            <div className="h-full w-full relative">
+            <div
+              className={`h-full w-full ${
+                mapViewState === "fullscreen"
+                  ? "fixed inset-0 z-[9999] bg-white"
+                  : "relative"
+              }`}
+            >
               <GoogleMaps
                 polylines={routePolylines}
                 markers={markers}
@@ -673,35 +804,43 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
                 mapViewState={mapViewState}
               />
 
-              {/* Clear-focus chip — the only visible affordance telling the
-                  dispatcher why the rest of the plan went gray. */}
-              {focusedRouteIndex !== null && (
-                <div className="absolute top-3 left-3 z-40 flex items-center gap-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-none shadow-md pl-3 pr-1.5 py-1.5">
-                  <span
-                    className="w-2.5 h-2.5 rounded-none shrink-0"
-                    style={{
-                      backgroundColor: getRouteColor(focusedRouteIndex),
-                    }}
-                  />
-                  <span className="text-xs font-semibold text-gray-800 max-w-[180px] truncate">
-                    {focusedRoute?.team_member_name ||
-                      `Driver ${focusedRouteIndex + 1}`}
-                  </span>
-                  <span className="text-[11px] text-gray-400">
-                    {getGroupedStopsCount(focusedRoute?.stops)} stops
-                  </span>
-                  <Tooltip title="Clear focus (Esc)">
-                    <button
-                      type="button"
-                      onClick={clearFocus}
-                      aria-label="Clear route focus"
-                      className="flex items-center justify-center w-5 h-5 rounded-none text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-none outline-none"
-                    >
-                      <X size={13} />
-                    </button>
-                  </Tooltip>
-                </div>
-              )}
+              {/* Top-left overlay column: focus chip + in-map search stacked */}
+              <div className="absolute top-3 left-3 z-40 flex flex-col gap-1.5" style={{ maxWidth: "calc(100% - 120px)" }}>
+                {/* Clear-focus chip */}
+                {focusedRouteIndex !== null && (
+                  <div className="flex items-center gap-2 bg-white/95 backdrop-blur-sm border border-gray-200 rounded-none shadow-md pl-3 pr-1.5 py-1.5 self-start">
+                    <span
+                      className="w-2.5 h-2.5 rounded-none shrink-0"
+                      style={{
+                        backgroundColor: getRouteColor(focusedRouteIndex),
+                      }}
+                    />
+                    <span className="text-xs font-semibold text-gray-800 max-w-[180px] truncate">
+                      {focusedRoute?.team_member_name ||
+                        `Driver ${focusedRouteIndex + 1}`}
+                    </span>
+                    <span className="text-[11px] text-gray-400">
+                      {getGroupedStopsCount(focusedRoute?.stops)} stops
+                    </span>
+                    <Tooltip title="Clear focus (Esc)">
+                      <button
+                        type="button"
+                        onClick={clearFocus}
+                        aria-label="Clear route focus"
+                        className="flex items-center justify-center w-5 h-5 rounded-none text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer border-none outline-none"
+                      >
+                        <X size={13} />
+                      </button>
+                    </Tooltip>
+                  </div>
+                )}
+
+                {/* In-map expandable candidate search */}
+                <MapSearch
+                  candidates={candidateIndex}
+                  onSelect={handleSelectCandidate}
+                />
+              </div>
             </div>
           </Panel>
 
@@ -712,7 +851,7 @@ const OptimizationView = ({ route }: OptimizationViewProps) => {
               {mapViewState === "collapsed" && (
                 <div className="bg-[#ecfdf5] text-[#003220] px-4 py-2 flex items-center justify-between border-b border-emerald-100 shrink-0 transition-all">
                   <div className="flex items-center gap-2 text-xs font-semibold">
-                    <Map size={14} className="text-[#003220]" />
+                    <MapIcon size={14} className="text-[#003220]" />
                     <span>Map view is currently collapsed</span>
                   </div>
                   <button
