@@ -51,23 +51,18 @@ export const createCustomMarkerIcon = (
     dotColor = baseColor;
   }
 
-  const scale = isSelected ? 1.2 : 1;
+  const scale = isSelected ? 1.35 : 1;
   /* 
     Depot markers are square (36x36 base) and centred.
     Stop markers are pins (32x45 base) and bottom-anchored.
     We need consistent base dimensions for scaling but dynamic viewboxes for the SVG content.
   */
-  // Base dimensions for the SVG coordinate system
-  const baseWidth = 32;
-  const baseHeight = isDepot ? 32 : 45; // Depots are square, pins are taller
-
   // Rendered dimensions
   const width = (isDepot ? 36 : 32) * scale;
   const height = (isDepot ? 36 : 45) * scale;
 
   // SVG marker icon - teardrop pin with number and dot trail
   const svg = `
-
     <svg width="${width}" height="${height}" viewBox="-2 -2 36 49" xmlns="http://www.w3.org/2000/svg">
       <!-- Drop shadow -->
       <defs>
@@ -75,7 +70,7 @@ export const createCustomMarkerIcon = (
           <feGaussianBlur in="SourceAlpha" stdDeviation="1.5"/>
           <feOffset dx="0" dy="1" result="offsetblur"/>
           <feComponentTransfer>
-            <feFuncA type="linear" slope="0.3"/>
+            <feFuncA type="linear" slope="0.35"/>
           </feComponentTransfer>
           <feMerge>
             <feMergeNode/>
@@ -83,8 +78,7 @@ export const createCustomMarkerIcon = (
           </feMerge>
         </filter>
       </defs>
-      
-      <!-- Main pin body (teardrop shape) -->
+
       <!-- Main pin body (teardrop for stops, rounded square for depot) -->
       ${
         isDepot

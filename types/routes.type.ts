@@ -8,6 +8,7 @@ type OptimizationStatus =
   | "success";
 
 export interface Stop {
+  id?: number | string;
   job_id: number | null;
   stop_type: string;
   arrival_time: string;

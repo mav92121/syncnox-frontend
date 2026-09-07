@@ -141,13 +141,27 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
     setMapTypeId(type);
   };
 
-  // Sync selected marker with external selectedMarkerId prop
+  // Sync selected marker with external selectedMarkerId prop & trigger 3-jump bounce animation
+  const [bouncingMarkerId, setBouncingMarkerId] = useState<string | number | null>(null);
+
   useEffect(() => {
     if (selectedMarkerId !== undefined && selectedMarkerId !== null) {
       const marker = markers.find((m) => String(m.id) === String(selectedMarkerId));
       setSelectedMarker(marker || null);
+      setBouncingMarkerId(null);
+      const rAF = requestAnimationFrame(() => {
+        setBouncingMarkerId(selectedMarkerId);
+      });
+      const timer = setTimeout(() => {
+        setBouncingMarkerId(null);
+      }, 2100); // 3 bounce cycles (~700ms each)
+      return () => {
+        cancelAnimationFrame(rAF);
+        clearTimeout(timer);
+      };
     } else {
       setSelectedMarker(null);
+      setBouncingMarkerId(null);
     }
   }, [selectedMarkerId, markers]);
 
@@ -342,7 +356,15 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
             ? marker.jobData.status
             : undefined) || "draft";
 
-        const isSelected = selectedMarker?.id === marker.id;
+        const isSelected =
+          selectedMarker?.id === marker.id ||
+          (selectedMarkerId !== undefined &&
+            selectedMarkerId !== null &&
+            String(selectedMarkerId) === String(marker.id));
+
+        const isBouncing =
+          bouncingMarkerId !== null &&
+          String(bouncingMarkerId) === String(marker.id);
 
         const icon = createCustomMarkerIcon(
           markerNumber,
@@ -359,8 +381,16 @@ const GoogleMaps: React.FC<GoogleMapsProps> = ({
             title={marker.title}
             icon={icon}
             draggable={marker.draggable}
+            zIndex={isSelected ? 9999 : (marker.sequenceNumber ?? 1)}
+            animation={
+              isBouncing && typeof window !== "undefined" && window.google?.maps?.Animation
+                ? window.google.maps.Animation.BOUNCE
+                : undefined
+            }
             onClick={() => {
               setSelectedMarker(marker);
+              setBouncingMarkerId(marker.id);
+              setTimeout(() => setBouncingMarkerId(null), 2100);
               onMarkerSelect?.(marker.id);
             }}
             onDragEnd={(e) => {
